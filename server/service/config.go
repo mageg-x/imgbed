@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	"github.com/imgbed/server/config"
 	"github.com/imgbed/server/database"
 	"github.com/imgbed/server/model"
@@ -240,10 +241,8 @@ func (s *ConfigService) GetSiteConfig() (*SiteConfig, error) {
 	}
 
 	return &SiteConfig{
-		Name:       configs["site.name"],
-		Logo:       configs["site.logo"],
-		Background: configs["site.background"],
-		FooterText: configs["site.footer_text"],
+		Name: configs["site.name"],
+		Logo: configs["site.logo"],
 	}, nil
 }
 
@@ -385,10 +384,8 @@ func (s *ConfigService) UpdateUploadConfig(cfg *UploadConfig) error {
 //   - error: 更新过程中的错误
 func (s *ConfigService) UpdateSiteConfig(cfg *SiteConfig) error {
 	updates := map[string]string{
-		"site.name":        cfg.Name,
-		"site.logo":        cfg.Logo,
-		"site.background":  cfg.Background,
-		"site.footer_text": cfg.FooterText,
+		"site.name": cfg.Name,
+		"site.logo": cfg.Logo,
 	}
 
 	for key, value := range updates {
@@ -515,10 +512,8 @@ type CompressionConfig struct {
 
 // SiteConfig 站点配置结构
 type SiteConfig struct {
-	Name       string // 站点名称
-	Logo       string // 站点Logo
-	Background string // 背景图片
-	FooterText string // 页脚文本
+	Name string // 站点名称
+	Logo string // 站点Logo
 }
 
 // AuthConfig 认证配置结构
@@ -602,6 +597,13 @@ func (s *ConfigService) UpdateAppConfig(cfg *AppConfig) error {
 			return err
 		}
 	}
+
+	// 运行时更新 gin 模式
+	if cfg.Mode == "release" {
+		gin.SetMode(gin.ReleaseMode)
+	} else {
+		gin.SetMode(gin.DebugMode)
+	}
 	return nil
 }
 
@@ -641,6 +643,9 @@ func (s *ConfigService) UpdateJwtConfig(cfg *JwtConfig) error {
 			return err
 		}
 	}
+
+	// 运行时更新 JWT 配置
+	utils.UpdateJWTConfig(cfg.Secret, cfg.Expire)
 	return nil
 }
 

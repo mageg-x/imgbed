@@ -428,7 +428,7 @@ async function executeCleanup() {
 <template>
   <div class="space-y-6">
     <!-- 工具栏 -->
-    <div class="rounded-xl sm:rounded-2xl border p-3 sm:p-4 flex flex-wrap items-center gap-2 sm:gap-3"
+    <div class="rounded-xl sm:rounded-2xl border py-3 sm:py-4 flex flex-wrap items-center gap-2 sm:gap-3"
       :class="isDark ? 'bg-[var(--bg-secondary)]/50 border-[var(--border)]' : 'bg-white border-gray-200'">
 
       <!-- 搜索 -->

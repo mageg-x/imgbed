@@ -200,8 +200,6 @@ func initDefaultData() error {
 		// 站点配置
 		{"site.name", "ImgBed"},
 		{"site.logo", ""},
-		{"site.background", ""},
-		{"site.footer_text", "ImgBed - 开源文件托管解决方案"},
 	}
 
 	// 确保每个配置项都存在

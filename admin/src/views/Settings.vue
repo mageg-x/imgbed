@@ -24,9 +24,7 @@ const uploadConfig = reactive({
 
 const siteConfig = reactive({
   name: 'ImgBed',
-  logo: '',
-  background: '',
-  footerText: ''
+  logo: ''
 })
 
 const authConfig = reactive({
@@ -101,8 +99,6 @@ async function loadConfigs() {
     if (siteRes.data) {
       siteConfig.name = siteRes.data.name || 'ImgBed'
       siteConfig.logo = siteRes.data.logo || ''
-      siteConfig.background = siteRes.data.background || ''
-      siteConfig.footerText = siteRes.data.footerText || ''
     }
 
     if (authRes.data) {
@@ -183,9 +179,7 @@ async function saveSiteConfig() {
   try {
     await request.put('/config/site', {
       name: siteConfig.name,
-      logo: siteConfig.logo,
-      background: siteConfig.background,
-      footerText: siteConfig.footerText
+      logo: siteConfig.logo
     })
     ElMessage.success('站点配置已保存')
   } catch {
@@ -525,24 +519,6 @@ const jwtConfig = reactive({
             <input v-model="siteConfig.logo" type="text" placeholder="Logo 图片地址"
               class="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm"
               :class="isDark ? 'bg-[var(--bg-hover)] border-[var(--border)]' : 'bg-gray-50 border-gray-200'" />
-          </div>
-
-          <div>
-            <el-tooltip content="网站背景图片 URL，留空使用默认背景" placement="top">
-              <label class="block text-sm font-medium mb-2 cursor-help">背景图片</label>
-            </el-tooltip>
-            <input v-model="siteConfig.background" type="text" placeholder="背景图片地址"
-              class="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm"
-              :class="isDark ? 'bg-[var(--bg-hover)] border-[var(--border)]' : 'bg-gray-50 border-gray-200'" />
-          </div>
-
-          <div>
-            <el-tooltip content="页面底部显示的自定义文字" placement="top">
-              <label class="block text-sm font-medium mb-2 cursor-help">页脚文字</label>
-            </el-tooltip>
-            <textarea v-model="siteConfig.footerText" rows="2" placeholder="页脚显示的文字"
-              class="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/50 resize-none text-sm"
-              :class="isDark ? 'bg-[var(--bg-hover)] border-[var(--border)]' : 'bg-gray-50 border-gray-200'"></textarea>
           </div>
 
           <button @click="saveSiteConfig"

@@ -10,7 +10,7 @@ const routes = [
   },
   {
     path: "/",
-    redirect: "/files",
+    redirect: "/home",
   },
   {
     path: "/",
@@ -48,7 +48,7 @@ const routes = [
         meta: { title: "集成示例" },
       },
       {
-        path: "",
+        path: "home",
         name: "Dashboard",
         component: () => import("@/views/Dashboard.vue"),
         meta: { title: "仪表盘" },

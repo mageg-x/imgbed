@@ -16,7 +16,7 @@ const isCollapsed = ref(false)
 const isMobileMenuOpen = ref(false)
 
 const menuItems = [
-  { path: '/', label: '仪表盘', icon: Home },
+  { path: '/home', label: '仪表盘', icon: Home },
   { path: '/files', label: '文件管理', icon: Folder },
   { path: '/channels', label: '渠道管理', icon: Network },
   { path: '/tokens', label: 'API Token', icon: Key },
@@ -50,7 +50,7 @@ function closeMobileMenu() {
 
     <!-- 侧边栏 -->
     <aside class="fixed left-0 top-0 h-full flex flex-col transition-all duration-300 z-50" :class="[
-      isCollapsed ? 'w-[72px]' : 'w-64',
+      isCollapsed ? 'w-[72px]' : ' w-52',
       isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
     ]" :style="{ background: themeStore.isDark ? 'var(--bg-secondary)' : 'white' }">
 
@@ -91,7 +91,7 @@ function closeMobileMenu() {
     </aside>
 
     <!-- 主内容 -->
-    <main class="flex-1 transition-all duration-300 w-full" :class="isCollapsed ? 'lg:ml-[72px]' : 'lg:ml-64'">
+    <main class="flex-1 transition-all duration-300 w-full" :class="isCollapsed ? 'lg:ml-[72px]' : 'lg:ml-52'">
 
       <!-- 顶部栏 -->
       <header class="sticky top-0 z-40 border-b backdrop-blur-xl px-4 sm:px-6 py-4"

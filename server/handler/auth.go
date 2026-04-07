@@ -57,7 +57,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie("imgbed_token", token, 7*24*3600, "/", "", false, true)
+	c.SetCookie("imgbed_token", token, h.authService.GetSessionTimeout(), "/", "", false, true)
 	utils.Infof("login: success")
 	response.Success(c, gin.H{"token": token})
 }
@@ -90,7 +90,7 @@ func (h *AuthHandler) AdminLogin(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie("imgbed_token", token, 7*24*3600, "/", "", false, true)
+	c.SetCookie("imgbed_token", token, h.authService.GetSessionTimeout(), "/", "", false, true)
 	utils.Infof("admin login: success, username=%s", req.Username)
 	response.Success(c, gin.H{"token": token})
 }
@@ -196,7 +196,7 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie("imgbed_token", token, 7*24*3600, "/", "", false, true)
+	c.SetCookie("imgbed_token", token, h.authService.GetSessionTimeout(), "/", "", false, true)
 	response.Success(c, gin.H{
 		"token":    token,
 		"userId":   userId,

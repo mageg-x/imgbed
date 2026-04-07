@@ -21,6 +21,12 @@ const pasteEnabled = ref(true)
 const isDragover = ref(false)
 const fileInput = ref(null)
 const maxFileSize = ref(20 * 1024 * 1024)
+
+// 站点配置
+const siteConfig = ref({
+  name: 'ImgBed',
+  logo: ''
+})
 const allowedTypes = ref([
   'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml', 'image/bmp',
   'video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo',
@@ -57,10 +63,18 @@ onUnmounted(() => {
 
 async function loadConfig() {
   try {
-    const res = await fetch('/api/v1/config/upload')
-    const data = await res.json()
-    if (data.code === 0 && data.data?.maxSize) {
-      maxFileSize.value = data.data.maxSize
+    const [uploadRes, siteRes] = await Promise.all([
+      fetch('/api/v1/config/upload').then(r => r.json()),
+      fetch('/api/v1/config/site').then(r => r.json())
+    ])
+    if (uploadRes.code === 0 && uploadRes.data?.maxSize) {
+      maxFileSize.value = uploadRes.data.maxSize
+    }
+    if (siteRes.code === 0 && siteRes.data) {
+      siteConfig.value = {
+        name: siteRes.data.name || 'ImgBed',
+        logo: siteRes.data.logo || ''
+      }
     }
   } catch { }
 }
@@ -313,11 +327,13 @@ function isImageType(type) {
       :class="themeStore.isDark ? 'bg-[var(--bg-primary)]/80 border-[var(--border)]' : 'bg-white/80 border-gray-200'">
       <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-4">
         <div class="flex items-center gap-2 sm:gap-3">
-          <img src="/imgbed.webp" alt="ImgBed"
+          <img v-if="siteConfig.logo" :src="siteConfig.logo" :alt="siteConfig.name"
+            class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl object-cover shadow-lg shadow-indigo-500/30" />
+          <img v-else src="/imgbed.webp" :alt="siteConfig.name"
             class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl object-cover shadow-lg shadow-indigo-500/30" />
           <span class="text-lg sm:text-xl font-bold">
-            <span class="text-gradient">Img</span><span
-              :class="themeStore.isDark ? 'text-white' : 'text-gray-800'">Bed</span>
+            <span class="text-gradient">{{ siteConfig.name.slice(0, 3) }}</span><span
+              :class="themeStore.isDark ? 'text-white' : 'text-gray-800'">{{ siteConfig.name.slice(3) }}</span>
           </span>
         </div>
 

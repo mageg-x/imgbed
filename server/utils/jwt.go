@@ -33,6 +33,24 @@ func SetJWTConfig(secret string, expire int) {
 	jwtExpire = expire
 }
 
+// UpdateJWTConfig 更新JWT配置（运行时）
+// 参数：
+//   - secret: 新JWT签名密钥（空字符串则不更新）
+//   - expire: 新Token过期时间（0则不更新）
+func UpdateJWTConfig(secret string, expire int) {
+	if secret != "" {
+		jwtSecret = secret
+	}
+	if expire > 0 {
+		jwtExpire = expire
+	}
+}
+
+// GetJWTConfig 获取当前JWT配置
+func GetJWTConfig() (secret string, expire int) {
+	return jwtSecret, jwtExpire
+}
+
 // JWTClaims JWT声明结构
 // 包含用户信息和标准JWT声明
 type JWTClaims struct {
