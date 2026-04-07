@@ -153,7 +153,7 @@ function formatSize(bytes) {
 </script>
 
 <template>
-  <div class="min-h-screen" :class="themeStore.isDark ? 'bg-[var(--bg-primary)]' : 'bg-gray-50'">
+  <div class="min-h-screen container" :class="themeStore.isDark ? 'bg-[var(--bg-primary)]' : 'bg-gray-50'">
     <!-- 顶部导航 -->
     <header class="sticky top-0 z-50 border-b backdrop-blur-xl"
       :class="themeStore.isDark ? 'bg-[var(--bg-primary)]/80 border-[var(--border)]' : 'bg-white/80 border-gray-200'">
@@ -294,7 +294,7 @@ function formatSize(bytes) {
 
       <!-- 瀑布流网格 -->
       <div v-else-if="viewMode === 'grid'"
-        class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+        class=" max-w-6xl mx-auto grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-6 sm:gap-4">
         <div v-for="(file, idx) in files" :key="file.id"
           class="group relative aspect-square rounded-xl overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-xl hover:shadow-black/20 hover:-translate-y-1"
           :style="{ animationDelay: (idx % 12) * 50 + 'ms' }" @click="openPreview(file.url)">

@@ -32,7 +32,8 @@ type S3Driver struct {
 	client      *s3.Client  // S3客户端
 	bucket      string      // 存储桶名称
 	region      string      // 区域
-	endpoint    string      // 自定义端点
+	endpoint    string      // 自定义端点（用于 SDK）
+	urlEndpoint string      // URL 访问端点（用于生成访问 URL）
 	channelID   string      // 通道ID
 	storageType StorageType // 存储类型（S3或R2）
 	publicURL   string      // 公共访问URL（R2.dev子域名或自定义域名）
@@ -65,10 +66,29 @@ func NewS3Driver(cfg *ChannelConfig) (StorageDriver, error) {
 	}
 	endpoint, _ := cfg.Config["endpoint"].(string)
 
+	// 自动处理常见格式问题
+	bucket = strings.TrimSpace(bucket)
+	endpoint = strings.TrimSpace(endpoint)
+	// AWS SDK 要求 endpoint 必须是完整 URI
+	if endpoint != "" && !strings.HasPrefix(endpoint, "http://") && !strings.HasPrefix(endpoint, "https://") {
+		endpoint = "https://" + endpoint
+	}
+
 	// 验证必需参数
 	if accessKey == "" || secretKey == "" || bucket == "" {
 		utils.Errorf("new s3 driver: missing required parameters")
 		return nil, fmt.Errorf("s3 access key, secret key and bucket are required")
+	}
+
+	// 保存 URL 访问端点（用于生成访问 URL）
+	urlEndpoint := endpoint
+	// AWS SDK 要求 endpoint 必须是完整 URI
+	if endpoint != "" && !strings.HasPrefix(endpoint, "http://") && !strings.HasPrefix(endpoint, "https://") {
+		endpoint = "https://" + endpoint
+	} else if strings.HasPrefix(endpoint, "http://") || strings.HasPrefix(endpoint, "https://") {
+		// urlEndpoint 需要去掉协议前缀，用于生成 bucket.endpoint 格式的 URL
+		urlEndpoint = strings.TrimPrefix(endpoint, "https://")
+		urlEndpoint = strings.TrimPrefix(urlEndpoint, "http://")
 	}
 
 	// 加载AWS配置
@@ -95,6 +115,7 @@ func NewS3Driver(cfg *ChannelConfig) (StorageDriver, error) {
 		bucket:      bucket,
 		region:      region,
 		endpoint:    endpoint,
+		urlEndpoint: urlEndpoint,
 		channelID:   cfg.ID,
 		storageType: StorageTypeS3,
 	}, nil
@@ -188,7 +209,7 @@ func (d *S3Driver) Upload(ctx context.Context, req *UploadRequest) (*UploadResul
 	// 添加文件扩展名
 	ext := ""
 	if idx := strings.LastIndex(req.FileName, "."); idx != -1 {
-		ext = req.FileName[idx:]
+		ext = strings.ToLower(req.FileName[idx:])
 	}
 	// fileID 包含扩展名，作为存储的 key
 	fileIDWithExt := fileID + ext
@@ -199,11 +220,15 @@ func (d *S3Driver) Upload(ctx context.Context, req *UploadRequest) (*UploadResul
 		key = req.Directory + "/" + fileIDWithExt
 	}
 
+	// 获取 MIME 类型
+	mimeType := getMimeType(ext)
+
 	// 上传到S3
 	_, err := d.client.PutObject(ctx, &s3.PutObjectInput{
-		Bucket: aws.String(d.bucket),
-		Key:    aws.String(key),
-		Body:   req.Reader,
+		Bucket:        aws.String(d.bucket),
+		Key:           aws.String(key),
+		Body:          req.Reader,
+		ContentType:   aws.String(mimeType),
 	})
 	if err != nil {
 		utils.Errorf("s3 upload: put object failed, key=%s, error=%v", key, err)
@@ -358,21 +383,16 @@ func (d *S3Driver) GetQuota(ctx context.Context) (*QuotaInfo, error) {
 }
 
 // HealthCheck 检查S3存储健康状态
-// 通过列出对象来验证连接是否正常
-// 参数：
-//   - ctx: 上下文
-//
-// 返回：
-//   - error: 检查失败时的错误
+// 通过 HeadBucket 验证 bucket 是否可访问
 func (d *S3Driver) HealthCheck(ctx context.Context) error {
-	_, err := d.client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
-		Bucket:  aws.String(d.bucket),
-		MaxKeys: aws.Int32(1),
+	_, err := d.client.HeadBucket(ctx, &s3.HeadBucketInput{
+		Bucket: aws.String(d.bucket),
 	})
 	if err != nil {
-		utils.Errorf("s3 health check: list objects failed, error=%v", err)
+		utils.Errorf("s3 health check: head bucket failed, bucket=%s, error=%v", d.bucket, err)
+		return err
 	}
-	return err
+	return nil
 }
 
 // getObjectURL 生成对象的访问URL
@@ -392,8 +412,8 @@ func (d *S3Driver) getObjectURL(key string) string {
 	}
 
 	// S3使用bucket域名格式
-	if d.endpoint != "" {
-		return fmt.Sprintf("%s/%s/%s", strings.TrimSuffix(d.endpoint, "/"), d.bucket, key)
+	if d.urlEndpoint != "" {
+		return fmt.Sprintf("https://%s.%s/%s", d.bucket, d.urlEndpoint, key)
 	}
 
 	return fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", d.bucket, d.region, key)

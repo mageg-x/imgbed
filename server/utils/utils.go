@@ -107,7 +107,8 @@ func GetMimeType(file *multipart.FileHeader) string {
 //   - bool: 是否允许
 func IsAllowedType(mimeType string, allowedTypes []string) bool {
 	if len(allowedTypes) == 0 {
-		return true
+		// 默认只允许图片类型
+		return strings.HasPrefix(mimeType, "image/")
 	}
 	for _, allowed := range allowedTypes {
 		// 支持通配符匹配，如"image/*"匹配所有图片类型

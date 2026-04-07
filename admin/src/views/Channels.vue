@@ -393,6 +393,8 @@ function getStatusColor(status) {
                 :class="isDark ? 'bg-[var(--bg-card)] border-[var(--border)]' : 'bg-white border-gray-200'" />
               <input v-model="form.config.channelId" placeholder="Channel ID" class="w-full px-3 py-2 rounded-lg border"
                 :class="isDark ? 'bg-[var(--bg-card)] border-[var(--border)]' : 'bg-white border-gray-200'" />
+              <input v-model="form.config.channelId2" placeholder="备用 Channel ID（可选，用于负载均衡）" class="w-full px-3 py-2 rounded-lg border"
+                :class="isDark ? 'bg-[var(--bg-card)] border-[var(--border)]' : 'bg-white border-gray-200'" />
             </template>
 
             <template v-else-if="form.type === 'cfr2'">
@@ -405,12 +407,14 @@ function getStatusColor(status) {
               <input v-model="form.config.secretKey" placeholder="Secret Access Key" type="password"
                 class="w-full px-3 py-2 rounded-lg border text-sm"
                 :class="isDark ? 'bg-[var(--bg-card)] border-[var(--border)]' : 'bg-white border-gray-200'" />
-              <input v-model="form.config.bucket" placeholder="Bucket 名称 (如: imgbed)"
+              <input v-model="form.config.bucket" placeholder="Bucket 名称"
                 class="w-full px-3 py-2 rounded-lg border text-sm"
                 :class="isDark ? 'bg-[var(--bg-card)] border-[var(--border)]' : 'bg-white border-gray-200'" />
-              <input v-model="form.config.accountId" placeholder="Account ID (端点 URL 中的 hash，如: d0206bcb...)"
+              <p class="text-xs -mt-1 mb-2 text-amber-500">⚠️ Bucket 名称不能包含空格</p>
+              <input v-model="form.config.accountId" placeholder="Account ID"
                 class="w-full px-3 py-2 rounded-lg border text-sm"
                 :class="isDark ? 'bg-[var(--bg-card)] border-[var(--border)]' : 'bg-white border-gray-200'" />
+              <p class="text-xs -mt-1 mb-2 text-amber-500">⚠️ 必须是 R2 账户页面显示的完整 Account ID</p>
               <div class="border-t pt-3 mt-3" :class="isDark ? 'border-[var(--border)]' : 'border-gray-200'">
                 <p class="text-xs font-medium mb-2" :class="isDark ? 'text-gray-400' : 'text-gray-500'">
                   公共访问 URL（必填）
@@ -418,7 +422,7 @@ function getStatusColor(status) {
                 <p class="text-xs mb-2" :class="isDark ? 'text-gray-500' : 'text-gray-400'">
                   在 R2 存储桶设置中启用"公共访问"，填写自定义域名或公共开发 URL
                 </p>
-                <input v-model="form.config.publicUrl" placeholder="https://image-bucket.ma3ok.com 或 https://pub-xxx.r2.dev"
+                <input v-model="form.config.publicUrl" placeholder="https://pub-xxx.r2.dev"
                   class="w-full px-3 py-2 rounded-lg border text-sm"
                   :class="isDark ? 'bg-[var(--bg-card)] border-[var(--border)]' : 'bg-white border-gray-200'" />
                 <p class="text-xs mt-1 text-amber-500">
@@ -428,6 +432,9 @@ function getStatusColor(status) {
             </template>
 
             <template v-else-if="form.type === 's3'">
+              <p class="text-xs mb-2" :class="isDark ? 'text-gray-500' : 'text-gray-400'">
+                Endpoint 只需填写地域端点（如 cos.ap-guangzhou.myqcloud.com），SDK 会自动拼接 Bucket
+              </p>
               <input v-model="form.config.accessKey" placeholder="Access Key ID"
                 class="w-full px-3 py-2 rounded-lg border text-sm"
                 :class="isDark ? 'bg-[var(--bg-card)] border-[var(--border)]' : 'bg-white border-gray-200'" />
@@ -437,18 +444,33 @@ function getStatusColor(status) {
               <input v-model="form.config.bucket" placeholder="Bucket 名称"
                 class="w-full px-3 py-2 rounded-lg border text-sm"
                 :class="isDark ? 'bg-[var(--bg-card)] border-[var(--border)]' : 'bg-white border-gray-200'" />
-              <input v-model="form.config.endpoint" placeholder="Endpoint (如: https://s3.amazonaws.com)"
+              <p class="text-xs -mt-1 mb-2 text-amber-500">⚠️ Bucket 名称不能包含空格</p>
+              <input v-model="form.config.endpoint" placeholder="cos.ap-guangzhou.myqcloud.com"
                 class="w-full px-3 py-2 rounded-lg border text-sm"
                 :class="isDark ? 'bg-[var(--bg-card)] border-[var(--border)]' : 'bg-white border-gray-200'" />
-              <input v-model="form.config.region" placeholder="Region (如: us-east-1)"
+              <p class="text-xs -mt-1 mb-2 text-amber-500">⚠️ 只需填地域端点，不要包含 Bucket 名称</p>
+              <input v-model="form.config.region" placeholder="Region (如: ap-guangzhou)"
                 class="w-full px-3 py-2 rounded-lg border text-sm"
                 :class="isDark ? 'bg-[var(--bg-card)] border-[var(--border)]' : 'bg-white border-gray-200'" />
             </template>
 
             <template v-else-if="form.type === 'discord'">
-              <input v-model="form.config.webhookUrl" placeholder="Webhook URL"
-                class="w-full px-3 py-2 rounded-lg border"
+              <p class="text-xs mb-2" :class="isDark ? 'text-gray-500' : 'text-gray-400'">
+                请在 Discord 开发者平台创建 Bot，获取 Token 和邀请到频道
+              </p>
+              <input v-model="form.config.botToken" placeholder="Bot Token"
+                class="w-full px-3 py-2 rounded-lg border text-sm"
                 :class="isDark ? 'bg-[var(--bg-card)] border-[var(--border)]' : 'bg-white border-gray-200'" />
+              <input v-model="form.config.channelId" placeholder="Channel ID"
+                class="w-full px-3 py-2 rounded-lg border text-sm"
+                :class="isDark ? 'bg-[var(--bg-card)] border-[var(--border)]' : 'bg-white border-gray-200'" />
+              <label class="flex items-center gap-2 cursor-pointer mt-2">
+                <input type="checkbox" v-model="form.config.isNitro"
+                  class="w-4 h-4 rounded accent-indigo-500" />
+                <span class="text-sm" :class="isDark ? 'text-gray-400' : 'text-gray-500'">
+                  Nitro 会员（支持 25MB，否则 8MB）
+                </span>
+              </label>
             </template>
 
             <template v-else-if="form.type === 'huggingface'">

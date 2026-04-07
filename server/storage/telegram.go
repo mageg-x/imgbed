@@ -77,6 +77,16 @@ func (d *TelegramDriver) Type() StorageType {
 	return StorageTypeTelegram
 }
 
+// getApiBaseUrl 获取 Telegram API 基础 URL
+func (d *TelegramDriver) getApiBaseUrl() string {
+	return fmt.Sprintf("https://api.telegram.org/bot%s", d.botToken)
+}
+
+// getFileBaseUrl 获取 Telegram 文件下载基础 URL
+func (d *TelegramDriver) getFileBaseUrl() string {
+	return fmt.Sprintf("https://api.telegram.org/file/bot%s", d.botToken)
+}
+
 // Upload 上传文件到Telegram
 // 文件作为文档上传，支持最大20MB
 // 参数：
@@ -136,7 +146,8 @@ func (d *TelegramDriver) Upload(ctx context.Context, req *UploadRequest) (*Uploa
 	}
 
 	// 构建请求URL
-	url := fmt.Sprintf("https://api.telegram.org/bot%s/sendDocument?chat_id=%s", d.botToken, channelID)
+	apiBase := d.getApiBaseUrl()
+	url := fmt.Sprintf("%s/sendDocument?chat_id=%s", apiBase, channelID)
 
 	// 创建HTTP请求
 	httpReq, err := http.NewRequestWithContext(ctx, "POST", url, body)
@@ -179,11 +190,21 @@ func (d *TelegramDriver) Upload(ctx context.Context, req *UploadRequest) (*Uploa
 		return nil, fmt.Errorf("telegram api error: %s", result.Description)
 	}
 
-	utils.Debugf("telegram upload: success, fileID=%s, tgFileID=%s", fileID, result.Result.Document.FileID)
+	tgFileID := result.Result.Document.FileID
+
+	// 获取文件路径（需要额外调用 getFile API）
+	filePath, err := d.getFilePath(ctx, tgFileID)
+	if err != nil {
+		utils.Warnf("telegram upload: get file path failed, fileID=%s, error=%v", tgFileID, err)
+		// 即使获取失败也继续，但 URL 可能不正确
+		filePath = tgFileID
+	}
+
+	utils.Debugf("telegram upload: success, fileID=%s, tgFileID=%s, filePath=%s", fileID, tgFileID, filePath)
 
 	return &UploadResult{
-		FileID:    result.Result.Document.FileID,
-		URL:       fmt.Sprintf("https://api.telegram.org/file/bot%s/%s", d.botToken, result.Result.Document.FileID),
+		FileID:    tgFileID,
+		URL:       fmt.Sprintf("%s/%s", d.getFileBaseUrl(), filePath),
 		Size:      result.Result.Document.FileSize,
 		ChannelID: d.channelIDInternal,
 	}, nil
@@ -199,7 +220,8 @@ func (d *TelegramDriver) Upload(ctx context.Context, req *UploadRequest) (*Uploa
 //   - error: 下载失败时的错误
 func (d *TelegramDriver) Download(ctx context.Context, fileID string) (*DownloadResult, error) {
 	// 获取文件路径
-	url := fmt.Sprintf("https://api.telegram.org/bot%s/getFile?file_id=%s", d.botToken, fileID)
+	apiBase := d.getApiBaseUrl()
+	url := fmt.Sprintf("%s/getFile?file_id=%s", apiBase, fileID)
 
 	resp, err := d.client.Get(url)
 	if err != nil {
@@ -229,7 +251,7 @@ func (d *TelegramDriver) Download(ctx context.Context, fileID string) (*Download
 	}
 
 	// 下载文件内容
-	fileURL := fmt.Sprintf("https://api.telegram.org/file/bot%s/%s", d.botToken, result.Result.FilePath)
+	fileURL := fmt.Sprintf("%s/%s", d.getFileBaseUrl(), result.Result.FilePath)
 	fileResp, err := d.client.Get(fileURL)
 	if err != nil {
 		utils.Errorf("telegram download: download file failed, error=%v", err)
@@ -254,7 +276,8 @@ func (d *TelegramDriver) Download(ctx context.Context, fileID string) (*Download
 //   - string: 访问URL
 //   - error: 获取失败时的错误
 func (d *TelegramDriver) GetURL(ctx context.Context, fileID string) (string, error) {
-	url := fmt.Sprintf("https://api.telegram.org/bot%s/getFile?file_id=%s", d.botToken, fileID)
+	apiBase := d.getApiBaseUrl()
+	url := fmt.Sprintf("%s/getFile?file_id=%s", apiBase, fileID)
 
 	resp, err := d.client.Get(url)
 	if err != nil {
@@ -280,7 +303,7 @@ func (d *TelegramDriver) GetURL(ctx context.Context, fileID string) (string, err
 		return "", ErrFileNotFound
 	}
 
-	return fmt.Sprintf("https://api.telegram.org/file/bot%s/%s", d.botToken, result.Result.FilePath), nil
+	return fmt.Sprintf("%s/%s", d.getFileBaseUrl(), result.Result.FilePath), nil
 }
 
 // Delete 删除Telegram文件（Telegram不提供删除API，直接返回成功）
@@ -304,7 +327,8 @@ func (d *TelegramDriver) Delete(ctx context.Context, fileID string) error {
 //   - bool: 文件是否存在
 //   - error: 检查失败时的错误
 func (d *TelegramDriver) Exists(ctx context.Context, fileID string) (bool, error) {
-	url := fmt.Sprintf("https://api.telegram.org/bot%s/getFile?file_id=%s", d.botToken, fileID)
+	apiBase := d.getApiBaseUrl()
+	url := fmt.Sprintf("%s/getFile?file_id=%s", apiBase, fileID)
 
 	resp, err := d.client.Get(url)
 	if err != nil {
@@ -334,7 +358,8 @@ func (d *TelegramDriver) Exists(ctx context.Context, fileID string) (bool, error
 //   - *FileInfo: 文件信息
 //   - error: 获取失败时的错误
 func (d *TelegramDriver) Stat(ctx context.Context, fileID string) (*FileInfo, error) {
-	url := fmt.Sprintf("https://api.telegram.org/bot%s/getFile?file_id=%s", d.botToken, fileID)
+	apiBase := d.getApiBaseUrl()
+	url := fmt.Sprintf("%s/getFile?file_id=%s", apiBase, fileID)
 
 	resp, err := d.client.Get(url)
 	if err != nil {
@@ -393,7 +418,8 @@ func (d *TelegramDriver) GetQuota(ctx context.Context) (*QuotaInfo, error) {
 // 返回：
 //   - error: 检查失败时的错误
 func (d *TelegramDriver) HealthCheck(ctx context.Context) error {
-	url := fmt.Sprintf("https://api.telegram.org/bot%s/getMe", d.botToken)
+	apiBase := d.getApiBaseUrl()
+	url := fmt.Sprintf("%s/getMe", apiBase)
 
 	resp, err := d.client.Get(url)
 	if err != nil {
@@ -432,4 +458,44 @@ func getMimeTypeFromPath(path string) string {
 		}
 	}
 	return "application/octet-stream"
+}
+
+// getFilePath 调用 getFile API 获取文件的路径
+// 参数：
+//   - ctx: 上下文
+//   - fileID: Telegram 文件 ID
+//
+// 返回：
+//   - string: 文件路径
+//   - error: 获取失败时的错误
+func (d *TelegramDriver) getFilePath(ctx context.Context, fileID string) (string, error) {
+	apiBase := d.getApiBaseUrl()
+	url := fmt.Sprintf("%s/getFile?file_id=%s", apiBase, fileID)
+
+	resp, err := d.client.Get(url)
+	if err != nil {
+		utils.Errorf("telegram getFilePath: request failed, error=%v", err)
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	var result struct {
+		OK     bool `json:"ok"`
+		Result struct {
+			FilePath string `json:"file_path"`
+		} `json:"result"`
+		Description string `json:"description"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		utils.Errorf("telegram getFilePath: decode failed, error=%v", err)
+		return "", err
+	}
+
+	if !result.OK {
+		utils.Errorf("telegram getFilePath: api error, description=%s", result.Description)
+		return "", fmt.Errorf("telegram api error: %s", result.Description)
+	}
+
+	return result.Result.FilePath, nil
 }

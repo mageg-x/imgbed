@@ -381,7 +381,7 @@ function isImageType(type) {
             </template>
           </p>
           <p class="text-xs sm:text-sm" :class="themeStore.isDark ? 'text-gray-500' : 'text-gray-400'">
-            支持图片、视频、音频、文档等多种格式
+            支持 JPG、PNG、GIF、WebP、SVG、BMP 等图片格式
           </p>
         </div>
       </div>

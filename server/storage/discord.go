@@ -19,17 +19,13 @@ func init() {
 }
 
 // DiscordDriver Discord存储驱动
-// 通过Webhook将文件作为附件上传到Discord频道
+// 通过 Bot Token 将文件作为附件上传到 Discord 频道
 type DiscordDriver struct {
-	webhookURL        string       // Discord Webhook URL
-	channelID         string       // 通道ID（用于标识）
+	botToken          string       // Discord Bot Token
+	channelID         string       // Discord 频道 ID
+	isNitro           bool         // 是否 Nitro 会员（25MB vs 8MB）
 	client            *http.Client // HTTP客户端
 	channelIDInternal string       // 内部通道ID
-}
-
-// DiscordConfig Discord存储配置
-type DiscordConfig struct {
-	WebhookURL string `json:"webhookUrl"` // Discord Webhook URL
 }
 
 // NewDiscordDriver 创建Discord存储驱动实例
@@ -40,20 +36,21 @@ type DiscordConfig struct {
 //   - StorageDriver: 存储驱动实例
 //   - error: 创建失败时的错误
 func NewDiscordDriver(cfg *ChannelConfig) (StorageDriver, error) {
-	// 从配置中提取Webhook URL
-	webhookURL, _ := cfg.Config["webhookUrl"].(string)
+	botToken, _ := cfg.Config["botToken"].(string)
+	channelID, _ := cfg.Config["channelId"].(string)
+	isNitro, _ := cfg.Config["isNitro"].(bool)
 
-	// 验证必需参数
-	if webhookURL == "" {
-		utils.Errorf("new discord driver: webhook url is required")
-		return nil, fmt.Errorf("discord webhook url is required")
+	if botToken == "" || channelID == "" {
+		utils.Errorf("new discord driver: bot token and channel id are required")
+		return nil, fmt.Errorf("discord bot token and channel id is required")
 	}
 
-	utils.Infof("new discord driver: success")
+	utils.Infof("new discord driver: success, channelID=%s, isNitro=%v", channelID, isNitro)
 
 	return &DiscordDriver{
-		webhookURL:        webhookURL,
-		channelID:         cfg.ID,
+		botToken:          botToken,
+		channelID:         channelID,
+		isNitro:           isNitro,
 		channelIDInternal: cfg.ID,
 		client: &http.Client{
 			Timeout: 60 * time.Second,
@@ -71,68 +68,74 @@ func (d *DiscordDriver) Type() StorageType {
 	return StorageTypeDiscord
 }
 
-// Upload 上传文件到Discord
-// Discord限制附件最大8MB
-// 参数：
-//   - ctx: 上下文
-//   - req: 上传请求
-//
-// 返回：
-//   - *UploadResult: 上传结果
-//   - error: 上传失败时的错误
+// getApiBaseUrl 获取 Discord API 基础 URL
+func (d *DiscordDriver) getApiBaseUrl() string {
+	return "https://discord.com/api/v10"
+}
+
+// getFileSizeLimit 获取文件大小限制
+func (d *DiscordDriver) getFileSizeLimit() int {
+	if d.isNitro {
+		return 25 * 1024 * 1024 // 25MB for Nitro
+	}
+	return 8 * 1024 * 1024 // 8MB for free tier
+}
+
+// Upload 上传文件到 Discord
+// Discord 限制附件最大 8MB（Nitro 25MB）
 func (d *DiscordDriver) Upload(ctx context.Context, req *UploadRequest) (*UploadResult, error) {
-	// 读取文件内容
 	data, err := io.ReadAll(req.Reader)
 	if err != nil {
 		utils.Errorf("discord upload: read file failed, error=%v", err)
 		return nil, fmt.Errorf("read file failed: %w", err)
 	}
 
-	// Discord限制附件最大8MB
-	if len(data) > 8*1024*1024 {
-		utils.Errorf("discord upload: file size exceeds 8MB limit, size=%d", len(data))
-		return nil, fmt.Errorf("file size exceeds 8MB limit for Discord")
+	sizeLimit := d.getFileSizeLimit()
+	if len(data) > sizeLimit {
+		utils.Errorf("discord upload: file size exceeds %dMB limit, size=%d", sizeLimit/1024/1024, len(data))
+		return nil, fmt.Errorf("file size exceeds %dMB limit for Discord", sizeLimit/1024/1024)
 	}
 
-	// 生成文件ID
 	fileID := req.FileID
 	if fileID == "" {
 		fileID = generateFileID()
 	}
 
-	// 构建multipart表单
+	// 构建 multipart 表单
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
-	// 创建表单文件字段
-	part, err := writer.CreateFormFile("file", req.FileName)
+	// 创建表单文件字段（Discord 使用 files[0]）
+	part, err := writer.CreateFormFile("files[0]", req.FileName)
 	if err != nil {
 		utils.Errorf("discord upload: create form file failed, error=%v", err)
 		return nil, fmt.Errorf("create form file failed: %w", err)
 	}
 
-	// 写入文件数据
 	if _, err := part.Write(data); err != nil {
 		utils.Errorf("discord upload: write form file failed, error=%v", err)
 		return nil, fmt.Errorf("write form file failed: %w", err)
 	}
 
-	// 关闭writer
 	if err := writer.Close(); err != nil {
 		utils.Errorf("discord upload: close writer failed, error=%v", err)
 		return nil, fmt.Errorf("close writer failed: %w", err)
 	}
 
-	// 创建HTTP请求
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", d.webhookURL, body)
+	// 构建请求
+	apiBase := d.getApiBaseUrl()
+	url := fmt.Sprintf("%s/channels/%s/messages", apiBase, d.channelID)
+
+	httpReq, err := http.NewRequestWithContext(ctx, "POST", url, body)
 	if err != nil {
 		utils.Errorf("discord upload: create request failed, error=%v", err)
 		return nil, fmt.Errorf("create request failed: %w", err)
 	}
 
 	httpReq.Header.Set("Content-Type", writer.FormDataContentType())
+	httpReq.Header.Set("Authorization", fmt.Sprintf("Bot %s", d.botToken))
+	httpReq.Header.Set("User-Agent", "DiscordBot (ImgBed, 1.0)")
 
-	// 发送请求
 	resp, err := d.client.Do(httpReq)
 	if err != nil {
 		utils.Errorf("discord upload: send request failed, error=%v", err)
@@ -140,13 +143,13 @@ func (d *DiscordDriver) Upload(ctx context.Context, req *UploadRequest) (*Upload
 	}
 	defer resp.Body.Close()
 
-	// 解析响应
 	var result struct {
 		ID          string `json:"id"`
 		Attachments []struct {
 			ID       string `json:"id"`
 			Filename string `json:"filename"`
 			URL      string `json:"url"`
+			ProxyURL string `json:"proxy_url"`
 			Size     int    `json:"size"`
 		} `json:"attachments"`
 		Message string `json:"message"`
@@ -157,7 +160,6 @@ func (d *DiscordDriver) Upload(ctx context.Context, req *UploadRequest) (*Upload
 		return nil, fmt.Errorf("decode response failed: %w", err)
 	}
 
-	// 检查是否有附件
 	if len(result.Attachments) == 0 {
 		utils.Errorf("discord upload: no attachment in response")
 		return nil, fmt.Errorf("no attachment in response")
@@ -165,85 +167,86 @@ func (d *DiscordDriver) Upload(ctx context.Context, req *UploadRequest) (*Upload
 
 	attachment := result.Attachments[0]
 
-	utils.Debugf("discord upload: success, fileID=%s, attachmentID=%s", fileID, attachment.ID)
+	utils.Debugf("discord upload: success, fileID=%s, messageID=%s, attachmentID=%s", fileID, result.ID, attachment.ID)
 
 	return &UploadResult{
-		FileID:    attachment.ID,
+		FileID:    fmt.Sprintf("%s:%s", d.channelID, result.ID), // 存储 channelID:messageID
 		URL:       attachment.URL,
 		Size:      int64(attachment.Size),
 		ChannelID: d.channelIDInternal,
 	}, nil
 }
 
-// Download Discord不支持直接下载，返回错误
-// 参数：
-//   - ctx: 上下文
-//   - fileID: 文件ID
-//
-// 返回：
-//   - *DownloadResult: 下载结果（始终返回nil）
-//   - error: 错误信息
+// Download Discord 不支持直接下载
 func (d *DiscordDriver) Download(ctx context.Context, fileID string) (*DownloadResult, error) {
 	utils.Warnf("discord download: not supported")
 	return nil, fmt.Errorf("discord does not support direct download, use URL instead")
 }
 
-// GetURL Discord不支持通过文件ID获取URL，返回错误
-// 参数：
-//   - ctx: 上下文
-//   - fileID: 文件ID
-//
-// 返回：
-//   - string: 空字符串
-//   - error: 错误信息
+// GetURL Discord 不支持通过文件ID获取URL
 func (d *DiscordDriver) GetURL(ctx context.Context, fileID string) (string, error) {
 	utils.Warnf("discord get url: not supported")
 	return "", fmt.Errorf("discord does not support URL retrieval by file ID")
 }
 
-// Delete Discord不提供删除API，直接返回成功
-// 参数：
-//   - ctx: 上下文
-//   - fileID: 文件ID
-//
-// 返回：
-//   - error: 错误（始终返回nil）
+// Delete 删除 Discord 消息（删除文件）
 func (d *DiscordDriver) Delete(ctx context.Context, fileID string) error {
-	return nil
+	// fileID 格式为 channelID:messageID
+	var channelID, messageID string
+	for i := 0; i < len(fileID); i++ {
+		if fileID[i] == ':' {
+			channelID = fileID[:i]
+			messageID = fileID[i+1:]
+			break
+		}
+	}
+
+	if channelID == "" || messageID == "" {
+		utils.Warnf("discord delete: invalid fileID format, fileID=%s", fileID)
+		return fmt.Errorf("invalid fileID format")
+	}
+
+	apiBase := d.getApiBaseUrl()
+	url := fmt.Sprintf("%s/channels/%s/messages/%s", apiBase, channelID, messageID)
+
+	httpReq, err := http.NewRequestWithContext(ctx, "DELETE", url, nil)
+	if err != nil {
+		utils.Errorf("discord delete: create request failed, error=%v", err)
+		return fmt.Errorf("create request failed: %w", err)
+	}
+
+	httpReq.Header.Set("Authorization", fmt.Sprintf("Bot %s", d.botToken))
+	httpReq.Header.Set("User-Agent", "DiscordBot (ImgBed, 1.0)")
+
+	resp, err := d.client.Do(httpReq)
+	if err != nil {
+		utils.Errorf("discord delete: send request failed, fileID=%s, error=%v", fileID, err)
+		return fmt.Errorf("send request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// 204 No Content 表示成功
+	if resp.StatusCode == 204 || resp.StatusCode == 200 {
+		utils.Debugf("discord delete: success, fileID=%s", fileID)
+		return nil
+	}
+
+	utils.Errorf("discord delete: failed, fileID=%s, status=%d", fileID, resp.StatusCode)
+	return fmt.Errorf("delete failed: status %d", resp.StatusCode)
 }
 
-// Exists Discord不提供查询API，直接返回存在
-// 参数：
-//   - ctx: 上下文
-//   - fileID: 文件ID
-//
-// 返回：
-//   - bool: 是否存在（始终返回true）
-//   - error: 错误（始终返回nil）
+// Exists Discord 不提供查询 API
 func (d *DiscordDriver) Exists(ctx context.Context, fileID string) (bool, error) {
 	return true, nil
 }
 
-// Stat Discord不支持文件状态查询
-// 参数：
-//   - ctx: 上下文
-//   - fileID: 文件ID
-//
-// 返回：
-//   - *FileInfo: 文件信息（始终返回nil）
-//   - error: 错误信息
+// Stat Discord 不支持文件状态查询
 func (d *DiscordDriver) Stat(ctx context.Context, fileID string) (*FileInfo, error) {
 	utils.Warnf("discord stat: not supported")
 	return nil, fmt.Errorf("discord does not support file stat")
 }
 
-// GetQuota 获取存储配额信息（Discord无配额概念）
-// 参数：
-//   - ctx: 上下文
-//
-// 返回：
-//   - *QuotaInfo: 配额信息
-//   - error: 获取失败时的错误
+// GetQuota 获取存储配额信息
 func (d *DiscordDriver) GetQuota(ctx context.Context) (*QuotaInfo, error) {
 	return &QuotaInfo{
 		UsedSpace:  0,
@@ -252,13 +255,30 @@ func (d *DiscordDriver) GetQuota(ctx context.Context) (*QuotaInfo, error) {
 	}, nil
 }
 
-// HealthCheck 检查Discord Webhook连接状态
-// 参数：
-//   - ctx: 上下文
-//
-// 返回：
-//   - error: 检查失败时的错误
+// HealthCheck 检查 Discord Bot 连接状态
 func (d *DiscordDriver) HealthCheck(ctx context.Context) error {
-	// Discord Webhook不支持健康检查，直接返回成功
+	apiBase := d.getApiBaseUrl()
+	url := fmt.Sprintf("%s/users/@me", apiBase)
+
+	httpReq, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return err
+	}
+
+	httpReq.Header.Set("Authorization", fmt.Sprintf("Bot %s", d.botToken))
+	httpReq.Header.Set("User-Agent", "DiscordBot (ImgBed, 1.0)")
+
+	resp, err := d.client.Do(httpReq)
+	if err != nil {
+		utils.Errorf("discord health check: request failed, error=%v", err)
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		utils.Errorf("discord health check: bot token invalid, status=%d", resp.StatusCode)
+		return fmt.Errorf("bot token invalid")
+	}
+
 	return nil
 }
