@@ -22,6 +22,31 @@ const (
 	AccessTypeUploadFailed  = "upload_failed"
 )
 
+// convertToCDNUrl 将原始直链转换为 CDN 代理地址
+// 如果未启用 CDN 或 URL 不需要转换，则返回原始 URL
+func convertToCDNUrl(originalUrl string) string {
+	cdnConfig := config.GetCDNConfig()
+	if !cdnConfig.Enabled || cdnConfig.ProxyUrl == "" || originalUrl == "" {
+		return originalUrl
+	}
+
+	// 提取 URL 的基础路径（最后一个 / 之前）
+	lastSlash := strings.LastIndex(originalUrl, "/")
+	if lastSlash <= 0 {
+		return originalUrl
+	}
+
+	baseUrl := originalUrl[:lastSlash]
+	filePath := originalUrl[lastSlash+1:]
+
+	// Base58 编码基础 URL
+	encoded := utils.Base58Encode(baseUrl)
+
+	// 拼接 CDN URL
+	proxyUrl := strings.TrimSuffix(cdnConfig.ProxyUrl, "/")
+	return fmt.Sprintf("%s/%s/%s", proxyUrl, encoded, filePath)
+}
+
 // parseSearchSource 解析搜索字符串，支持 "source:文件名" 格式
 // source 支持前缀模糊匹配（如 api_git 匹配 api_github、api_gitlab）
 // 文件名支持模糊匹配
@@ -572,15 +597,23 @@ func (s *FileService) List(ctx context.Context, page, pageSize int, search strin
 
 	result := make([]model.FileInfo, len(files))
 	for i, f := range files {
+		// 原始 URL 直接从数据库取
+		originalURL := f.URL
+		// local 渠道不进行 CDN 转换
+		cdnURL := originalURL
+		if f.ChannelType != "local" {
+			cdnURL = convertToCDNUrl(originalURL)
+		}
 		links := model.Links{
-			URL:      f.URL,
-			Markdown: fmt.Sprintf("![%s](%s)", f.Name, f.URL),
-			HTML:     fmt.Sprintf(`<img src="%s" alt="%s">`, f.URL, f.Name),
+			URL:      cdnURL,
+			Markdown: fmt.Sprintf("![%s](%s)", f.Name, cdnURL),
+			HTML:     fmt.Sprintf(`<img src="%s" alt="%s">`, cdnURL, f.Name),
 		}
 		result[i] = model.FileInfo{
 			ID:          f.ID,
 			Name:        f.Name,
-			URL:         f.URL,
+			URL:         cdnURL,
+			OriginalURL: originalURL,
 			Size:        f.Size,
 			Type:        f.Type,
 			Channel:     f.ChannelID,
@@ -589,6 +622,7 @@ func (s *FileService) List(ctx context.Context, page, pageSize int, search strin
 			Tags:        utils.ParseTags(f.Tags),
 			UploadedAt:  f.CreatedAt.Unix(),
 			AccessCount: f.AccessCount,
+			Source:      f.Source,
 			Links:       links,
 		}
 	}
@@ -858,12 +892,18 @@ func (s *FileService) GetInfo(ctx context.Context, fileID string) (*model.FileIn
 		return nil, fmt.Errorf("file not found")
 	}
 
-	url, _ := s.GetURL(ctx, file.ID)
+	// 原始 URL 直接从数据库取，CDN 转换后返回
+	originalURL := file.URL
+	// local 渠道不进行 CDN 转换
+	cdnURL := originalURL
+	if file.ChannelType != "local" {
+		cdnURL = convertToCDNUrl(originalURL)
+	}
 
 	links := model.Links{
-		URL:      url,
-		Markdown: fmt.Sprintf("![%s](%s)", file.Name, url),
-		HTML:     fmt.Sprintf(`<img src="%s" alt="%s">`, url, file.Name),
+		URL:      cdnURL,
+		Markdown: fmt.Sprintf("![%s](%s)", file.Name, cdnURL),
+		HTML:     fmt.Sprintf(`<img src="%s" alt="%s">`, cdnURL, file.Name),
 	}
 
 	var lastAccessAt int64
@@ -875,7 +915,8 @@ func (s *FileService) GetInfo(ctx context.Context, fileID string) (*model.FileIn
 	info := &model.FileInfo{
 		ID:           file.ID,
 		Name:         file.Name,
-		URL:          url,
+		URL:          cdnURL,
+		OriginalURL:  originalURL,
 		Size:         file.Size,
 		Type:         file.Type,
 		Channel:      file.ChannelID,
@@ -886,6 +927,7 @@ func (s *FileService) GetInfo(ctx context.Context, fileID string) (*model.FileIn
 		AccessCount:  file.AccessCount,
 		LastAccessAt: lastAccessAt,
 		Checksum:     file.Checksum,
+		Source:       file.Source,
 		Links:        links,
 	}
 
@@ -907,5 +949,24 @@ func (s *FileService) GetURL(ctx context.Context, fileID string) (string, error)
 	}
 
 	url, err := driver.GetURL(ctx, fileID)
-	return url, err
+	if err != nil {
+		return "", err
+	}
+	// CDN 转换
+	return convertToCDNUrl(url), nil
+}
+
+func (s *FileService) GetUploadCount(ip string, date string) (int, error) {
+	var count int64
+	startOfDay, _ := time.Parse("2006-01-02", date)
+	endOfDay := startOfDay.Add(24 * time.Hour)
+
+	err := database.DB.Model(&model.File{}).
+		Where("created_at >= ? AND created_at < ?", startOfDay, endOfDay).
+		Where("source = ? OR source = ?", "user", "anonymous").
+		Count(&count).Error
+	if err != nil {
+		return 0, err
+	}
+	return int(count), nil
 }

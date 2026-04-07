@@ -97,18 +97,16 @@ func (h *AdminHandler) GetFiles(c *gin.Context) {
 		return
 	}
 
-	// 补全每个文件的 URL（某些存储驱动如 R2 上传时 URL 为空，需要通过 GetURL 重新获取）
-	for i := range files {
-		if files[i].URL == "" {
-			url, err := h.fileService.GetURL(c.Request.Context(), files[i].ID)
-			if err == nil {
-				files[i].URL = url
-			}
-		}
+	// 构建返回数据，直接使用 service 层的逻辑
+	list, _, err := h.fileService.List(c.Request.Context(), page, pageSize, search, channelID, 0, 0, 0)
+	if err != nil {
+		utils.Errorf("get files: list failed, error=%v", err)
+		response.Error(c, response.ErrInternal, err.Error())
+		return
 	}
 
 	response.Success(c, gin.H{
-		"list":     files,
+		"list":     list,
 		"total":    total,
 		"page":     page,
 		"pageSize": pageSize,

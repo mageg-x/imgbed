@@ -381,3 +381,36 @@ func (h *ConfigHandler) UpdateJwtConfig(c *gin.Context) {
 	utils.Infof("update jwt config: success")
 	response.Success(c, nil)
 }
+
+// GetCDNConfig 获取 CDN 代理配置
+// GET /api/v1/config/cdn (需要admin权限)
+func (h *ConfigHandler) GetCDNConfig(c *gin.Context) {
+	config, err := h.configService.GetCDNConfig()
+	if err != nil {
+		utils.Errorf("get cdn config: query failed, error=%v", err)
+		response.Error(c, response.ErrInternal, err.Error())
+		return
+	}
+
+	response.Success(c, config)
+}
+
+// UpdateCDNConfig 更新 CDN 代理配置
+// PUT /api/v1/config/cdn (需要admin权限)
+func (h *ConfigHandler) UpdateCDNConfig(c *gin.Context) {
+	var config service.CDNConfig
+	if err := c.ShouldBindJSON(&config); err != nil {
+		utils.Warnf("update cdn config: invalid request, error=%v", err)
+		response.ValidationError(c, "invalid request")
+		return
+	}
+
+	if err := h.configService.UpdateCDNConfig(&config); err != nil {
+		utils.Errorf("update cdn config: update failed, error=%v", err)
+		response.Error(c, response.ErrInternal, err.Error())
+		return
+	}
+
+	utils.Infof("update cdn config: success")
+	response.Success(c, nil)
+}

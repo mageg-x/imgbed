@@ -306,22 +306,26 @@ func (s *ConfigService) GetRateLimitConfig() (*RateLimitConfig, error) {
 		return nil, err
 	}
 
-	// 解析每分钟请求数限制，默认60
-	requestsPerMinute, _ := strconv.Atoi(configs["rate_limit.requests_per_minute"])
-	if requestsPerMinute == 0 {
-		requestsPerMinute = 60
+	rateLimit, _ := strconv.Atoi(configs["rate_limit.rate_limit"])
+	if rateLimit == 0 {
+		rateLimit = 10
 	}
 
-	// 解析每小时上传数限制，默认100
-	uploadsPerHour, _ := strconv.Atoi(configs["rate_limit.uploads_per_hour"])
-	if uploadsPerHour == 0 {
-		uploadsPerHour = 100
+	dailyLimit, _ := strconv.Atoi(configs["rate_limit.daily_limit"])
+	if dailyLimit == 0 {
+		dailyLimit = 100
+	}
+
+	maxFileSize, _ := strconv.ParseInt(configs["rate_limit.max_file_size"], 10, 64)
+	if maxFileSize == 0 {
+		maxFileSize = 5242880
 	}
 
 	return &RateLimitConfig{
-		Enabled:           configs["rate_limit.enabled"] == "true",
-		RequestsPerMinute: requestsPerMinute,
-		UploadsPerHour:    uploadsPerHour,
+		Enabled:     configs["rate_limit.enabled"] == "true",
+		RateLimit:   rateLimit,
+		DailyLimit:  dailyLimit,
+		MaxFileSize: maxFileSize,
 	}, nil
 }
 
@@ -452,9 +456,10 @@ func (s *ConfigService) UpdateAccessConfig(cfg *AccessConfig) error {
 //   - error: 更新过程中的错误
 func (s *ConfigService) UpdateRateLimitConfig(cfg *RateLimitConfig) error {
 	updates := map[string]string{
-		"rate_limit.enabled":             strconv.FormatBool(cfg.Enabled),
-		"rate_limit.requests_per_minute": strconv.Itoa(cfg.RequestsPerMinute),
-		"rate_limit.uploads_per_hour":    strconv.Itoa(cfg.UploadsPerHour),
+		"rate_limit.enabled":       strconv.FormatBool(cfg.Enabled),
+		"rate_limit.rate_limit":    strconv.Itoa(cfg.RateLimit),
+		"rate_limit.daily_limit":   strconv.Itoa(cfg.DailyLimit),
+		"rate_limit.max_file_size": strconv.FormatInt(cfg.MaxFileSize, 10),
 	}
 
 	for key, value := range updates {
@@ -532,9 +537,10 @@ type AccessConfig struct {
 
 // RateLimitConfig 速率限制配置结构
 type RateLimitConfig struct {
-	Enabled           bool // 是否启用
-	RequestsPerMinute int  // 每分钟请求数限制
-	UploadsPerHour    int  // 每小时上传数限制
+	Enabled     bool  // 是否启用
+	RateLimit   int   // 每分钟上传限制
+	DailyLimit  int   // 每日上传限制
+	MaxFileSize int64 // 最大文件大小（字节）
 }
 
 // ModerationConfig 内容审核配置结构
@@ -661,6 +667,42 @@ func (s *ConfigService) UpdateScheduleConfig(cfg *ScheduleConfig) error {
 	if err := s.Set("schedule.strategy", cfg.Strategy); err != nil {
 		utils.Errorf("update schedule config: set failed, error=%v", err)
 		return err
+	}
+	return nil
+}
+
+// CDNConfig CDN 代理配置结构
+type CDNConfig struct {
+	Enabled  bool   `json:"enabled"`  // 是否启用 CDN 代理
+	ProxyUrl string `json:"proxyUrl"` // CDN 代理基础地址
+}
+
+// GetCDNConfig 获取 CDN 代理配置
+func (s *ConfigService) GetCDNConfig() (*CDNConfig, error) {
+	configs, err := s.GetByPrefix("cdn.")
+	if err != nil {
+		utils.Errorf("get cdn config: get by prefix failed, error=%v", err)
+		return nil, err
+	}
+
+	return &CDNConfig{
+		Enabled:  configs["cdn.enabled"] == "true",
+		ProxyUrl: configs["cdn.proxyUrl"],
+	}, nil
+}
+
+// UpdateCDNConfig 更新 CDN 代理配置
+func (s *ConfigService) UpdateCDNConfig(cfg *CDNConfig) error {
+	updates := map[string]string{
+		"cdn.enabled":  strconv.FormatBool(cfg.Enabled),
+		"cdn.proxyUrl": cfg.ProxyUrl,
+	}
+
+	for key, value := range updates {
+		if err := s.Set(key, value); err != nil {
+			utils.Errorf("update cdn config: set failed, key=%s, error=%v", key, err)
+			return err
+		}
 	}
 	return nil
 }

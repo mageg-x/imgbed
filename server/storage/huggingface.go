@@ -518,7 +518,7 @@ func (d *HuggingFaceDriver) Delete(ctx context.Context, fileID string) error {
 
 // Exists 检查文件是否存在
 func (d *HuggingFaceDriver) Exists(ctx context.Context, fileID string) (bool, error) {
-	url := fmt.Sprintf("https://huggingface.co/api/%s/%s/file/%s", d.repoType, d.repoID, fileID)
+	url := fmt.Sprintf("https://huggingface.co/api/%s/%s/file/%s", d.getAPIPath(), d.repoID, fileID)
 
 	req, err := http.NewRequestWithContext(ctx, "HEAD", url, nil)
 	if err != nil {
@@ -538,7 +538,7 @@ func (d *HuggingFaceDriver) Exists(ctx context.Context, fileID string) (bool, er
 
 // Stat 获取文件信息
 func (d *HuggingFaceDriver) Stat(ctx context.Context, fileID string) (*FileInfo, error) {
-	url := fmt.Sprintf("https://huggingface.co/api/%s/%s/file/%s", d.repoType, d.repoID, fileID)
+	url := fmt.Sprintf("https://huggingface.co/api/%s/%s/file/%s", d.getAPIPath(), d.repoID, fileID)
 
 	req, err := http.NewRequestWithContext(ctx, "HEAD", url, nil)
 	if err != nil {

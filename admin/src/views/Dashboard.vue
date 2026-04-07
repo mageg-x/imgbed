@@ -561,46 +561,57 @@ function getSuccessRateClass(rate) {
 
       <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         <div v-for="channel in dashboard.channelStatuses" :key="channel.id"
-          class="p-3 sm:p-4 rounded-xl transition-all hover:shadow-md"
-          :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-50'">
+          class="relative p-3 sm:p-4 rounded-xl border-2 transition-all hover:shadow-lg overflow-hidden"
+          :class="isDark ? 'bg-[var(--bg-card)] border-gray-600' : 'bg-white border-gray-300'">
+          <!-- 左侧状态色条 -->
+          <div class="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl" :class="{
+            'bg-green-500': channel.status === 'healthy',
+            'bg-yellow-500': channel.status === 'warning',
+            'bg-red-500': channel.status === 'error',
+            'bg-gray-400': !channel.status
+          }"></div>
 
-          <div class="flex items-center justify-between mb-2 sm:mb-3">
+          <div class="flex items-center justify-between mb-2 sm:mb-3 pl-2">
             <div class="flex items-center gap-2 sm:gap-3">
               <div
-                class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center text-sm sm:text-base font-bold"
-                :class="isDark ? 'bg-[var(--bg-card)]' : 'bg-white'">
+                class="w-9 h-9 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center text-base sm:text-lg font-bold shadow-sm"
+                :class="isDark ? 'bg-[var(--bg-primary)] text-white' : 'bg-indigo-500 text-white'">
                 {{ channel.name?.[0]?.toUpperCase() || '?' }}
               </div>
               <div>
-                <p class="font-medium text-sm sm:text-base">{{ channel.name }}</p>
+                <p class="font-semibold text-sm sm:text-base">{{ channel.name }}</p>
                 <p class="text-xs" :class="isDark ? 'text-gray-500' : 'text-gray-400'">
                   {{ channel.type }}
                 </p>
               </div>
             </div>
-            <div class="flex items-center gap-1.5 sm:gap-2">
-              <span class="w-2 h-2 rounded-full" :class="getChannelStatusColor(channel.status)"></span>
-              <span class="text-xs sm:text-sm font-medium" :class="{
-                'text-green-500': channel.status === 'healthy',
-                'text-yellow-500': channel.status === 'warning',
-                'text-red-500': channel.status === 'error',
-                'text-gray-500': !channel.status
+            <div class="flex items-center gap-2">
+              <span class="w-3 h-3 rounded-full ring-2 ring-offset-1" :class="[
+                getChannelStatusColor(channel.status),
+                isDark ? 'ring-[var(--bg-card)]' : 'ring-white'
+              ]"></span>
+              <span class="text-xs sm:text-sm font-semibold px-2 py-0.5 rounded-full" :class="{
+                'bg-green-100 text-green-700': channel.status === 'healthy',
+                'bg-yellow-100 text-yellow-700': channel.status === 'warning',
+                'bg-red-100 text-red-700': channel.status === 'error',
+                'bg-gray-100 text-gray-500': !channel.status
               }">
-                {{ channel.status || '未知' }}
+                {{ channel.status === 'healthy' ? '正常' : channel.status === 'warning' ? '警告' : channel.status ===
+                  'error' ? '错误' : '未知' }}
               </span>
             </div>
           </div>
 
-          <div class="space-y-1.5 sm:space-y-2">
+          <div class="space-y-1.5 sm:space-y-2 pl-2">
             <div class="flex items-center justify-between text-xs sm:text-sm">
               <span :class="isDark ? 'text-gray-400' : 'text-gray-500'">存储使用</span>
-              <span class="text-xs sm:text-sm">{{ formatSize(channel.usedSpace) }} / {{ formatSize(channel.totalSpace)
-                }}</span>
+              <span class="text-xs sm:text-sm font-medium">{{ formatSize(channel.usedSpace) }} / {{
+                formatSize(channel.totalSpace) }}</span>
             </div>
             <div class="progress-bar">
               <div class="progress" :style="{
                 width: (channel.usagePercent || 0) + '%',
-                background: channel.usagePercent > 90 ? 'var(--danger)' : channel.usagePercent > 70 ? 'var(--warning)' : ''
+                background: channel.usagePercent > 90 ? 'var(--danger)' : channel.usagePercent > 70 ? 'var(--warning)' : 'var(--primary)'
               }"></div>
             </div>
           </div>

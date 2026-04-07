@@ -236,7 +236,8 @@ function getStatusColor(status) {
     </div>
 
     <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-      <div v-for="channel in channels" :key="channel.id" class="card p-4 sm:p-6 hover-lift animate-fade-in overflow-hidden">
+      <div v-for="channel in channels" :key="channel.id"
+        class="card p-4 sm:p-6 hover-lift animate-fade-in overflow-hidden">
 
         <!-- 头部 -->
         <div class="flex items-start justify-between mb-3 sm:mb-4">
@@ -244,7 +245,8 @@ function getStatusColor(status) {
             <div
               class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/25"
               :class="isDark ? 'bg-indigo-600' : 'bg-indigo-500'">
-              <span class="text-white font-bold text-base sm:text-lg">{{ channel.type?.charAt(0).toUpperCase() || '?' }}</span>
+              <span class="text-white font-bold text-base sm:text-lg">{{ channel.type?.charAt(0).toUpperCase() || '?'
+                }}</span>
             </div>
             <div>
               <p class="font-semibold text-sm sm:text-base">{{ channel.name }}</p>
@@ -319,7 +321,8 @@ function getStatusColor(status) {
         </div>
 
         <!-- 操作 -->
-        <div class="flex items-center gap-0.5 sm:gap-2 pt-3 sm:pt-4 border-t overflow-hidden" :style="{ borderColor: 'var(--border)' }">
+        <div class="flex items-center gap-0.5 sm:gap-2 pt-3 sm:pt-4 border-t overflow-hidden"
+          :style="{ borderColor: 'var(--border)' }">
           <el-tooltip :content="channel.enabled ? '禁用此渠道' : '启用此渠道'" placement="top">
             <button @click="toggleChannel(channel)"
               class="flex-1 min-w-0 px-1.5 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all truncate"
@@ -345,8 +348,7 @@ function getStatusColor(status) {
           </el-tooltip>
           <el-tooltip :content="channel.type === 'local' ? '本地存储渠道不能删除' : '删除渠道'" placement="top">
             <button @click="deleteChannel(channel)" :disabled="channel.type === 'local'"
-              class="flex-shrink-0 p-1.5 sm:p-1.5 rounded-lg transition-all flex items-center justify-center"
-              :class="channel.type === 'local'
+              class="flex-shrink-0 p-1.5 sm:p-1.5 rounded-lg transition-all flex items-center justify-center" :class="channel.type === 'local'
                 ? 'text-gray-400 cursor-not-allowed'
                 : 'text-red-500 hover:bg-red-500/10'">
               <Trash2 class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -393,7 +395,8 @@ function getStatusColor(status) {
                 :class="isDark ? 'bg-[var(--bg-card)] border-[var(--border)]' : 'bg-white border-gray-200'" />
               <input v-model="form.config.channelId" placeholder="Channel ID" class="w-full px-3 py-2 rounded-lg border"
                 :class="isDark ? 'bg-[var(--bg-card)] border-[var(--border)]' : 'bg-white border-gray-200'" />
-              <input v-model="form.config.channelId2" placeholder="备用 Channel ID（可选，用于负载均衡）" class="w-full px-3 py-2 rounded-lg border"
+              <input v-model="form.config.channelId2" placeholder="备用 Channel ID（可选，用于负载均衡）"
+                class="w-full px-3 py-2 rounded-lg border"
                 :class="isDark ? 'bg-[var(--bg-card)] border-[var(--border)]' : 'bg-white border-gray-200'" />
             </template>
 
@@ -465,8 +468,7 @@ function getStatusColor(status) {
                 class="w-full px-3 py-2 rounded-lg border text-sm"
                 :class="isDark ? 'bg-[var(--bg-card)] border-[var(--border)]' : 'bg-white border-gray-200'" />
               <label class="flex items-center gap-2 cursor-pointer mt-2">
-                <input type="checkbox" v-model="form.config.isNitro"
-                  class="w-4 h-4 rounded accent-indigo-500" />
+                <input type="checkbox" v-model="form.config.isNitro" class="w-4 h-4 rounded accent-indigo-500" />
                 <span class="text-sm" :class="isDark ? 'text-gray-400' : 'text-gray-500'">
                   Nitro 会员（支持 25MB，否则 8MB）
                 </span>
@@ -483,11 +485,11 @@ function getStatusColor(status) {
               <input v-model="form.config.repoId" placeholder="仓库 ID (如: username/imgbed-storage)"
                 class="w-full px-3 py-2 rounded-lg border text-sm"
                 :class="isDark ? 'bg-[var(--bg-card)] border-[var(--border)]' : 'bg-white border-gray-200'" />
-              <select v-model="form.config.repoType"
-                class="w-full px-3 py-2 rounded-lg border text-sm"
+              <select v-model="form.config.repoType" class="w-full px-3 py-2 rounded-lg border text-sm"
                 :class="isDark ? 'bg-[var(--bg-card)] border-[var(--border)]' : 'bg-white border-gray-200'">
                 <option value="dataset">Dataset (数据集)</option>
                 <option value="model">Model (模型)</option>
+                <option value="space">Space (空间)</option>
               </select>
               <p class="text-xs mt-2" :class="isDark ? 'text-gray-600' : 'text-gray-400'">
                 文件将上传到 HuggingFace 数据集/模型仓库，可通过公开 URL 访问
@@ -505,8 +507,7 @@ function getStatusColor(status) {
           <div class="flex items-center justify-between mb-3">
             <h3 class="font-medium">配额设置</h3>
             <label class="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" v-model="form.quota.enabled"
-                class="w-4 h-4 rounded accent-indigo-500" />
+              <input type="checkbox" v-model="form.quota.enabled" class="w-4 h-4 rounded accent-indigo-500" />
               <span class="text-sm" :class="isDark ? 'text-gray-400' : 'text-gray-500'">启用配额</span>
             </label>
           </div>

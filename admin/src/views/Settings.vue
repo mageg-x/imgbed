@@ -2,7 +2,7 @@
 import { ref, onMounted, reactive } from 'vue'
 import request from '@/api/request'
 import { ElMessage } from 'element-plus'
-import { Upload, Image, Lock, RefreshCw, Settings, Shield } from 'lucide-vue-next'
+import { Upload, Image, Lock, RefreshCw, Settings, Shield, Globe } from 'lucide-vue-next'
 
 const isDark = ref(true)
 const loading = ref(false)
@@ -41,10 +41,15 @@ const scheduleConfig = reactive({
 })
 
 const rateLimitConfig = reactive({
-  anonymousEnabled: true,
-  anonymousRateLimit: 10,
-  anonymousDailyLimit: 100,
-  anonymousMaxFileSize: 5
+  enabled: true,
+  rateLimit: 10,
+  dailyLimit: 100,
+  maxFileSize: 5
+})
+
+const cdnConfig = reactive({
+  enabled: false,
+  proxyUrl: ''
 })
 
 onMounted(() => {
@@ -55,14 +60,15 @@ onMounted(() => {
 async function loadConfigs() {
   loading.value = true
   try {
-    const [uploadRes, appRes, jwtRes, siteRes, authRes, scheduleRes, rateLimitRes] = await Promise.all([
+    const [uploadRes, appRes, jwtRes, siteRes, authRes, scheduleRes, rateLimitRes, cdnRes] = await Promise.all([
       request.get('/config/upload').catch(() => ({ data: null })),
       request.get('/config/app').catch(() => ({ data: null })),
       request.get('/config/jwt').catch(() => ({ data: null })),
       request.get('/config/site').catch(() => ({ data: null })),
       request.get('/config/auth').catch(() => ({ data: null })),
       request.get('/config/schedule').catch(() => ({ data: null })),
-      request.get('/config/rate-limit').catch(() => ({ data: null }))
+      request.get('/config/rate-limit').catch(() => ({ data: null })),
+      request.get('/config/cdn').catch(() => ({ data: null }))
     ])
 
     if (uploadRes.data) {
@@ -85,6 +91,7 @@ async function loadConfigs() {
     if (appRes.data) {
       appConfig.host = appRes.data.host || '0.0.0.0'
       appConfig.port = appRes.data.port || 8080
+      appConfig.mode = appRes.data.mode || 'debug'
     }
 
     if (jwtRes.data) {
@@ -109,10 +116,15 @@ async function loadConfigs() {
     }
 
     if (rateLimitRes.data) {
-      rateLimitConfig.anonymousEnabled = rateLimitRes.data.enabled !== false
-      rateLimitConfig.anonymousRateLimit = rateLimitRes.data.rateLimit || 10
-      rateLimitConfig.anonymousDailyLimit = rateLimitRes.data.dailyLimit || 100
-      rateLimitConfig.anonymousMaxFileSize = Math.round((rateLimitRes.data.maxFileSize || 5242880) / (1024 * 1024))
+      rateLimitConfig.enabled = rateLimitRes.data.enabled !== false
+      rateLimitConfig.rateLimit = rateLimitRes.data.rateLimit || 10
+      rateLimitConfig.dailyLimit = rateLimitRes.data.dailyLimit || 100
+      rateLimitConfig.maxFileSize = Math.round((rateLimitRes.data.maxFileSize || 5242880) / (1024 * 1024))
+    }
+
+    if (cdnRes && cdnRes.data) {
+      cdnConfig.enabled = cdnRes.data.enabled || false
+      cdnConfig.proxyUrl = cdnRes.data.proxyUrl || ''
     }
   } catch {
     ElMessage.error('加载配置失败')
@@ -212,12 +224,36 @@ async function saveScheduleConfig() {
 async function saveRateLimitConfig() {
   try {
     await request.put('/config/rate-limit', {
-      enabled: rateLimitConfig.anonymousEnabled,
-      rateLimit: rateLimitConfig.anonymousRateLimit,
-      dailyLimit: rateLimitConfig.anonymousDailyLimit,
-      maxFileSize: rateLimitConfig.anonymousMaxFileSize * 1024 * 1024
+      enabled: rateLimitConfig.enabled,
+      rateLimit: rateLimitConfig.rateLimit,
+      dailyLimit: rateLimitConfig.dailyLimit,
+      maxFileSize: rateLimitConfig.maxFileSize * 1024 * 1024
     })
     ElMessage.success('速率限制配置已保存')
+  } catch {
+    ElMessage.error('保存失败')
+  }
+}
+
+async function loadCdnConfig() {
+  try {
+    const res = await request.get('/config/cdn')
+    if (res.data) {
+      cdnConfig.enabled = res.data.enabled || false
+      cdnConfig.proxyUrl = res.data.proxyUrl || ''
+    }
+  } catch {
+    // ignore
+  }
+}
+
+async function saveCdnConfig() {
+  try {
+    await request.put('/config/cdn', {
+      enabled: cdnConfig.enabled,
+      proxyUrl: cdnConfig.proxyUrl
+    })
+    ElMessage.success('CDN配置已保存')
   } catch {
     ElMessage.error('保存失败')
   }
@@ -230,12 +266,14 @@ const tabs = [
   { name: 'site', label: '站点设置', icon: Image },
   { name: 'auth', label: '认证设置', icon: Lock },
   { name: 'schedule', label: '调度策略', icon: Settings },
-  { name: 'rateLimit', label: '速率限制', icon: Shield }
+  { name: 'rateLimit', label: '速率限制', icon: Shield },
+  { name: 'cdn', label: 'CDN加速', icon: Globe }
 ]
 
 const appConfig = reactive({
   host: '0.0.0.0',
-  port: 8080
+  port: 8080,
+  mode: 'debug'
 })
 
 const jwtConfig = reactive({
@@ -389,7 +427,8 @@ const jwtConfig = reactive({
             </div>
           </div>
 
-          <button @click="saveUploadConfig" class="btn-gradient px-5 sm:px-6 py-2 sm:py-2.5 rounded-xl text-sm w-full sm:w-auto">
+          <button @click="saveUploadConfig"
+            class="btn-gradient px-5 sm:px-6 py-2 sm:py-2.5 rounded-xl text-sm w-full sm:w-auto">
             保存上传配置
           </button>
         </div>
@@ -434,7 +473,8 @@ const jwtConfig = reactive({
             </p>
           </div>
 
-          <button @click="saveAppConfig" class="btn-gradient px-5 sm:px-6 py-2 sm:py-2.5 rounded-xl text-sm w-full sm:w-auto">
+          <button @click="saveAppConfig"
+            class="btn-gradient px-5 sm:px-6 py-2 sm:py-2.5 rounded-xl text-sm w-full sm:w-auto">
             保存应用设置
           </button>
         </div>
@@ -461,7 +501,8 @@ const jwtConfig = reactive({
             <p class="text-xs mt-1.5" :class="isDark ? 'text-gray-500' : 'text-gray-400'">默认24小时 (86400秒)，最小1小时，最大7天</p>
           </div>
 
-          <button @click="saveJwtConfig" class="btn-gradient px-5 sm:px-6 py-2 sm:py-2.5 rounded-xl text-sm w-full sm:w-auto">
+          <button @click="saveJwtConfig"
+            class="btn-gradient px-5 sm:px-6 py-2 sm:py-2.5 rounded-xl text-sm w-full sm:w-auto">
             保存JWT设置
           </button>
         </div>
@@ -504,7 +545,8 @@ const jwtConfig = reactive({
               :class="isDark ? 'bg-[var(--bg-hover)] border-[var(--border)]' : 'bg-gray-50 border-gray-200'"></textarea>
           </div>
 
-          <button @click="saveSiteConfig" class="btn-gradient px-5 sm:px-6 py-2 sm:py-2.5 rounded-xl text-sm w-full sm:w-auto">
+          <button @click="saveSiteConfig"
+            class="btn-gradient px-5 sm:px-6 py-2 sm:py-2.5 rounded-xl text-sm w-full sm:w-auto">
             保存站点配置
           </button>
         </div>
@@ -556,7 +598,8 @@ const jwtConfig = reactive({
             </div>
           </div>
 
-          <button @click="saveAuthConfig" class="btn-gradient px-5 sm:px-6 py-2 sm:py-2.5 rounded-xl text-sm w-full sm:w-auto">
+          <button @click="saveAuthConfig"
+            class="btn-gradient px-5 sm:px-6 py-2 sm:py-2.5 rounded-xl text-sm w-full sm:w-auto">
             保存认证配置
           </button>
         </div>
@@ -611,7 +654,8 @@ const jwtConfig = reactive({
             </div>
           </div>
 
-          <button @click="saveScheduleConfig" class="btn-gradient px-5 sm:px-6 py-2 sm:py-2.5 rounded-xl text-sm w-full sm:w-auto">
+          <button @click="saveScheduleConfig"
+            class="btn-gradient px-5 sm:px-6 py-2 sm:py-2.5 rounded-xl text-sm w-full sm:w-auto">
             保存调度策略
           </button>
         </div>
@@ -621,25 +665,25 @@ const jwtConfig = reactive({
           <div class="p-4 rounded-xl" :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-50'">
             <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
               <div>
-                <el-tooltip content="限制未登录用户的匿名上传频率，防止滥用" placement="top">
-                  <h3 class="font-medium cursor-help">匿名上传限制</h3>
+                <el-tooltip content="限制所有用户的上传频率，防止滥用" placement="top">
+                  <h3 class="font-medium cursor-help">上传速率限制</h3>
                 </el-tooltip>
                 <p class="text-sm mt-0.5" :class="isDark ? 'text-gray-400' : 'text-gray-500'">
-                  限制未登录用户的上传频率
+                  限制所有用户的上传频率
                 </p>
               </div>
               <label class="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" v-model="rateLimitConfig.anonymousEnabled" class="w-4 h-4 accent-indigo-500" />
+                <input type="checkbox" v-model="rateLimitConfig.enabled" class="w-4 h-4 accent-indigo-500" />
                 <span class="text-sm">启用</span>
               </label>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <el-tooltip content="匿名用户每分钟最多上传的文件数量" placement="top">
+                <el-tooltip content="每分钟最多上传的文件数量" placement="top">
                   <label class="block text-sm font-medium mb-2 cursor-help">每分钟限制</label>
                 </el-tooltip>
-                <input v-model.number="rateLimitConfig.anonymousRateLimit" type="number" min="1" max="100"
+                <input v-model.number="rateLimitConfig.rateLimit" type="number" min="1" max="100"
                   class="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm"
                   :class="isDark ? 'bg-[var(--bg-secondary)] border-[var(--border)]' : 'bg-white border-gray-200'" />
                 <p class="text-xs mt-1.5" :class="isDark ? 'text-gray-500' : 'text-gray-400'">
@@ -647,10 +691,10 @@ const jwtConfig = reactive({
                 </p>
               </div>
               <div>
-                <el-tooltip content="匿名用户每天最多上传的文件数量" placement="top">
+                <el-tooltip content="每天最多上传的文件数量" placement="top">
                   <label class="block text-sm font-medium mb-2 cursor-help">每日限制</label>
                 </el-tooltip>
-                <input v-model.number="rateLimitConfig.anonymousDailyLimit" type="number" min="1" max="1000"
+                <input v-model.number="rateLimitConfig.dailyLimit" type="number" min="1" max="1000"
                   class="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm"
                   :class="isDark ? 'bg-[var(--bg-secondary)] border-[var(--border)]' : 'bg-white border-gray-200'" />
                 <p class="text-xs mt-1.5" :class="isDark ? 'text-gray-500' : 'text-gray-400'">
@@ -658,21 +702,72 @@ const jwtConfig = reactive({
                 </p>
               </div>
               <div class="sm:col-span-2">
-                <el-tooltip content="匿名用户单次上传文件的大小限制" placement="top">
+                <el-tooltip content="单次上传文件的大小限制" placement="top">
                   <label class="block text-sm font-medium mb-2 cursor-help">最大文件大小 (MB)</label>
                 </el-tooltip>
-                <input v-model.number="rateLimitConfig.anonymousMaxFileSize" type="number" min="1" max="50"
+                <input v-model.number="rateLimitConfig.maxFileSize" type="number" min="1" max="50"
                   class="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm"
                   :class="isDark ? 'bg-[var(--bg-secondary)] border-[var(--border)]' : 'bg-white border-gray-200'" />
                 <p class="text-xs mt-1.5" :class="isDark ? 'text-gray-500' : 'text-gray-400'">
-                  匿名用户单文件最大大小限制
+                  单文件最大大小限制
                 </p>
               </div>
             </div>
           </div>
 
-          <button @click="saveRateLimitConfig" class="btn-gradient px-5 sm:px-6 py-2 sm:py-2.5 rounded-xl text-sm w-full sm:w-auto">
+          <button @click="saveRateLimitConfig"
+            class="btn-gradient px-5 sm:px-6 py-2 sm:py-2.5 rounded-xl text-sm w-full sm:w-auto">
             保存速率限制配置
+          </button>
+        </div>
+
+        <!-- CDN加速设置 -->
+        <div v-else-if="activeTab === 'cdn'" class="max-w-2xl space-y-4 sm:space-y-6">
+          <div class="p-4 rounded-xl" :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-50'">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+              <div>
+                <el-tooltip content="启用后将图片URL转换为CDN代理地址，实现加速访问" placement="top">
+                  <h3 class="font-medium cursor-help">CDN 代理加速</h3>
+                </el-tooltip>
+                <p class="text-sm mt-0.5" :class="isDark ? 'text-gray-400' : 'text-gray-500'">
+                  将图片直链转换为 CDN 代理地址，提升访问速度
+                </p>
+              </div>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" v-model="cdnConfig.enabled" class="w-4 h-4 accent-indigo-500" />
+                <span class="text-sm">启用</span>
+              </label>
+            </div>
+
+            <div v-if="cdnConfig.enabled" class="space-y-4">
+              <div>
+                <el-tooltip content="Cloudflare Worker 或其他 CDN 代理的基础地址" placement="top">
+                  <label class="block text-sm font-medium mb-2 cursor-help">代理地址</label>
+                </el-tooltip>
+                <input v-model="cdnConfig.proxyUrl" type="text" placeholder="https://img-proxy.xxx.workers.dev"
+                  class="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm"
+                  :class="isDark ? 'bg-[var(--bg-secondary)] border-[var(--border)]' : 'bg-white border-gray-200'" />
+                <p class="text-xs mt-1.5" :class="isDark ? 'text-gray-500' : 'text-gray-400'">
+                  填写 Cloudflare Worker 或类似 CDN 代理的基础地址
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-4 rounded-xl" :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-50'">
+            <h3 class="font-medium mb-2">工作原理</h3>
+            <ul class="text-sm space-y-1" :class="isDark ? 'text-gray-400' : 'text-gray-500'">
+              <li>1. 上传图片时，原始直链存入数据库</li>
+              <li>2. 返回给客户端时，URL 会被转换为 CDN 代理地址</li>
+              <li>3. 格式：<code class="px-1 py-0.5 rounded text-xs"
+                  :class="isDark ? 'bg-gray-700' : 'bg-gray-200'">{proxyUrl}/{base58(原始基础URL)}/{文件名}</code></li>
+              <li>4. CDN 代理解码 base58 获取原始地址并拉取图片</li>
+            </ul>
+          </div>
+
+          <button @click="saveCdnConfig"
+            class="btn-gradient px-5 sm:px-6 py-2 sm:py-2.5 rounded-xl text-sm w-full sm:w-auto">
+            保存 CDN 配置
           </button>
         </div>
       </div>

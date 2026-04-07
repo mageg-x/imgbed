@@ -168,6 +168,7 @@ type FileInfo struct {
 	ID           string   `json:"id"`
 	Name         string   `json:"name"`
 	URL          string   `json:"url"`
+	OriginalURL  string   `json:"originalUrl"`
 	Size         int64    `json:"size"`
 	Type         string   `json:"type"`
 	Channel      string   `json:"channel"`
@@ -178,6 +179,7 @@ type FileInfo struct {
 	AccessCount  int      `json:"accessCount"`
 	LastAccessAt int64    `json:"lastAccessAt"`
 	Checksum     string   `json:"checksum"`
+	Source       string   `json:"source"`
 	Links        Links    `json:"links"`
 }
 

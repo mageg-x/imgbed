@@ -9,20 +9,14 @@ const routes = [
     meta: { title: "登录", requiresAuth: false },
   },
   {
-    path: "/admin",
-    redirect: "/admin/"
+    path: "/",
+    redirect: "/files",
   },
   {
     path: "/",
     component: () => import("@/layouts/MainLayout.vue"),
     meta: { requiresAuth: true },
     children: [
-      {
-        path: "",
-        name: "Dashboard",
-        component: () => import("@/views/Dashboard.vue"),
-        meta: { title: "仪表盘" },
-      },
       {
         path: "files",
         name: "Files",
@@ -52,6 +46,12 @@ const routes = [
         name: "Integration",
         component: () => import("@/views/Integration.vue"),
         meta: { title: "集成示例" },
+      },
+      {
+        path: "",
+        name: "Dashboard",
+        component: () => import("@/views/Dashboard.vue"),
+        meta: { title: "仪表盘" },
       },
     ],
   },

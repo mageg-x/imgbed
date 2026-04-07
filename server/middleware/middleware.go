@@ -271,6 +271,52 @@ func cleanupVisitors() {
 	}
 }
 
+func RateLimitFromConfig() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if !config.GetBool("rate_limit.enabled") {
+			c.Next()
+			return
+		}
+
+		rateLimit := config.GetInt("rate_limit.rate_limit")
+		if rateLimit <= 0 {
+			rateLimit = 10
+		}
+
+		ip := c.ClientIP()
+
+		limiter.Lock()
+		v, exists := limiter.visitors[ip]
+		if !exists {
+			limiter.visitors[ip] = &visitor{
+				lastSeen: time.Now(),
+				count:    1,
+			}
+			limiter.Unlock()
+			c.Next()
+			return
+		}
+
+		if time.Since(v.lastSeen) > time.Minute {
+			v.count = 1
+			v.lastSeen = time.Now()
+		} else {
+			v.count++
+			v.lastSeen = time.Now()
+		}
+		limiter.Unlock()
+
+		if v.count > rateLimit {
+			utils.Warnf("rate limit: exceeded, ip=%s, count=%d, limit=%d, path=%s", ip, v.count, rateLimit, c.Request.URL.Path)
+			response.Error(c, response.ErrTooManyRequests, "rate limit exceeded")
+			c.Abort()
+			return
+		}
+
+		c.Next()
+	}
+}
+
 func RateLimit(requestsPerMinute int) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ip := c.ClientIP()

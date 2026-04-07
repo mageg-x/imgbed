@@ -51,6 +51,10 @@ async function handleLogin() {
     ElMessage.error(res.message || '登录失败')
   }
 }
+
+function goHome() {
+  window.location.href = '/'
+}
 </script>
 
 <template>
@@ -64,7 +68,7 @@ async function handleLogin() {
     </div>
 
     <!-- 返回按钮 -->
-    <button @click="router.push('/')" class="absolute top-6 left-6 p-3 rounded-xl border transition-all z-10"
+    <button @click="goHome()" class="absolute top-6 left-6 p-3 rounded-xl border transition-all z-10"
       :class="themeStore.isDark ? 'bg-[var(--bg-secondary)] border-[var(--border)] text-gray-400 hover:text-white' : 'bg-white border-gray-200 text-gray-600 hover:text-gray-900'">
       <ArrowLeft class="w-5 h-5" />
     </button>
@@ -82,7 +86,8 @@ async function handleLogin() {
         <img src="/imgbed.webp" alt="Logo"
           class="w-16 h-16 rounded-2xl mx-auto mb-4 shadow-xl shadow-indigo-500/30 object-contain" />
         <h1 class="text-3xl font-bold">
-          <span class="text-gradient">Img</span><span :class="themeStore.isDark ? 'text-white' : 'text-gray-800'">Bed</span>
+          <span class="text-gradient">Img</span><span
+            :class="themeStore.isDark ? 'text-white' : 'text-gray-800'">Bed</span>
         </h1>
         <p class="text-sm mt-2" :class="themeStore.isDark ? 'text-gray-400' : 'text-gray-500'">
           管理后台
@@ -95,7 +100,8 @@ async function handleLogin() {
 
         <!-- 非 admin 用户已登录，显示无权限提示 -->
         <div v-if="isLoggedInAsUser" class="text-center py-8">
-          <div class="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 mx-auto mb-4 flex items-center justify-center">
+          <div
+            class="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 mx-auto mb-4 flex items-center justify-center">
             <Lock class="w-8 h-8 text-red-500" />
           </div>
           <h3 class="text-lg font-medium mb-2" :class="themeStore.isDark ? 'text-white' : 'text-gray-800'">
@@ -126,7 +132,8 @@ async function handleLogin() {
           </div>
 
           <div>
-            <label class="block text-sm font-medium mb-2" :class="themeStore.isDark ? 'text-gray-300' : 'text-gray-700'">密码</label>
+            <label class="block text-sm font-medium mb-2"
+              :class="themeStore.isDark ? 'text-gray-300' : 'text-gray-700'">密码</label>
             <div class="relative">
               <Lock class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5"
                 :class="themeStore.isDark ? 'text-gray-500' : 'text-gray-400'" />

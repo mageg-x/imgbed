@@ -365,11 +365,6 @@ func (s *ChannelService) GetDriver(channelID string) (storage.StorageDriver, err
 		return nil, fmt.Errorf("channel not found")
 	}
 
-	if !channel.Enabled {
-		utils.Warnf("get driver: channel is disabled, channelID=%s", channelID)
-		return nil, fmt.Errorf("channel is disabled")
-	}
-
 	var configMap map[string]interface{}
 	if err := json.Unmarshal([]byte(channel.Config), &configMap); err != nil {
 		utils.Errorf("get driver: parse config failed, channelID=%s, error=%v", channelID, err)

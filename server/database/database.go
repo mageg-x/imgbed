@@ -188,8 +188,9 @@ func initDefaultData() error {
 
 		// 速率限制
 		{"rate_limit.enabled", "true"},
-		{"rate_limit.requests_per_minute", "60"},
-		{"rate_limit.uploads_per_hour", "100"},
+		{"rate_limit.rate_limit", "10"},
+		{"rate_limit.daily_limit", "100"},
+		{"rate_limit.max_file_size", "5242880"},
 
 		// 内容审核
 		{"moderation.enabled", "false"},

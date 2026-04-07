@@ -50,7 +50,7 @@ func SetupRouter() *gin.Engine {
 		}
 
 		upload := api.Group("/upload")
-		upload.Use(middleware.RateLimit(60))
+		upload.Use(middleware.RateLimitFromConfig())
 		upload.Use(middleware.AuthRequired())
 		upload.Use(middleware.TokenPermissionRequired("upload"))
 		{
@@ -125,6 +125,8 @@ func SetupRouter() *gin.Engine {
 			config.PUT("/app", configHandler.UpdateAppConfig)
 			config.GET("/jwt", configHandler.GetJwtConfig)
 			config.PUT("/jwt", configHandler.UpdateJwtConfig)
+			config.GET("/cdn", configHandler.GetCDNConfig)
+			config.PUT("/cdn", configHandler.UpdateCDNConfig)
 		}
 
 		stats := api.Group("/stats")

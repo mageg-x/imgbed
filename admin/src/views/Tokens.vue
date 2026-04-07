@@ -258,7 +258,8 @@ function getPermissionLabel(perm) {
     </div>
 
     <!-- 创建弹窗 -->
-    <el-dialog v-model="showDialog" title="创建 API Token" width="90vw" class="!max-w-[500px]" :close-on-click-modal="false">
+    <el-dialog v-model="showDialog" title="创建 API Token" width="90vw" class="!max-w-[500px]"
+      :close-on-click-modal="false">
       <div class="space-y-3 sm:space-y-4">
         <div>
           <label class="block text-xs sm:text-sm font-medium mb-2">名称</label>
@@ -305,7 +306,8 @@ function getPermissionLabel(perm) {
     </el-dialog>
 
     <!-- Token 创建成功弹窗 -->
-    <el-dialog v-model="showTokenDialog" title="Token 创建成功" width="90vw" class="!max-w-[500px]" :close-on-click-modal="false">
+    <el-dialog v-model="showTokenDialog" title="Token 创建成功" width="90vw" class="!max-w-[500px]"
+      :close-on-click-modal="false">
       <div class="p-3 sm:p-4 rounded-xl border-2 border-red-500/50 bg-red-500/10 mb-3 sm:mb-4">
         <div class="flex items-start gap-2 sm:gap-3">
           <AlertTriangle class="w-4 h-4 sm:w-5 sm:h-5 text-red-500 flex-shrink-0 mt-0.5" />
@@ -351,7 +353,8 @@ function getPermissionLabel(perm) {
       </div>
 
       <template #footer>
-        <button @click="showTokenDialog = false" class="btn-gradient px-4 py-2 rounded-lg w-full sm:w-auto">我已安全保存</button>
+        <button @click="showTokenDialog = false"
+          class="btn-gradient px-4 py-2 rounded-lg w-full sm:w-auto">我已安全保存</button>
       </template>
     </el-dialog>
   </div>

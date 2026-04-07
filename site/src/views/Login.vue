@@ -61,7 +61,7 @@ async function handleLogin() {
     loading.value = false
     if (res.success) {
       ElMessage.success('管理员登录成功')
-      router.push('/admin')
+      window.location.href = '/admin/'
     } else {
       ElMessage.error(res.message || '登录失败')
     }

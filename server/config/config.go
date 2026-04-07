@@ -232,25 +232,29 @@ func GetString(key string) string {
 // 返回：
 //   - int: 配置值
 func GetInt(key string) int {
-	// 尝试从缓存获取
 	if val, ok := getFromCache(key); ok {
 		if num, ok := val.(int); ok {
 			return num
 		}
 	}
 
-	// 从 viper 获取并缓存
 	value := v.GetInt(key)
 	setCache(key, value)
 	return value
 }
 
-// GetBool 获取布尔类型配置（带缓存）
-// 参数：
-//   - key: 配置键（如"rate_limit.enabled"）
-//
-// 返回：
-//   - bool: 配置值
+func GetInt64(key string) int64 {
+	if val, ok := getFromCache(key); ok {
+		if num, ok := val.(int64); ok {
+			return num
+		}
+	}
+
+	value := v.GetInt64(key)
+	setCache(key, value)
+	return value
+}
+
 func GetBool(key string) bool {
 	// 尝试从缓存获取
 	if val, ok := getFromCache(key); ok {
@@ -283,4 +287,28 @@ func GetStringSlice(key string) []string {
 	value := v.GetStringSlice(key)
 	setCache(key, value)
 	return value
+}
+
+// CDNConfig CDN 代理配置
+type CDNConfig struct {
+	Enabled  bool   // 是否启用 CDN 代理
+	ProxyUrl string // CDN 代理基础地址
+}
+
+// GetCDNConfig 获取 CDN 代理配置
+func GetCDNConfig() *CDNConfig {
+	return &CDNConfig{
+		Enabled:  GetBool("cdn.enabled"),
+		ProxyUrl: GetString("cdn.proxyUrl"),
+	}
+}
+
+// IsCDNEnabled 检查 CDN 是否启用
+func IsCDNEnabled() bool {
+	return GetBool("cdn.enabled")
+}
+
+// GetCDNProxyUrl 获取 CDN 代理地址
+func GetCDNProxyUrl() string {
+	return GetString("cdn.proxyUrl")
 }

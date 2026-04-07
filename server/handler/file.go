@@ -3,8 +3,10 @@ package handler
 import (
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/imgbed/server/config"
 	"github.com/imgbed/server/response"
 	"github.com/imgbed/server/service"
 	"github.com/imgbed/server/utils"
@@ -50,6 +52,27 @@ func (h *FileHandler) Upload(c *gin.Context) {
 		return
 	}
 
+	if config.GetBool("rate_limit.enabled") {
+		maxFileSize := config.GetInt64("rate_limit.max_file_size")
+		if maxFileSize > 0 && file.Size > maxFileSize {
+			utils.Warnf("upload: file size exceeded, size=%d, limit=%d", file.Size, maxFileSize)
+			response.Error(c, response.ErrFileTooLarge, "file size exceeds limit")
+			return
+		}
+
+		dailyLimit := config.GetInt("rate_limit.daily_limit")
+		if dailyLimit > 0 {
+			ip := c.ClientIP()
+			today := time.Now().Format("2006-01-02")
+			count, _ := h.fileService.GetUploadCount(ip, today)
+			if count >= dailyLimit {
+				utils.Warnf("upload: daily limit exceeded, ip=%s, count=%d, limit=%d", ip, count, dailyLimit)
+				response.Error(c, response.ErrRateLimitAnon, "daily upload limit exceeded")
+				return
+			}
+		}
+	}
+
 	tags := c.PostFormArray("tags")
 
 	retryCount := 3
@@ -59,7 +82,6 @@ func (h *FileHandler) Upload(c *gin.Context) {
 		}
 	}
 
-	// 确定来源
 	source := h.getSourceFromContext(c)
 
 	clientIP := c.ClientIP()
@@ -92,6 +114,29 @@ func (h *FileHandler) UploadMultiple(c *gin.Context) {
 		utils.Warnf("upload multiple: no files uploaded")
 		response.ValidationError(c, "no files uploaded")
 		return
+	}
+
+	if config.GetBool("rate_limit.enabled") {
+		maxFileSize := config.GetInt64("rate_limit.max_file_size")
+		for _, file := range files {
+			if maxFileSize > 0 && file.Size > maxFileSize {
+				utils.Warnf("upload multiple: file size exceeded, filename=%s, size=%d, limit=%d", file.Filename, file.Size, maxFileSize)
+				response.Error(c, response.ErrFileTooLarge, "file size exceeds limit: "+file.Filename)
+				return
+			}
+		}
+
+		dailyLimit := config.GetInt("rate_limit.daily_limit")
+		if dailyLimit > 0 {
+			ip := c.ClientIP()
+			today := time.Now().Format("2006-01-02")
+			count, _ := h.fileService.GetUploadCount(ip, today)
+			if count+len(files) > dailyLimit {
+				utils.Warnf("upload multiple: daily limit exceeded, ip=%s, count=%d, new=%d, limit=%d", ip, count, len(files), dailyLimit)
+				response.Error(c, response.ErrRateLimitAnon, "daily upload limit exceeded")
+				return
+			}
+		}
 	}
 
 	tags := c.PostFormArray("tags")

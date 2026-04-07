@@ -504,8 +504,7 @@ async function executeCleanup() {
     <!-- 全选工具栏 -->
     <div v-if="files.length > 0" class="flex items-center gap-2 text-sm"
       :class="isDark ? 'text-gray-400' : 'text-gray-500'">
-      <input ref="selectAllRef" type="checkbox" :checked="isAllCurrentPageSelected"
-        @change="toggleSelectAllCurrentPage"
+      <input ref="selectAllRef" type="checkbox" :checked="isAllCurrentPageSelected" @change="toggleSelectAllCurrentPage"
         class="w-5 h-5 rounded cursor-pointer accent-indigo-500" />
       <el-tooltip content="选择当前页所有文件" placement="top">
         <button @click="selectAllCurrentPage"
@@ -592,26 +591,22 @@ async function executeCleanup() {
           <!-- 按钮：始终显示在底部 -->
           <div class="flex justify-center gap-2 mt-2">
             <el-tooltip content="详情" placement="top">
-              <button @click.stop="openFileDetail(file)"
-                class="p-1.5 mx-2 rounded-lg hover:bg-black/10 transition-all">
+              <button @click.stop="openFileDetail(file)" class="p-1.5 mx-2 rounded-lg hover:bg-black/10 transition-all">
                 <Info class="w-4 h-4 text-blue-500" />
               </button>
             </el-tooltip>
             <el-tooltip content="复制" placement="top">
-              <button @click.stop="copyFileUrl(file)"
-                class="p-1.5 rounded-lg hover:bg-black/10 transition-all">
+              <button @click.stop="copyFileUrl(file)" class="p-1.5 rounded-lg hover:bg-black/10 transition-all">
                 <Link class="w-4 h-4 text-indigo-500" />
               </button>
             </el-tooltip>
             <el-tooltip content="下载" placement="top">
-              <button @click.stop="downloadFile(file)"
-                class="p-1.5 rounded-lg hover:bg-black/10 transition-all">
+              <button @click.stop="downloadFile(file)" class="p-1.5 rounded-lg hover:bg-black/10 transition-all">
                 <Download class="w-4 h-4 text-green-500" />
               </button>
             </el-tooltip>
             <el-tooltip content="删除" placement="top">
-              <button @click.stop="deleteFile(file)"
-                class="p-1.5 rounded-lg hover:bg-black/10 transition-all">
+              <button @click.stop="deleteFile(file)" class="p-1.5 rounded-lg hover:bg-black/10 transition-all">
                 <Trash2 class="w-4 h-4 text-red-500" />
               </button>
             </el-tooltip>
@@ -658,13 +653,15 @@ async function executeCleanup() {
                       :class="isDark ? 'text-gray-500' : 'text-gray-400'" />
                   </div>
                   <span class="font-medium truncate text-xs sm:text-sm max-w-[20px] sm:max-w-[80px]">{{ file.name
-                    }}</span>
+                  }}</span>
                 </div>
               </td>
-              <td class="p-2 sm:p-4 text-xs text-center sm:text-sm hidden sm:table-cell" :class="isDark ? 'text-gray-400' : 'text-gray-500'">
+              <td class="p-2 sm:p-4 text-xs text-center sm:text-sm hidden sm:table-cell"
+                :class="isDark ? 'text-gray-400' : 'text-gray-500'">
                 {{ formatSize(file.size) }}
               </td>
-              <td class="p-3 sm:p-4 text-sm  text-center hidden sm:table-cell" :class="isDark ? 'text-gray-400' : 'text-gray-500'">
+              <td class="p-3 sm:p-4 text-sm  text-center hidden sm:table-cell"
+                :class="isDark ? 'text-gray-400' : 'text-gray-500'">
                 {{ formatDate(file.createdAt) }}
               </td>
               <td class="p-1 sm:p-4 w-28 sm:w-40 whitespace-nowrap">
@@ -692,8 +689,7 @@ async function executeCleanup() {
                   </el-tooltip>
                   <el-popover trigger="click" placement="bottom-end" :width="140">
                     <template #reference>
-                      <button
-                        class="p-0.5 rounded-lg transition-all hover:bg-gray-100 border"
+                      <button class="p-0.5 rounded-lg transition-all hover:bg-gray-100 border"
                         :class="isDark ? 'border-[var(--border)] hover:bg-[var(--bg-hover)]' : 'border-gray-200'">
                         <MoreHorizontal class="w-3 h-3 text-gray-500" />
                       </button>
@@ -733,15 +729,15 @@ async function executeCleanup() {
   </div>
 
   <!-- 预览弹窗 -->
-  <el-dialog v-model="previewVisible" title="文件预览" width="90vw" class="!max-w-[800px]"
-    :class="isDark ? 'dark' : ''">
+  <el-dialog v-model="previewVisible" title="文件预览" width="90vw" class="!max-w-[800px]" :class="isDark ? 'dark' : ''">
     <div v-if="previewFile" class="flex flex-col items-center">
       <img v-if="previewFile.type?.startsWith('image/')" :src="previewFile.url || `/api/v1/file/${previewFile.id}`"
         :alt="previewFile.name" class="max-w-full max-h-[50vh] sm:max-h-[60vh] object-contain rounded-lg" />
-      <video v-else-if="previewFile.type?.startsWith('video/')" :src="previewFile.url || `/api/v1/file/${previewFile.id}`"
-        controls class="max-w-full max-h-[50vh] sm:max-h-[60vh] rounded-lg"></video>
-      <audio v-else-if="previewFile.type?.startsWith('audio/')" :src="previewFile.url || `/api/v1/file/${previewFile.id}`"
-        controls class="w-full mt-4"></audio>
+      <video v-else-if="previewFile.type?.startsWith('video/')"
+        :src="previewFile.url || `/api/v1/file/${previewFile.id}`" controls
+        class="max-w-full max-h-[50vh] sm:max-h-[60vh] rounded-lg"></video>
+      <audio v-else-if="previewFile.type?.startsWith('audio/')"
+        :src="previewFile.url || `/api/v1/file/${previewFile.id}`" controls class="w-full mt-4"></audio>
       <div class="mt-3 sm:mt-4 text-center">
         <p class="font-medium text-sm sm:text-base">{{ previewFile.name }}</p>
         <p class="text-xs sm:text-sm mt-1" :class="isDark ? 'text-gray-400' : 'text-gray-500'">
@@ -752,8 +748,7 @@ async function executeCleanup() {
   </el-dialog>
 
   <!-- 清理弹窗 -->
-  <el-dialog v-model="cleanupVisible" title="一键清理旧文件" width="90vw" class="!max-w-[600px]"
-    :class="isDark ? 'dark' : ''">
+  <el-dialog v-model="cleanupVisible" title="一键清理旧文件" width="90vw" class="!max-w-[600px]" :class="isDark ? 'dark' : ''">
     <div class="space-y-3 sm:space-y-4">
       <div class="p-3 sm:p-4 rounded-xl" :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-50'">
         <p class="text-xs sm:text-sm" :class="isDark ? 'text-gray-400' : 'text-gray-500'">
@@ -763,7 +758,8 @@ async function executeCleanup() {
           <span v-if="olderThan > 0" class="px-2 py-1 rounded bg-indigo-500/10 text-indigo-500 text-xs sm:text-sm">
             {{ olderThan }}天前的文件
           </span>
-          <span v-else-if="dateRange.length > 0" class="px-2 py-1 rounded bg-indigo-500/10 text-indigo-500 text-xs sm:text-sm">
+          <span v-else-if="dateRange.length > 0"
+            class="px-2 py-1 rounded bg-indigo-500/10 text-indigo-500 text-xs sm:text-sm">
             {{ dateRange[0] }} 至 {{ dateRange[1] }}
           </span>
           <span v-else class="px-2 py-1 rounded bg-gray-500/10 text-gray-500 text-xs sm:text-sm">
@@ -795,7 +791,8 @@ async function executeCleanup() {
               class="flex items-center justify-between p-2 text-xs sm:text-sm border-b last:border-b-0"
               :class="isDark ? 'border-[var(--border)]' : 'border-gray-100'">
               <span class="truncate flex-1 mr-2">{{ f.name }}</span>
-              <span class="text-xs whitespace-nowrap" :class="isDark ? 'text-gray-500' : 'text-gray-400'">{{ formatDate(f.uploadedAt)
+              <span class="text-xs whitespace-nowrap" :class="isDark ? 'text-gray-500' : 'text-gray-400'">{{
+                formatDate(f.uploadedAt)
                 }}</span>
             </div>
           </div>
@@ -826,8 +823,8 @@ async function executeCleanup() {
     <div v-else-if="detailFile" class="space-y-3 sm:space-y-4">
       <!-- 预览图 -->
       <div v-if="isImageType(detailFile.type)" class="flex justify-center">
-        <img :src="detailFile.links?.url || detailFile.url || `${getOrigin()}/api/v1/file/${detailFile.id}`" :alt="detailFile.name"
-          class="max-h-48 sm:max-h-60 object-contain rounded-lg border w-full"
+        <img :src="detailFile.links?.url || detailFile.url || `${getOrigin()}/api/v1/file/${detailFile.id}`"
+          :alt="detailFile.name" class="max-h-48 sm:max-h-60 object-contain rounded-lg border w-full"
           :class="isDark ? 'border-[var(--border)]' : 'border-gray-200'" />
       </div>
 
@@ -846,13 +843,15 @@ async function executeCleanup() {
         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b gap-1"
           :class="isDark ? 'border-[var(--border)]' : 'border-gray-100'">
           <span class="text-xs sm:text-sm" :class="isDark ? 'text-gray-400' : 'text-gray-500'">文件类型</span>
-          <span class="text-xs sm:text-sm" :class="isDark ? 'text-gray-300' : 'text-gray-600'">{{ detailFile.type || '未知' }}</span>
+          <span class="text-xs sm:text-sm" :class="isDark ? 'text-gray-300' : 'text-gray-600'">{{ detailFile.type ||
+            '未知'
+            }}</span>
         </div>
         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b gap-1"
           :class="isDark ? 'border-[var(--border)]' : 'border-gray-100'">
           <span class="text-xs sm:text-sm" :class="isDark ? 'text-gray-400' : 'text-gray-500'">存储渠道</span>
-          <span class="text-xs sm:text-sm" :class="isDark ? 'text-gray-300' : 'text-gray-600'">{{ detailFile.channel ||
-            detailFile.channelType || '-' }}</span>
+          <span class="text-xs sm:text-sm" :class="isDark ? 'text-gray-300' : 'text-gray-600'">{{ detailFile.channelType
+            || '-' }}</span>
         </div>
         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b gap-1"
           :class="isDark ? 'border-[var(--border)]' : 'border-gray-100'">
@@ -864,30 +863,47 @@ async function executeCleanup() {
           <span class="text-xs sm:text-sm" :class="isDark ? 'text-gray-400' : 'text-gray-500'">来源</span>
           <span class="text-xs sm:text-sm">{{ detailFile.source || '-' }}</span>
         </div>
-        <div v-if="detailFile.accessCount !== undefined" class="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b gap-1"
+        <div v-if="detailFile.accessCount !== undefined"
+          class="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b gap-1"
           :class="isDark ? 'border-[var(--border)]' : 'border-gray-100'">
           <span class="text-xs sm:text-sm" :class="isDark ? 'text-gray-400' : 'text-gray-500'">访问次数</span>
           <span class="text-xs sm:text-sm font-medium">{{ detailFile.accessCount }}</span>
         </div>
-        <div v-if="detailFile.checksum" class="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b gap-1"
+        <div v-if="detailFile.checksum"
+          class="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b gap-1"
           :class="isDark ? 'border-[var(--border)]' : 'border-gray-100'">
           <span class="text-xs sm:text-sm" :class="isDark ? 'text-gray-400' : 'text-gray-500'">文件校验</span>
-          <span class="text-xs sm:text-sm font-mono truncate max-w-[200px] sm:max-w-none" :class="isDark ? 'text-gray-300' : 'text-gray-600'"
-            :title="detailFile.checksum">{{ detailFile.checksum.substring(0, 16) }}...</span>
+          <span class="text-xs sm:text-sm font-mono truncate max-w-[200px] sm:max-w-none"
+            :class="isDark ? 'text-gray-300' : 'text-gray-600'" :title="detailFile.checksum">{{
+              detailFile.checksum.substring(0, 16) }}...</span>
         </div>
       </div>
 
       <!-- 链接操作 -->
-      <div class="pt-2">
-        <p class="text-xs sm:text-sm mb-2" :class="isDark ? 'text-gray-400' : 'text-gray-500'">文件链接</p>
-        <div class="flex flex-col sm:flex-row gap-2">
-          <input :value="detailFile.links?.url || detailFile.url || `${origin}/api/v1/file/${detailFile.id}`" readonly
-            class="flex-1 px-3 py-2 rounded-lg border text-xs sm:text-sm min-w-0"
-            :class="isDark ? 'bg-[var(--bg-hover)] border-[var(--border)] text-gray-300' : 'bg-gray-50 border-gray-200'" />
-          <button @click="copyText(detailFile.links?.url || detailFile.url || `${origin}/api/v1/file/${detailFile.id}`, '链接')"
-            class="px-4 py-2 rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 transition-all text-xs sm:text-sm whitespace-nowrap">
-            复制
-          </button>
+      <div class="pt-2 space-y-3">
+        <div>
+          <p class="text-xs sm:text-sm mb-1" :class="isDark ? 'text-gray-400' : 'text-gray-500'">原始链接</p>
+          <div class="flex flex-col sm:flex-row gap-2">
+            <input :value="detailFile.originalUrl || ''" readonly
+              class="flex-1 px-3 py-2 rounded-lg border text-xs sm:text-sm min-w-0"
+              :class="isDark ? 'bg-[var(--bg-hover)] border-[var(--border)] text-gray-300' : 'bg-gray-50 border-gray-200'" />
+            <button @click="copyText(detailFile.originalUrl, '原始链接')"
+              class="px-4 py-2 rounded-lg bg-gray-500 text-white hover:bg-gray-600 transition-all text-xs sm:text-sm whitespace-nowrap">
+              复制
+            </button>
+          </div>
+        </div>
+        <div>
+          <p class="text-xs sm:text-sm mb-1" :class="isDark ? 'text-gray-400' : 'text-gray-500'">CDN 链接（转换后）</p>
+          <div class="flex flex-col sm:flex-row gap-2">
+            <input :value="detailFile.url || detailFile.links?.url || ''" readonly
+              class="flex-1 px-3 py-2 rounded-lg border text-xs sm:text-sm min-w-0"
+              :class="isDark ? 'bg-[var(--bg-hover)] border-[var(--border)] text-gray-300' : 'bg-gray-50 border-gray-200'" />
+            <button @click="copyText(detailFile.url || detailFile.links?.url, 'CDN链接')"
+              class="px-4 py-2 rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 transition-all text-xs sm:text-sm whitespace-nowrap">
+              复制
+            </button>
+          </div>
         </div>
       </div>
     </div>
