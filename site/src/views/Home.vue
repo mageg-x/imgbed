@@ -129,12 +129,12 @@ function validateFileType(file) {
   })) {
     return true
   }
-  
+
   const ext = '.' + file.name.split('.').pop().toLowerCase()
   if (allowedExtensions.value.includes(ext)) {
     return true
   }
-  
+
   return false
 }
 
@@ -313,14 +313,17 @@ function isImageType(type) {
       :class="themeStore.isDark ? 'bg-[var(--bg-primary)]/80 border-[var(--border)]' : 'bg-white/80 border-gray-200'">
       <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-4">
         <div class="flex items-center gap-2 sm:gap-3">
-          <img src="/imgbed.webp" alt="ImgBed" class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl object-cover shadow-lg shadow-indigo-500/30" />
+          <img src="/imgbed.webp" alt="ImgBed"
+            class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl object-cover shadow-lg shadow-indigo-500/30" />
           <span class="text-lg sm:text-xl font-bold">
-            <span class="text-gradient">Img</span><span :class="themeStore.isDark ? 'text-white' : 'text-gray-800'">Bed</span>
+            <span class="text-gradient">Img</span><span
+              :class="themeStore.isDark ? 'text-white' : 'text-gray-800'">Bed</span>
           </span>
         </div>
 
         <nav class="flex items-center gap-1">
-          <button @click="router.push('/gallery')" class="p-2 sm:px-4 rounded-lg text-sm font-medium transition-all flex items-center gap-1"
+          <button @click="router.push('/gallery')"
+            class="p-2 sm:px-4 rounded-lg text-sm font-medium transition-all flex items-center gap-1"
             :class="themeStore.isDark ? 'text-gray-400 hover:text-white hover:bg-white/5' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'">
             <Folder class="w-4 h-4" />
             <span class="hidden sm:inline">我的图库</span>
@@ -405,15 +408,15 @@ function isImageType(type) {
         </el-tooltip>
 
         <el-tooltip v-if="stats.done > 0" content="清空已完成的记录" placement="top">
-          <button @click="clearDone"
-            class="px-3 sm:px-4 py-2 rounded-xl text-sm font-medium transition-all"
+          <button @click="clearDone" class="px-3 sm:px-4 py-2 rounded-xl text-sm font-medium transition-all"
             :class="themeStore.isDark ? 'text-gray-400 hover:text-white hover:bg-white/5' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'">
             清空
           </button>
         </el-tooltip>
       </div>
 
-      <div v-if="uploadQueue.length > 0" class="mt-3 sm:mt-4 space-y-2 sm:space-y-3 overflow-y-auto" style="max-height: calc(100vh - 420px);">
+      <div v-if="uploadQueue.length > 0" class="mt-3 sm:mt-4 space-y-2 sm:space-y-3 overflow-y-auto"
+        style="max-height: calc(100vh - 420px);">
         <TransitionGroup name="list">
           <div v-for="item in uploadQueue" :key="item.id"
             class="group flex items-center gap-2 sm:gap-4 p-3 sm:p-4 rounded-xl border transition-all duration-300 hover:shadow-lg"

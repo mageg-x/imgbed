@@ -7,6 +7,8 @@ import {
   RefreshCw, Search, Grid3x3, List, Download, Eye, Calendar, Zap, Info, CheckSquare,
   MoreHorizontal
 } from 'lucide-vue-next'
+import { VueDatePicker } from '@vuepic/vue-datepicker'
+import '@vuepic/vue-datepicker/dist/main.css'
 
 const isDark = ref(true)
 const origin = window.location.origin
@@ -21,7 +23,8 @@ const selected = ref([])
 
 // 时间筛选
 const olderThan = ref(0)  // 0表示不限，7/30/90/365分别表示天数
-const dateRange = ref([])
+const startDate = ref('')
+const endDate = ref('')
 const showDatePicker = ref(false)
 
 // 清理相关
@@ -133,9 +136,9 @@ async function loadFiles() {
     const params = { page: page.value, pageSize: pageSize.value }
     if (search.value) params.search = search.value
     if (olderThan.value > 0) params.olderThan = olderThan.value
-    if (dateRange.value && dateRange.value.length === 2) {
-      params.startTime = Math.floor(new Date(dateRange.value[0]).getTime() / 1000)
-      params.endTime = Math.floor(new Date(dateRange.value[1]).getTime() / 1000)
+    if (startDate.value && endDate.value) {
+      params.startTime = Math.floor(new Date(startDate.value).getTime() / 1000)
+      params.endTime = Math.floor(new Date(endDate.value).getTime() / 1000)
     }
 
     const res = await request.get('/admin/files', { params })
@@ -162,21 +165,22 @@ function handlePageChange(p) {
 
 function handlePresetClick(value) {
   olderThan.value = value
-  dateRange.value = []
+  startDate.value = ''
+  endDate.value = ''
   showDatePicker.value = false
   page.value = 1
   loadFiles()
 }
 
-function handleDateConfirm(val) {
-  dateRange.value = val
+function handleDateConfirm() {
   olderThan.value = 0
   page.value = 1
   loadFiles()
 }
 
 function clearDateFilter() {
-  dateRange.value = []
+  startDate.value = ''
+  endDate.value = ''
   olderThan.value = 0
   showDatePicker.value = false
   page.value = 1
@@ -195,9 +199,9 @@ async function selectAllFiltered() {
   const params = {}
   if (search.value) params.search = search.value
   if (olderThan.value > 0) params.olderThan = olderThan.value
-  if (dateRange.value && dateRange.value.length === 2) {
-    params.startTime = Math.floor(new Date(dateRange.value[0]).getTime() / 1000)
-    params.endTime = Math.floor(new Date(dateRange.value[1]).getTime() / 1000)
+  if (startDate.value && endDate.value) {
+    params.startTime = Math.floor(new Date(startDate.value).getTime() / 1000)
+    params.endTime = Math.floor(new Date(endDate.value).getTime() / 1000)
   }
 
   try {
@@ -371,9 +375,9 @@ async function previewCleanup() {
   try {
     const params = {}
     if (olderThan.value > 0) params.olderThan = olderThan.value
-    if (dateRange.value && dateRange.value.length === 2) {
-      params.startTime = Math.floor(new Date(dateRange.value[0]).getTime() / 1000)
-      params.endTime = Math.floor(new Date(dateRange.value[1]).getTime() / 1000)
+    if (startDate.value && endDate.value) {
+      params.startTime = Math.floor(new Date(startDate.value).getTime() / 1000)
+      params.endTime = Math.floor(new Date(endDate.value).getTime() / 1000)
     }
     const res = await request.post('/files/cleanup/preview', params)
     if (res.code === 0) {
@@ -400,9 +404,9 @@ async function executeCleanup() {
     cleanupLoading.value = true
     const params = {}
     if (olderThan.value > 0) params.olderThan = olderThan.value
-    if (dateRange.value && dateRange.value.length === 2) {
-      params.startTime = Math.floor(new Date(dateRange.value[0]).getTime() / 1000)
-      params.endTime = Math.floor(new Date(dateRange.value[1]).getTime() / 1000)
+    if (startDate.value && endDate.value) {
+      params.startTime = Math.floor(new Date(startDate.value).getTime() / 1000)
+      params.endTime = Math.floor(new Date(endDate.value).getTime() / 1000)
     }
 
     const res = await request.post('/files/cleanup', params)
@@ -441,7 +445,7 @@ async function executeCleanup() {
       <div class="flex items-center gap-1 flex-wrap">
         <button v-for="preset in filterPresets" :key="preset.value" @click="handlePresetClick(preset.value)"
           class="px-2.5 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap"
-          :class="olderThan === preset.value && dateRange.length === 0
+          :class="olderThan === preset.value && !startDate && !endDate
             ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg'
             : (isDark ? 'bg-[var(--bg-hover)] text-gray-400 hover:text-white' : 'bg-gray-100 text-gray-600 hover:text-gray-800')">
           {{ preset.label }}
@@ -449,14 +453,20 @@ async function executeCleanup() {
       </div>
 
       <!-- 日期范围 -->
-      <el-date-picker v-model="dateRange" type="daterange" range-separator="至" start-placeholder="开始日期"
-        end-placeholder="结束日期" value-format="YYYY-MM-DD" :clearable="true" @change="handleDateConfirm"
-        class="!w-auto !text-xs sm:!text-sm" :class="isDark ? 'dark' : ''" />
+      <div class="flex items-center gap-2">
+        <VueDatePicker v-model="startDate" placeholder="开始日期" format="YYYY-MM-DD" class="!w-auto !text-xs sm:!text-sm rounded-xl border" 
+          :class="isDark ? 'bg-[var(--bg-hover)] border-[var(--border)] text-white' : 'bg-gray-50 border-gray-200 text-gray-800'" 
+          @update:modelValue="handleDateConfirm" />
+        <span class="text-xs sm:text-sm" :class="isDark ? 'text-gray-400' : 'text-gray-500'">至</span>
+        <VueDatePicker v-model="endDate" placeholder="结束日期" format="YYYY-MM-DD" class="!w-auto !text-xs sm:!text-sm rounded-xl border" 
+          :class="isDark ? 'bg-[var(--bg-hover)] border-[var(--border)] text-white' : 'bg-gray-50 border-gray-200 text-gray-800'" 
+          @update:modelValue="handleDateConfirm" />
+      </div>
 
       <!-- 清理按钮 -->
       <el-tooltip content="一键清理旧文件" placement="top">
         <button @click="openCleanup"
-          class="flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all text-sm border border-red-500/30">
+          class="flex sm:ml-auto items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all text-sm border border-red-500/30">
           <Zap class="w-4 h-4" />
           <span class="hidden sm:inline">一键清理</span>
         </button>
@@ -489,14 +499,14 @@ async function executeCleanup() {
     </div>
 
     <!-- 当前筛选状态 -->
-    <div v-if="olderThan > 0 || dateRange.length > 0" class="flex items-center gap-2 text-sm"
+    <div v-if="olderThan > 0 || (startDate && endDate)" class="flex items-center gap-2 text-sm"
       :class="isDark ? 'text-gray-400' : 'text-gray-500'">
       <span>当前筛选：</span>
       <span v-if="olderThan > 0" class="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-500">
         {{ olderThan }}天前
       </span>
-      <span v-if="dateRange.length > 0" class="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-500">
-        {{ dateRange[0] }} 至 {{ dateRange[1] }}
+      <span v-if="startDate && endDate" class="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-500">
+        {{ startDate }} 至 {{ endDate }}
       </span>
       <button @click="clearDateFilter" class="ml-2 text-indigo-500 hover:underline">清除筛选</button>
     </div>
@@ -758,9 +768,9 @@ async function executeCleanup() {
           <span v-if="olderThan > 0" class="px-2 py-1 rounded bg-indigo-500/10 text-indigo-500 text-xs sm:text-sm">
             {{ olderThan }}天前的文件
           </span>
-          <span v-else-if="dateRange.length > 0"
+          <span v-else-if="startDate && endDate"
             class="px-2 py-1 rounded bg-indigo-500/10 text-indigo-500 text-xs sm:text-sm">
-            {{ dateRange[0] }} 至 {{ dateRange[1] }}
+            {{ startDate }} 至 {{ endDate }}
           </span>
           <span v-else class="px-2 py-1 rounded bg-gray-500/10 text-gray-500 text-xs sm:text-sm">
             所有文件

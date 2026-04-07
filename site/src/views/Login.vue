@@ -92,9 +92,11 @@ async function handleLogin() {
     <div class="w-full max-w-sm sm:max-w-md relative z-10 px-4">
       <!-- Logo -->
       <div class="text-center mb-6 sm:mb-8">
-        <img src="/imgbed.webp" alt="ImgBed" class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl object-cover mx-auto mb-3 sm:mb-4 shadow-xl shadow-indigo-500/30" />
+        <img src="/imgbed.webp" alt="ImgBed"
+          class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl object-cover mx-auto mb-3 sm:mb-4 shadow-xl shadow-indigo-500/30" />
         <h1 class="text-2xl sm:text-3xl font-bold">
-          <span class="text-gradient">Img</span><span :class="themeStore.isDark ? 'text-white' : 'text-gray-800'">Bed</span>
+          <span class="text-gradient">Img</span><span
+            :class="themeStore.isDark ? 'text-white' : 'text-gray-800'">Bed</span>
         </h1>
         <p class="text-xs sm:text-sm mt-1.5 sm:mt-2" :class="themeStore.isDark ? 'text-gray-400' : 'text-gray-500'">
           开源文件托管解决方案
@@ -107,7 +109,8 @@ async function handleLogin() {
 
         <!-- admin 已登录，显示无权限提示 -->
         <div v-if="isLoggedInAsAdmin" class="text-center py-8">
-          <div class="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 mx-auto mb-4 flex items-center justify-center">
+          <div
+            class="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 mx-auto mb-4 flex items-center justify-center">
             <Lock class="w-8 h-8 text-red-500" />
           </div>
           <h3 class="text-lg font-medium mb-2" :class="themeStore.isDark ? 'text-white' : 'text-gray-800'">
@@ -126,7 +129,8 @@ async function handleLogin() {
         <!-- 正常登录表单 -->
         <template v-else>
           <!-- 模式切换 -->
-          <div class="flex rounded-xl p-1 mb-4 sm:mb-6" :class="themeStore.isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-100'">
+          <div class="flex rounded-xl p-1 mb-4 sm:mb-6"
+            :class="themeStore.isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-100'">
             <button @click="mode = 'user'" class="flex-1 py-2 rounded-lg text-sm font-medium transition-all" :class="mode === 'user'
               ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg'
               : (themeStore.isDark ? 'text-gray-400' : 'text-gray-600')">
@@ -154,25 +158,26 @@ async function handleLogin() {
               </div>
             </div>
 
-          <div>
-            <label class="block text-sm font-medium mb-2" :class="themeStore.isDark ? 'text-gray-300' : 'text-gray-700'">
-              {{ mode === 'admin' ? '密码' : '访问密码' }}
-            </label>
-            <div class="relative">
-              <Lock class="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5"
-                :class="themeStore.isDark ? 'text-gray-500' : 'text-gray-400'" />
-              <input v-model="password" type="password" :placeholder="mode === 'admin' ? '请输入密码' : '请输入访问密码'"
-                class="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 rounded-xl border transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-                :class="themeStore.isDark ? 'bg-[var(--bg-hover)] border-[var(--border)] text-white placeholder-gray-500' : 'bg-gray-50 border-gray-200 text-gray-800'" />
+            <div>
+              <label class="block text-sm font-medium mb-2"
+                :class="themeStore.isDark ? 'text-gray-300' : 'text-gray-700'">
+                {{ mode === 'admin' ? '密码' : '访问密码' }}
+              </label>
+              <div class="relative">
+                <Lock class="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5"
+                  :class="themeStore.isDark ? 'text-gray-500' : 'text-gray-400'" />
+                <input v-model="password" type="password" :placeholder="mode === 'admin' ? '请输入密码' : '请输入访问密码'"
+                  class="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 rounded-xl border transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                  :class="themeStore.isDark ? 'bg-[var(--bg-hover)] border-[var(--border)] text-white placeholder-gray-500' : 'bg-gray-50 border-gray-200 text-gray-800'" />
+              </div>
             </div>
-          </div>
 
-          <button type="submit" :disabled="loading"
-            class="w-full py-2.5 sm:py-3 rounded-xl font-medium text-white bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 transition-all shadow-lg shadow-indigo-500/25 disabled:opacity-50 disabled:cursor-not-allowed">
-            <span v-if="loading">登录中...</span>
-            <span v-else>登 录</span>
-          </button>
-        </form>
+            <button type="submit" :disabled="loading"
+              class="w-full py-2.5 sm:py-3 rounded-xl font-medium text-white bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 transition-all shadow-lg shadow-indigo-500/25 disabled:opacity-50 disabled:cursor-not-allowed">
+              <span v-if="loading">登录中...</span>
+              <span v-else>登 录</span>
+            </button>
+          </form>
         </template>
 
         <div class="mt-4 sm:mt-6 text-center">

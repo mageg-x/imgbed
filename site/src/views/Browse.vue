@@ -183,7 +183,8 @@ async function downloadFile(file) {
             </button>
           </el-tooltip>
           <div class="flex items-center gap-2 sm:gap-3">
-            <img src="/imgbed.webp" alt="ImgBed" class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl object-cover shadow-lg shadow-indigo-500/30" />
+            <img src="/imgbed.webp" alt="ImgBed"
+              class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl object-cover shadow-lg shadow-indigo-500/30" />
             <span class="text-lg sm:text-xl font-bold">
               <span class="text-gradient">我的文件</span>
             </span>
@@ -224,7 +225,8 @@ async function downloadFile(file) {
         </div>
 
         <!-- 视图切换 -->
-        <div class="flex items-center rounded-xl p-1" :class="themeStore.isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-100'">
+        <div class="flex items-center rounded-xl p-1"
+          :class="themeStore.isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-100'">
           <button @click="viewMode = 'grid'" class="p-2 rounded-lg transition-all" :class="viewMode === 'grid'
             ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg'
             : (themeStore.isDark ? 'text-gray-400' : 'text-gray-600')">
@@ -276,7 +278,8 @@ async function downloadFile(file) {
           :class="themeStore.isDark ? 'bg-[var(--bg-secondary)]' : 'bg-gray-100'">
           <Folder class="w-10 h-10 sm:w-12 sm:h-12" :class="themeStore.isDark ? 'text-gray-600' : 'text-gray-400'" />
         </div>
-        <p class="text-base sm:text-lg mb-3 sm:mb-4" :class="themeStore.isDark ? 'text-gray-400' : 'text-gray-500'">暂无文件</p>
+        <p class="text-base sm:text-lg mb-3 sm:mb-4" :class="themeStore.isDark ? 'text-gray-400' : 'text-gray-500'">暂无文件
+        </p>
         <button @click="router.push('/')"
           class="px-5 sm:px-6 py-2 sm:py-2.5 rounded-xl text-white bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 transition-all shadow-lg shadow-indigo-500/25">
           去上传
@@ -375,13 +378,14 @@ async function downloadFile(file) {
                         :class="themeStore.isDark ? 'text-gray-500' : 'text-gray-400'" />
                     </div>
                     <span class="font-medium text-sm sm:text-base truncate max-w-[120px] sm:max-w-none">{{ file.name
-                      }}</span>
+                    }}</span>
                   </div>
                 </td>
                 <td class="p-3 sm:p-4 text-sm" :class="themeStore.isDark ? 'text-gray-400' : 'text-gray-500'">
                   {{ formatSize(file.size) }}
                 </td>
-                <td class="p-3 sm:p-4 text-sm hidden sm:table-cell" :class="themeStore.isDark ? 'text-gray-400' : 'text-gray-500'">
+                <td class="p-3 sm:p-4 text-sm hidden sm:table-cell"
+                  :class="themeStore.isDark ? 'text-gray-400' : 'text-gray-500'">
                   {{ formatDate(file.createdAt || file.uploadedAt) }}
                 </td>
                 <td class="p-3 sm:p-4">

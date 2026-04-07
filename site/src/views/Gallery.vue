@@ -5,7 +5,7 @@ import { fileApi } from '@/api/file'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
 import { ElMessage } from 'element-plus'
-import { Image, Folder, Link, RefreshCw, Sun, Moon, ArrowLeft, X, Copy, Grid3x3, List, Search, Calendar, Check } from 'lucide-vue-next'
+import { Image, Folder, Link, RefreshCw, Sun, Moon, ArrowLeft, X, Copy, Grid3x3, List, Search } from 'lucide-vue-next'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -21,8 +21,6 @@ const viewMode = ref('grid')
 
 const search = ref('')
 const olderThan = ref(0)
-const dateRange = ref([])
-const showDatePicker = ref(false)
 
 function getOrigin() {
   return window.location.origin
@@ -63,11 +61,6 @@ async function loadGallery() {
     } else if (olderThan.value > 0) {
       params.startTime = Math.floor(Date.now() / 1000) - olderThan.value * 24 * 60 * 60
     }
-    if (dateRange.value && dateRange.value.length === 2) {
-      params.startTime = Math.floor(new Date(dateRange.value[0]).getTime() / 1000)
-      params.endTime = Math.floor(new Date(dateRange.value[1]).getTime() / 1000)
-    }
-
     const res = await fileApi.list(params)
     if (res.code === 0) {
       files.value = res.data?.list || res.data?.items || []
@@ -87,15 +80,6 @@ function handleSearch() {
 
 function handlePresetClick(value) {
   olderThan.value = value
-  dateRange.value = []
-  showDatePicker.value = false
-  page.value = 1
-  loadGallery()
-}
-
-function handleDateConfirm(val) {
-  dateRange.value = val
-  olderThan.value = 0
   page.value = 1
   loadGallery()
 }
@@ -103,8 +87,6 @@ function handleDateConfirm(val) {
 function clearFilters() {
   search.value = ''
   olderThan.value = 0
-  dateRange.value = []
-  showDatePicker.value = false
   page.value = 1
   loadGallery()
 }
@@ -223,34 +205,20 @@ function formatSize(bytes) {
           </div>
 
           <!-- 时间筛选 -->
-          <div class="flex items-center gap-2">
-            <div class="flex items-center gap-1 rounded-lg border overflow-hidden"
-              :class="themeStore.isDark ? 'border-[var(--border)]' : 'border-gray-200'">
-              <button v-for="preset in filterPresets" :key="preset.value" @click="handlePresetClick(preset.value)"
-                class="px-3 py-2 text-sm transition-all"
-                :class="olderThan === preset.value && dateRange.length === 0
-                  ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white'
-                  : (themeStore.isDark ? 'text-gray-400 hover:text-white hover:bg-white/5' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50')">
-                {{ preset.label }}
-              </button>
-            </div>
-            <el-popover v-model:visible="showDatePicker" trigger="click" placement="bottom" :width="266">
-              <template #reference>
-                <button class="p-2 rounded-lg border transition-all"
-                  :class="dateRange.length > 0
-                    ? 'bg-indigo-500/10 border-indigo-500 text-indigo-500'
-                    : (themeStore.isDark ? 'border-[var(--border)] text-gray-400 hover:text-white' : 'border-gray-200 text-gray-600 hover:text-gray-900')">
-                  <Calendar class="w-4 h-4" />
-                </button>
-              </template>
-              <el-date-picker v-model="dateRange" type="daterange" size="small" range-separator="至"
-                start-placeholder="开始" end-placeholder="结束" @change="handleDateConfirm" />
-            </el-popover>
+          <div class="flex items-center gap-1 rounded-lg border overflow-hidden"
+            :class="themeStore.isDark ? 'border-[var(--border)]' : 'border-gray-200'">
+            <button v-for="preset in filterPresets" :key="preset.value" @click="handlePresetClick(preset.value)"
+              class="px-3 py-2 text-sm transition-all"
+              :class="olderThan === preset.value
+                ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white'
+                : (themeStore.isDark ? 'text-gray-400 hover:text-white hover:bg-white/5' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50')">
+              {{ preset.label }}
+            </button>
           </div>
         </div>
 
         <!-- 当前筛选状态 -->
-        <div v-if="search || olderThan !== 0 || dateRange.length > 0" class="flex items-center gap-2 mt-3 text-sm"
+        <div v-if="search || olderThan !== 0" class="flex items-center gap-2 mt-3 text-sm"
           :class="themeStore.isDark ? 'text-gray-400' : 'text-gray-500'">
           <span>当前筛选：</span>
           <span v-if="search" class="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-500">
@@ -261,9 +229,6 @@ function formatSize(bytes) {
           </span>
           <span v-else-if="olderThan > 0" class="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-500">
             {{ olderThan }}天内
-          </span>
-          <span v-if="dateRange.length > 0" class="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-500">
-            {{ dateRange[0] }} 至 {{ dateRange[1] }}
           </span>
           <button @click="clearFilters" class="ml-2 text-indigo-500 hover:underline">清除筛选</button>
         </div>
