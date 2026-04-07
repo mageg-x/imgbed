@@ -29,7 +29,10 @@ export const useAuthStore = defineStore("auth", () => {
     return { success: false, message: res.message };
   }
 
-  function logout() {
+  async function logout() {
+    try {
+      await authApi.logout()
+    } catch {}
     token.value = "";
     user.value = null;
     document.cookie = "imgbed_token=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";

@@ -1,10 +1,10 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
 import { ElMessage } from 'element-plus'
-import { Lock, Sun, Moon, Image } from 'lucide-vue-next'
+import { Lock, Sun, Moon, Image, LogOut } from 'lucide-vue-next'
 
 const router = useRouter()
 const route = useRoute()
@@ -15,10 +15,26 @@ const mode = ref('user')
 const username = ref('')
 const password = ref('')
 const loading = ref(false)
+const checkLoading = ref(true)
 
-onMounted(() => {
-  themeStore.init()
+// 已登录但非 user（admin 登录了主站）
+const isLoggedInAsAdmin = computed(() => {
+  return checkLoading.value === false && authStore.isAuthenticated && authStore.user?.role === 'admin'
 })
+
+onMounted(async () => {
+  themeStore.init()
+  // 强制检查 session，确保 user 数据已加载
+  if (authStore.isAuthenticated) {
+    await authStore.checkSession()
+  }
+  checkLoading.value = false
+})
+
+async function handleLogout() {
+  await authStore.logout()
+  window.location.reload()
+}
 
 async function handleLogin() {
   if (mode.value === 'user') {
@@ -89,34 +105,54 @@ async function handleLogin() {
       <div class="rounded-xl sm:rounded-2xl border p-6 sm:p-8 shadow-xl"
         :class="themeStore.isDark ? 'bg-[var(--bg-secondary)]/80 backdrop-blur-xl border-[var(--border)]' : 'bg-white border-gray-200'">
 
-        <!-- 模式切换 -->
-        <div class="flex rounded-xl p-1 mb-4 sm:mb-6" :class="themeStore.isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-100'">
-          <button @click="mode = 'user'" class="flex-1 py-2 rounded-lg text-sm font-medium transition-all" :class="mode === 'user'
-            ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg'
-            : (themeStore.isDark ? 'text-gray-400' : 'text-gray-600')">
-            <span class="hidden sm:inline">用户登录</span>
-            <span class="sm:hidden">用户</span>
-          </button>
-          <button @click="mode = 'admin'" class="flex-1 py-2 rounded-lg text-sm font-medium transition-all" :class="mode === 'admin'
-            ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg'
-            : (themeStore.isDark ? 'text-gray-400' : 'text-gray-600')">
-            <span class="hidden sm:inline">管理登录</span>
-            <span class="sm:hidden">管理</span>
+        <!-- admin 已登录，显示无权限提示 -->
+        <div v-if="isLoggedInAsAdmin" class="text-center py-8">
+          <div class="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 mx-auto mb-4 flex items-center justify-center">
+            <Lock class="w-8 h-8 text-red-500" />
+          </div>
+          <h3 class="text-lg font-medium mb-2" :class="themeStore.isDark ? 'text-white' : 'text-gray-800'">
+            无访问权限
+          </h3>
+          <p class="text-sm mb-6" :class="themeStore.isDark ? 'text-gray-400' : 'text-gray-500'">
+            您当前以管理员身份登录<br>请退出后使用用户密码登录
+          </p>
+          <button @click="handleLogout"
+            class="w-full py-3 rounded-xl font-medium text-white bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 transition-all shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2">
+            <LogOut class="w-4 h-4" />
+            退出并重新登录
           </button>
         </div>
 
-        <form @submit.prevent="handleLogin" class="space-y-4">
-          <div v-if="mode === 'admin'">
-            <label class="block text-sm font-medium mb-2"
-              :class="themeStore.isDark ? 'text-gray-300' : 'text-gray-700'">用户名</label>
-            <div class="relative">
-              <Lock class="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5"
-                :class="themeStore.isDark ? 'text-gray-500' : 'text-gray-400'" />
-              <input v-model="username" type="text" placeholder="请输入用户名"
-                class="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 rounded-xl border transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-                :class="themeStore.isDark ? 'bg-[var(--bg-hover)] border-[var(--border)] text-white placeholder-gray-500' : 'bg-gray-50 border-gray-200 text-gray-800'" />
-            </div>
+        <!-- 正常登录表单 -->
+        <template v-else>
+          <!-- 模式切换 -->
+          <div class="flex rounded-xl p-1 mb-4 sm:mb-6" :class="themeStore.isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-100'">
+            <button @click="mode = 'user'" class="flex-1 py-2 rounded-lg text-sm font-medium transition-all" :class="mode === 'user'
+              ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg'
+              : (themeStore.isDark ? 'text-gray-400' : 'text-gray-600')">
+              <span class="hidden sm:inline">用户登录</span>
+              <span class="sm:hidden">用户</span>
+            </button>
+            <button @click="mode = 'admin'" class="flex-1 py-2 rounded-lg text-sm font-medium transition-all" :class="mode === 'admin'
+              ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg'
+              : (themeStore.isDark ? 'text-gray-400' : 'text-gray-600')">
+              <span class="hidden sm:inline">管理登录</span>
+              <span class="sm:hidden">管理</span>
+            </button>
           </div>
+
+          <form @submit.prevent="handleLogin" class="space-y-4">
+            <div v-if="mode === 'admin'">
+              <label class="block text-sm font-medium mb-2"
+                :class="themeStore.isDark ? 'text-gray-300' : 'text-gray-700'">用户名</label>
+              <div class="relative">
+                <Lock class="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5"
+                  :class="themeStore.isDark ? 'text-gray-500' : 'text-gray-400'" />
+                <input v-model="username" type="text" placeholder="请输入用户名"
+                  class="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 rounded-xl border transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                  :class="themeStore.isDark ? 'bg-[var(--bg-hover)] border-[var(--border)] text-white placeholder-gray-500' : 'bg-gray-50 border-gray-200 text-gray-800'" />
+              </div>
+            </div>
 
           <div>
             <label class="block text-sm font-medium mb-2" :class="themeStore.isDark ? 'text-gray-300' : 'text-gray-700'">
@@ -137,6 +173,7 @@ async function handleLogin() {
             <span v-else>登 录</span>
           </button>
         </form>
+        </template>
 
         <div class="mt-4 sm:mt-6 text-center">
           <router-link to="/" class="text-xs sm:text-sm transition-all"

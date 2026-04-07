@@ -859,6 +859,11 @@ async function executeCleanup() {
           <span class="text-xs sm:text-sm" :class="isDark ? 'text-gray-400' : 'text-gray-500'">上传时间</span>
           <span class="text-xs sm:text-sm">{{ formatDate(detailFile.createdAt || detailFile.uploadedAt) }}</span>
         </div>
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b gap-1"
+          :class="isDark ? 'border-[var(--border)]' : 'border-gray-100'">
+          <span class="text-xs sm:text-sm" :class="isDark ? 'text-gray-400' : 'text-gray-500'">来源</span>
+          <span class="text-xs sm:text-sm">{{ detailFile.source || '-' }}</span>
+        </div>
         <div v-if="detailFile.accessCount !== undefined" class="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b gap-1"
           :class="isDark ? 'border-[var(--border)]' : 'border-gray-100'">
           <span class="text-xs sm:text-sm" :class="isDark ? 'text-gray-400' : 'text-gray-500'">访问次数</span>

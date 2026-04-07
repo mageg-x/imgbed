@@ -17,6 +17,10 @@ request.interceptors.response.use(
       const { status, data } = response;
       if (status === 401) {
         document.cookie = "imgbed_token=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+      } else if (status === 403) {
+        document.cookie = "imgbed_token=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+        window.location.href = '/login'
+        return
       } else {
         ElMessage.error(data?.message || "请求失败");
       }

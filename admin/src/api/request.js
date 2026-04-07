@@ -24,7 +24,10 @@ request.interceptors.response.use(
           window.location.href = '/admin/login'
         }
       } else if (status === 403) {
-        ElMessage.error('没有权限执行此操作')
+        const authStore = useAuthStore()
+        authStore.logout()
+        window.location.href = '/admin/login'
+        return
       } else if (status === 404) {
         ElMessage.error('请求的资源不存在')
       } else {

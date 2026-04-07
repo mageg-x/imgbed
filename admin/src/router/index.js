@@ -71,7 +71,7 @@ router.beforeEach(async (to, from, next) => {
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next({ name: "Login" });
-  } else if (to.name === "Login" && authStore.isAuthenticated) {
+  } else if (to.name === "Login" && authStore.isAuthenticated && authStore.user?.role === 'admin') {
     next({ name: "Dashboard" });
   } else {
     next();

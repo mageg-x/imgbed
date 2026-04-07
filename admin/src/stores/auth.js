@@ -23,7 +23,10 @@ export const useAuthStore = defineStore("auth", () => {
     }
   }
 
-  function logout() {
+  async function logout() {
+    try {
+      await authApi.logout()
+    } catch {}
     token.value = "";
     user.value = null;
     initialized.value = true;

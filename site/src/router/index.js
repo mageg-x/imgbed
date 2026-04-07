@@ -37,8 +37,20 @@ const router = createRouter({
   },
 });
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore();
+
+  // 如果未初始化，先检查 session
+  if (!authStore.isAuthenticated) {
+    await authStore.checkSession()
+  }
+
+  // 所有非登录页面都检测 admin 用户
+  if (to.name !== "Login" && authStore.user?.role === 'admin') {
+    next({ name: "Login" });
+    return
+  }
+
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next({ name: "Login", query: { redirect: to.fullPath } });
   } else {

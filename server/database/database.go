@@ -63,11 +63,8 @@ func Init() error {
 		return fmt.Errorf("init default data failed: %w", err)
 	}
 
-	// 初始化 FTS5 全文搜索
-	if err = initFTS5(); err != nil {
-		utils.Errorf("database init: init fts5 failed, error=%v", err)
-		return fmt.Errorf("init fts5 failed: %w", err)
-	}
+	// 初始化 FTS5 全文搜索（可选，失败时降级到 LIKE）
+	initFTS5()
 
 	utils.Info("database initialized successfully")
 	return nil
@@ -90,31 +87,32 @@ func autoMigrate() error {
 
 // initFTS5 初始化 FTS5 全文搜索
 // 创建 files_fts 虚拟表和触发器，用于高效模糊搜索
+// 如果 FTS5 不可用，优雅降级到 LIKE 搜索
 func initFTS5() error {
-	// 创建 FTS5 虚拟表（如果不存在）
+	// 尝试创建 FTS5 虚拟表（存储 file ID 而不是 rowid，因为 File.ID 是 string 类型）
 	createFTS := `
 	CREATE VIRTUAL TABLE IF NOT EXISTS files_fts USING fts5(
+		id,
 		name,
-		original_name,
-		content='files',
-		content_rowid='rowid'
+		original_name
 	);
 	`
 	if err := DB.Exec(createFTS).Error; err != nil {
-		return fmt.Errorf("create files_fts failed: %w", err)
+		utils.Warnf("FTS5 not available, will use LIKE search: %v", err)
+		return nil // 优雅降级，不阻止启动
 	}
 
 	// 插入已有数据到 FTS 表
 	insertFTS := `
-	INSERT OR REPLACE INTO files_fts(rowid, name, original_name)
-	SELECT rowid, name, original_name FROM files;
+	INSERT OR REPLACE INTO files_fts(id, name, original_name)
+	SELECT id, name, original_name FROM files;
 	`
 	DB.Exec(insertFTS)
 
 	// 创建触发器：插入时同步
 	createInsertTrigger := `
 	CREATE TRIGGER IF NOT EXISTS files_ai AFTER INSERT ON files BEGIN
-		INSERT INTO files_fts(rowid, name, original_name) VALUES (NEW.rowid, NEW.name, NEW.original_name);
+		INSERT INTO files_fts(id, name, original_name) VALUES (NEW.id, NEW.name, NEW.original_name);
 	END;
 	`
 	DB.Exec(createInsertTrigger)
@@ -122,7 +120,7 @@ func initFTS5() error {
 	// 创建触发器：删除时同步
 	createDeleteTrigger := `
 	CREATE TRIGGER IF NOT EXISTS files_ad AFTER DELETE ON files BEGIN
-		INSERT INTO files_fts(files_fts, rowid, name, original_name) VALUES('delete', OLD.rowid, OLD.name, OLD.original_name);
+		DELETE FROM files_fts WHERE id = OLD.id;
 	END;
 	`
 	DB.Exec(createDeleteTrigger)
@@ -130,8 +128,7 @@ func initFTS5() error {
 	// 创建触发器：更新时同步
 	createUpdateTrigger := `
 	CREATE TRIGGER IF NOT EXISTS files_au AFTER UPDATE ON files BEGIN
-		INSERT INTO files_fts(files_fts, rowid, name, original_name) VALUES('delete', OLD.rowid, OLD.name, OLD.original_name);
-		INSERT INTO files_fts(rowid, name, original_name) VALUES (NEW.rowid, NEW.name, NEW.original_name);
+		UPDATE files_fts SET name = NEW.name, original_name = NEW.original_name WHERE id = OLD.id;
 	END;
 	`
 	DB.Exec(createUpdateTrigger)

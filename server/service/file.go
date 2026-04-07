@@ -50,22 +50,27 @@ func parseSearchSource(search string) (sourcePattern, namePattern string) {
 
 // fts5Search 使用 FTS5 全文搜索查找匹配的文件ID
 // keyword 支持中文分词和前缀匹配
-// 返回匹配的文件ID列表
+// 返回匹配的文件ID列表，如果 FTS5 不可用返回 nil
 func fts5Search(keyword string) ([]string, error) {
 	if keyword == "" {
 		return nil, nil
 	}
+	// 检查 FTS5 表是否存在
+	var count int64
+	database.DB.Raw("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='files_fts'").Scan(&count)
+	if count == 0 {
+		return nil, nil // FTS5 不可用
+	}
+
 	var ids []string
-	// FTS5 使用 * 做前缀匹配，且自动支持中文分词
-	// 构造查询：匹配包含 keyword 的文档
 	matchClause := keyword + "*"
 	err := database.DB.Table("files_fts").
-		Select("rowid").
+		Select("id").
 		Where("files_fts MATCH ?", matchClause).
-		Pluck("rowid", &ids).Error
+		Pluck("id", &ids).Error
 	if err != nil {
-		utils.Warnf("fts5 search failed, fallback to LIKE, keyword=%s, error=%v", keyword, err)
-		return nil, nil // 失败时返回 nil，调用方会 fallback 到 LIKE
+		utils.Warnf("fts5 search failed, keyword=%s, error=%v", keyword, err)
+		return nil, err
 	}
 	return ids, nil
 }
@@ -526,14 +531,15 @@ func (s *FileService) List(ctx context.Context, page, pageSize int, search strin
 		query = query.Where("source LIKE ?", searchSource+"%")
 	}
 
-	// 文件名搜索：优先使用 FTS5 加速
+	// 文件名搜索：优先使用 FTS5 加速，失败则 fallback 到 LIKE
 	if searchName != "" {
-		// FTS5 MATCH 查询获取匹配的 rowid，再用子查询过滤
-		matchClause := searchName + "*"
-		subQuery := database.DB.Table("files_fts").
-			Select("rowid").
-			Where("files_fts MATCH ?", matchClause)
-		query = query.Where("rowid IN (?)", subQuery)
+		ids, err := fts5Search(searchName)
+		if err == nil && ids != nil && len(ids) > 0 {
+			query = query.Where("id IN (?)", ids)
+		} else if err != nil || ids == nil {
+			// FTS5 不可用或失败，fallback 到 LIKE
+			query = query.Where("name LIKE ? OR original_name LIKE ?", "%"+searchName+"%", "%"+searchName+"%")
+		}
 	}
 
 	// 来源筛选（优先级高于 search 解析的 source）
@@ -602,13 +608,15 @@ func (s *FileService) ListIds(ctx context.Context, search string, source string,
 		query = query.Where("source LIKE ?", searchSource+"%")
 	}
 
-	// 文件名搜索：优先使用 FTS5 加速
+	// 文件名搜索：优先使用 FTS5 加速，失败则 fallback 到 LIKE
 	if searchName != "" {
-		matchClause := searchName + "*"
-		subQuery := database.DB.Table("files_fts").
-			Select("rowid").
-			Where("files_fts MATCH ?", matchClause)
-		query = query.Where("rowid IN (?)", subQuery)
+		ids, err := fts5Search(searchName)
+		if err == nil && ids != nil && len(ids) > 0 {
+			query = query.Where("id IN (?)", ids)
+		} else if err != nil || ids == nil {
+			// FTS5 不可用或失败，fallback 到 LIKE
+			query = query.Where("name LIKE ? OR original_name LIKE ?", "%"+searchName+"%", "%"+searchName+"%")
+		}
 	}
 
 	// 来源筛选（优先级高于 search 解析的 source）
