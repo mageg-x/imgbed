@@ -274,22 +274,36 @@ body {
 .el-table th {
   background: var(--bg-hover) !important;
 }
-
-
-/* 1. 隐藏 Chrome/Edge/Safari 等 WebKit 内核浏览器的滚动条 */
-*::-webkit-scrollbar {
+/* 滚动条样式 - 只对特定元素隐藏，默认显示 */
+/* 隐藏滚动条的元素 */
+body::-webkit-scrollbar,
+html::-webkit-scrollbar {
   display: none !important;
-  /* 直接隐藏滚动条元素 */
   width: 0 !important;
-  /* 兜底：宽度设为0 */
   height: 0 !important;
-  /* 兜底：高度设为0 */
 }
 
-/* 2. 隐藏 Firefox 浏览器的滚动条（Firefox 专用属性） */
-* {
+body,
+html {
   scrollbar-width: none !important;
-  /* 隐藏滚动条，保留滚动功能 */
   -ms-overflow-style: none !important;
-  /* 兼容 IE/Edge 旧版本 */
+}
+
+/* 其他元素默认显示滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }

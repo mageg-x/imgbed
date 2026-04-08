@@ -278,11 +278,11 @@ const jwtConfig = reactive({
 </script>
 
 <template>
-  <div class="space-y-4 sm:space-y-6">
+  <div class="min-h-screen flex flex-col">
     <!-- 设置卡片 -->
-    <div class="card overflow-hidden">
+    <div class="card overflow-hidden flex-1 flex flex-col">
       <!-- 标签页导航 -->
-      <div class="flex border-b overflow-x-auto scrollbar-thin" :style="{ borderColor: 'var(--border)' }">
+      <div class="tabs-nav flex border-b overflow-x-auto" :style="{ borderColor: 'var(--border)' }">
         <button v-for="tab in tabs" :key="tab.name" @click="activeTab = tab.name"
           class="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-3 font-medium whitespace-nowrap transition-all border-b-2 text-sm flex-shrink-0"
           :class="activeTab === tab.name
@@ -294,7 +294,7 @@ const jwtConfig = reactive({
       </div>
 
       <!-- 内容区 -->
-      <div class="p-3 sm:p-6">
+      <div class="p-3 sm:p-6 settings-content flex-1 overflow-auto">
         <div v-if="loading" class="space-y-4">
           <div v-for="i in 4" :key="i" class="h-12 rounded-xl loading-shimmer"></div>
         </div>
@@ -350,9 +350,11 @@ const jwtConfig = reactive({
           <div class="flex items-center justify-between p-3 sm:p-4 rounded-xl"
             :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-50'">
             <div>
-              <el-tooltip :content="t('settings.upload.autoRetryTip')" placement="top">
-                <p class="font-medium text-sm cursor-help">{{ t('settings.upload.autoRetry') }}</p>
-              </el-tooltip>
+              <p class="font-medium text-sm">
+                <el-tooltip :content="t('settings.upload.autoRetryTip')" placement="top">
+                  <span class="cursor-help">{{ t('settings.upload.autoRetry') }}</span>
+                </el-tooltip>
+              </p>
               <p class="text-xs" :class="isDark ? 'text-gray-500' : 'text-gray-400'">{{ t('settings.upload.autoRetryDesc') }}</p>
             </div>
             <input type="checkbox" v-model="uploadConfig.autoRetry"
@@ -371,8 +373,8 @@ const jwtConfig = reactive({
           </div>
 
           <!-- 图片压缩配置 -->
-          <div class="border-t pt-4 mt-4" :style="{ borderColor: 'var(--border)' }">
-            <h3 class="font-medium mb-3">{{ t('settings.upload.compressionConfig') }}</h3>
+          <div  :style="{ borderColor: 'var(--border)' }">
+            <h3 class=" font-normal text-sm mb-3">{{ t('settings.upload.compressionConfig') }}</h3>
 
             <div class="flex items-center justify-between p-3 sm:p-4 rounded-xl mb-4"
               :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-50'">
@@ -472,10 +474,12 @@ const jwtConfig = reactive({
               :class="isDark ? 'bg-[var(--bg-hover)] border-[var(--border)]' : 'bg-gray-50 border-gray-200'" />
           </div>
 
-          <div class="p-4 rounded-xl" :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-50'">
-            <el-tooltip :content="t('settings.app.runModeTip')" placement="top">
-              <h3 class="font-medium mb-2 cursor-help">{{ t('settings.app.runMode') }}</h3>
-            </el-tooltip>
+          <div  :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-50'">
+            <h3 class=" font-normal text-sm mb-2">
+              <el-tooltip :content="t('settings.app.runModeTip')" placement="top">
+                <span class="cursor-help">{{ t('settings.app.runMode') }}</span>
+              </el-tooltip>
+            </h3>
             <div class="flex gap-4">
               <label class="flex items-center gap-2 cursor-pointer">
                 <input type="radio" v-model="appConfig.mode" value="debug" class="accent-indigo-500" />
@@ -573,8 +577,8 @@ const jwtConfig = reactive({
             <p class="text-xs mt-1.5" :class="isDark ? 'text-gray-500' : 'text-gray-400'">{{ t('settings.auth.userPasswordDesc') }}</p>
           </div>
 
-          <div class="border-t pt-4 sm:pt-6" :style="{ borderColor: 'var(--border)' }">
-            <h3 class="font-medium mb-3 sm:mb-4">{{ t('settings.auth.adminSettings') }}</h3>
+          <div  :style="{ borderColor: 'var(--border)' }">
+            <h3 class="font-normal text-sm mb-3 sm:mb-4">{{ t('settings.auth.adminSettings') }}</h3>
 
             <div class="space-y-4">
               <div>
@@ -623,9 +627,11 @@ const jwtConfig = reactive({
         <!-- 调度策略设置 -->
         <div v-else-if="activeTab === 'schedule'" class="max-w-2xl space-y-4 sm:space-y-6">
           <div class="p-4 rounded-xl" :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-50'">
-            <el-tooltip :content="t('settings.schedule.strategyTip')" placement="top">
-              <h3 class="font-medium mb-3 cursor-help">{{ t('settings.schedule.strategyTitle') }}</h3>
-            </el-tooltip>
+            <h3 class="font-medium mb-3">
+              <el-tooltip :content="t('settings.schedule.strategyTip')" placement="top">
+                <span class="cursor-help">{{ t('settings.schedule.strategyTitle') }}</span>
+              </el-tooltip>
+            </h3>
             <p class="text-sm mb-4" :class="isDark ? 'text-gray-400' : 'text-gray-500'">
               {{ t('settings.schedule.strategyDesc') }}
             </p>
@@ -681,9 +687,11 @@ const jwtConfig = reactive({
           <div class="p-4 rounded-xl" :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-50'">
             <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
               <div>
-                <el-tooltip :content="t('settings.rateLimit.rateLimitTip')" placement="top">
-                  <h3 class="font-medium cursor-help">{{ t('settings.rateLimit.rateLimitTitle') }}</h3>
-                </el-tooltip>
+                <h3 class="font-medium">
+                  <el-tooltip :content="t('settings.rateLimit.rateLimitTip')" placement="top">
+                    <span class="cursor-help">{{ t('settings.rateLimit.rateLimitTitle') }}</span>
+                  </el-tooltip>
+                </h3>
                 <p class="text-sm mt-0.5" :class="isDark ? 'text-gray-400' : 'text-gray-500'">
                   {{ t('settings.rateLimit.rateLimitDesc') }}
                 </p>
@@ -696,9 +704,11 @@ const jwtConfig = reactive({
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <el-tooltip :content="t('settings.rateLimit.perMinuteLimitTip')" placement="top">
-                  <label class="block text-sm font-medium mb-2 cursor-help">{{ t('settings.rateLimit.perMinuteLimit') }}</label>
-                </el-tooltip>
+                <label class="block text-sm font-medium mb-2">
+                  <el-tooltip :content="t('settings.rateLimit.perMinuteLimitTip')" placement="top">
+                    <span class="cursor-help">{{ t('settings.rateLimit.perMinuteLimit') }}</span>
+                  </el-tooltip>
+                </label>
                 <input v-model.number="rateLimitConfig.rateLimit" type="number" min="1" max="100"
                   class="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm"
                   :class="isDark ? 'bg-[var(--bg-secondary)] border-[var(--border)]' : 'bg-white border-gray-200'" />
@@ -707,9 +717,11 @@ const jwtConfig = reactive({
                 </p>
               </div>
               <div>
-                <el-tooltip :content="t('settings.rateLimit.dailyLimitTip')" placement="top">
-                  <label class="block text-sm font-medium mb-2 cursor-help">{{ t('settings.rateLimit.dailyLimit') }}</label>
-                </el-tooltip>
+                <label class="block text-sm font-medium mb-2">
+                  <el-tooltip :content="t('settings.rateLimit.dailyLimitTip')" placement="top">
+                    <span class="cursor-help">{{ t('settings.rateLimit.dailyLimit') }}</span>
+                  </el-tooltip>
+                </label>
                 <input v-model.number="rateLimitConfig.dailyLimit" type="number" min="1" max="1000"
                   class="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm"
                   :class="isDark ? 'bg-[var(--bg-secondary)] border-[var(--border)]' : 'bg-white border-gray-200'" />
@@ -718,9 +730,11 @@ const jwtConfig = reactive({
                 </p>
               </div>
               <div class="sm:col-span-2">
-                <el-tooltip :content="t('settings.rateLimit.maxFileSizeTip')" placement="top">
-                  <label class="block text-sm font-medium mb-2 cursor-help">{{ t('settings.rateLimit.maxFileSize') }}</label>
-                </el-tooltip>
+                <label class="block text-sm font-medium mb-2">
+                  <el-tooltip :content="t('settings.rateLimit.maxFileSizeTip')" placement="top">
+                    <span class="cursor-help">{{ t('settings.rateLimit.maxFileSize') }}</span>
+                  </el-tooltip>
+                </label>
                 <input v-model.number="rateLimitConfig.maxFileSize" type="number" min="1" max="50"
                   class="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm"
                   :class="isDark ? 'bg-[var(--bg-secondary)] border-[var(--border)]' : 'bg-white border-gray-200'" />
@@ -804,3 +818,16 @@ const jwtConfig = reactive({
     </div>
   </div>
 </template>
+
+<style scoped>
+.tabs-nav {
+  flex-shrink: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.settings-content {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+</style>

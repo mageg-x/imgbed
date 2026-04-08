@@ -116,6 +116,7 @@ export default {
     and: '和'
   },
   nav: {
+    menu: '菜单',
     dashboard: '仪表盘',
     files: '文件管理',
     channels: '渠道管理',

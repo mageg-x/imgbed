@@ -492,36 +492,36 @@ func (s *ConfigService) UpdateModerationConfig(cfg *ModerationConfig) error {
 
 // UploadConfig 上传配置结构
 type UploadConfig struct {
-	MaxSize        int64             // 最大文件大小（字节）
-	ChunkSize      int64             // 分块上传大小（字节）
-	DefaultChannel string            // 默认存储通道
-	AllowedTypes   []string          // 允许的文件类型
-	AutoRetry      bool              // 是否自动重试
-	RetryCount     int               // 重试次数
-	Compression    CompressionConfig // 图片压缩配置
+	MaxSize        int64          `json:"maxSize"`         // 最大文件大小（字节）
+	ChunkSize      int64          `json:"chunkSize"`       // 分块上传大小（字节）
+	DefaultChannel string         `json:"defaultChannel"`  // 默认存储通道
+	AllowedTypes   []string       `json:"allowedTypes"`    // 允许的文件类型
+	AutoRetry      bool           `json:"autoRetry"`       // 是否自动重试
+	RetryCount     int            `json:"retryCount"`      // 重试次数
+	Compression    CompressionConfig `json:"compression"`   // 图片压缩配置
 }
 
 // CompressionConfig 图片压缩配置
 type CompressionConfig struct {
-	Enabled   bool   // 是否启用压缩
-	Quality   int    // 压缩质量 (1-100)
-	Format    string // 目标格式 (original/webp/jpeg/png)
-	MaxWidth  int    // 最大宽度
-	MaxHeight int    // 最大高度
+	Enabled   bool   `json:"enabled"`   // 是否启用压缩
+	Quality   int    `json:"quality"`   // 压缩质量 (1-100)
+	Format    string `json:"format"`    // 目标格式 (original/webp/jpeg/png)
+	MaxWidth  int    `json:"maxWidth"`  // 最大宽度
+	MaxHeight int    `json:"maxHeight"` // 最大高度
 }
 
 // SiteConfig 站点配置结构
 type SiteConfig struct {
-	Name string // 站点名称
-	Logo string // 站点Logo
+	Name string `json:"name"` // 站点名称
+	Logo string `json:"logo"` // 站点Logo
 }
 
 // AuthConfig 认证配置结构
 type AuthConfig struct {
-	UserPassword   string // 用户密码
-	AdminUsername  string // 管理员用户名
-	AdminPassword  string // 管理员密码
-	SessionTimeout int    // 会话超时时间（秒）
+	UserPassword   string `json:"userPassword"`   // 用户密码
+	AdminUsername  string `json:"adminUsername"`  // 管理员用户名
+	AdminPassword  string `json:"adminPassword"`  // 管理员密码
+	SessionTimeout int    `json:"sessionTimeout"` // 会话超时时间（秒）
 }
 
 // AccessConfig 访问控制配置结构
@@ -532,10 +532,10 @@ type AccessConfig struct {
 
 // RateLimitConfig 速率限制配置结构
 type RateLimitConfig struct {
-	Enabled     bool  // 是否启用
-	RateLimit   int   // 每分钟上传限制
-	DailyLimit  int   // 每日上传限制
-	MaxFileSize int64 // 最大文件大小（字节）
+	Enabled     bool  `json:"enabled"`     // 是否启用
+	RateLimit   int   `json:"rateLimit"`   // 每分钟上传限制
+	DailyLimit  int   `json:"dailyLimit"`  // 每日上传限制
+	MaxFileSize int64 `json:"maxFileSize"` // 最大文件大小（字节）
 }
 
 // ModerationConfig 内容审核配置结构
@@ -547,20 +547,20 @@ type ModerationConfig struct {
 
 // ScheduleConfig 调度策略配置结构
 type ScheduleConfig struct {
-	Strategy string // 调度策略: priority, weight, round-robin, random
+	Strategy string `json:"strategy"` // 调度策略: priority, weight, round-robin, random
 }
 
 // AppConfig 应用配置结构
 type AppConfig struct {
-	Host string // 监听地址
-	Port int    // 监听端口
-	Mode string // 运行模式
+	Host string `json:"host"` // 监听地址
+	Port int    `json:"port"` // 监听端口
+	Mode string `json:"mode"` // 运行模式
 }
 
 // JwtConfig JWT配置结构
 type JwtConfig struct {
-	Secret string // JWT密钥
-	Expire int    // 过期时间(秒)
+	Secret string `json:"secret"` // JWT密钥
+	Expire int    `json:"expire"` // 过期时间(秒)
 }
 
 // GetAppConfig 获取应用配置

@@ -32,7 +32,7 @@ build: build-frontend build-server
 
 generate-icon:
 	cd server/tools/png2ico && go run . ../../systray/icon.png ../../systray/icon.ico
-	cd server && rsrc -ico systray/icon.ico -o rsrc.syso
+	cd server && rsrc -ico systray/icon.ico -o windows/rsrc.syso
 
 build-gui-windows: build-frontend generate-icon
 	cd server && go build -tags gui -ldflags "-H=windowsgui" -o imgbed-gui.exe .
@@ -46,4 +46,4 @@ build-gui: build-frontend
 clean:
 	rm -rf server/static/embed/admin server/static/embed/site
 	rm -f server/imgbed server/imgbed.exe server/imgbed-gui server/imgbed-gui.exe
-	rm -f server/rsrc.syso server/systray/icon.ico
+	rm -f server/windows/rsrc.syso server/systray/icon.ico
