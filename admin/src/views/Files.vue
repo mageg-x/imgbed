@@ -281,6 +281,14 @@ function isImageType(type_) {
   return type_?.startsWith('image/')
 }
 
+function isImageUrl(url, type_) {
+  if (type_?.startsWith('image/')) return true
+  if (!url) return false
+  const ext = url.split('?')[0].split('#')[0].toLowerCase()
+  const imageExts = ['.svg', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.ico']
+  return imageExts.some(e => ext.endsWith(e))
+}
+
 function hasImageError(fileId) {
   return imageErrors.value.has(fileId)
 }
@@ -600,9 +608,9 @@ async function executeCleanup() {
         <div class="aspect-square flex items-center justify-center cursor-pointer flex-shrink-0"
           :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-50'"
           @click="isPreviewable(file.type) && openPreview(file)">
-          <img v-if="isImageType(file.type) && !hasImageError(file.id)" :src="file.url || `/api/v1/file/${file.id}`" :alt="file.name"
+          <img v-if="isImageUrl(file.url, file.type) && !hasImageError(file.id)" :src="file.url || `/api/v1/file/${file.id}`" :alt="file.name"
             class="w-full h-full object-cover" @error="handleImageError(file.id)" />
-          <div v-else-if="isImageType(file.type) && hasImageError(file.id)" class="w-full h-full flex flex-col items-center justify-center gap-1"
+          <div v-else-if="isImageUrl(file.url, file.type) && hasImageError(file.id)" class="w-full h-full flex flex-col items-center justify-center gap-1"
             :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-100'">
             <FileText class="w-8 h-8" :class="isDark ? 'text-gray-500' : 'text-gray-400'" />
             <span class="text-xs" :class="isDark ? 'text-gray-500' : 'text-gray-400'">{{ t('common.loadFailed') }}</span>
@@ -677,9 +685,9 @@ async function executeCleanup() {
                   <div
                     class="w-6 h-6 sm:w-8 sm:h-8 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center"
                     :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-100'">
-                    <img v-if="isImageType(file.type) && !hasImageError(file.id)" :src="file.url || `/api/v1/file/${file.id}`" :alt="file.name"
+                    <img v-if="isImageUrl(file.url, file.type) && !hasImageError(file.id)" :src="file.url || `/api/v1/file/${file.id}`" :alt="file.name"
                       class="w-full h-full object-cover" @error="handleImageError(file.id)" />
-                    <FileText v-else-if="isImageType(file.type) && hasImageError(file.id)" class="w-3 h-3 sm:w-4 sm:h-4"
+                    <FileText v-else-if="isImageUrl(file.url, file.type) && hasImageError(file.id)" class="w-3 h-3 sm:w-4 sm:h-4"
                       :class="isDark ? 'text-gray-500' : 'text-gray-400'" />
                     <component v-else :is="getIcon(file.type)" class="w-3 h-3 sm:w-4 sm:h-4"
                       :class="isDark ? 'text-gray-500' : 'text-gray-400'" />
@@ -853,7 +861,7 @@ async function executeCleanup() {
     </div>
     <div v-else-if="detailFile" class="space-y-3 sm:space-y-4">
       <!-- 预览图 -->
-      <div v-if="isImageType(detailFile.type)" class="flex justify-center">
+      <div v-if="isImageUrl(detailFile.links?.url || detailFile.url, detailFile.type)" class="flex justify-center">
         <img :src="detailFile.links?.url || detailFile.url || `${getOrigin()}/api/v1/file/${detailFile.id}`"
           :alt="detailFile.name" class="max-h-48 sm:max-h-60 object-contain rounded-lg border w-full"
           :class="isDark ? 'border-[var(--border)]' : 'border-gray-200'" />

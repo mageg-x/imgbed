@@ -351,9 +351,7 @@ export default {
     title: '集成文档',
     getApiToken: '获取 API Token',
     getApiTokenTip: '在 API Token 管理页面创建 Token，然后替换示例中的 your_token 和 your_secret',
-    curlAnonymous: '匿名上传',
     curlToken: 'Token 上传',
-    typoraAnonymous: '匿名上传',
     typoraToken: 'Token 上传 (推荐)',
     pythonScript: 'Python 脚本',
     pythonFullExample: '完整示例',
@@ -364,7 +362,6 @@ export default {
     responseFormat: '响应格式',
     successResponse: '成功响应 (code: 0)',
     uploadApi: '上传接口',
-    anonymousApi: '匿名接口',
     batchApi: '批量接口',
     // Code example comments
     pythonUsageExample: '# 使用示例',

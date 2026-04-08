@@ -74,8 +74,32 @@ func DetectMimeTypeByContent(file *multipart.FileHeader) (string, error) {
 }
 
 func isSVG(header []byte) bool {
-	content := strings.ToLower(string(header))
-	return strings.Contains(content, "<svg") || strings.Contains(content, "<?xml")
+	content := strings.TrimSpace(string(header))
+	lowerContent := strings.ToLower(content)
+
+	if strings.HasPrefix(lowerContent, "<?xml") || strings.HasPrefix(lowerContent, "<svg") {
+		if containsJSKeywords(lowerContent) {
+			return false
+		}
+		return strings.Contains(lowerContent, "<svg")
+	}
+
+	return false
+}
+
+func containsJSKeywords(content string) bool {
+	jsKeywords := []string{
+		"function(", "function ", "=>",
+		"document.", "window.", "alert(",
+		"eval(", "settimeout(", "setinterval(",
+		"<script", "javascript:",
+	}
+	for _, keyword := range jsKeywords {
+		if strings.Contains(content, keyword) {
+			return true
+		}
+	}
+	return false
 }
 
 func ValidateFileType(file *multipart.FileHeader) (string, bool) {

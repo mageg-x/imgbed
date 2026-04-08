@@ -351,9 +351,7 @@ export default {
     title: 'Integration Guide',
     getApiToken: 'Get API Token',
     getApiTokenTip: 'Create a token on the API Token Management page, then replace your_token and your_secret in the examples',
-    curlAnonymous: 'Anonymous Upload',
     curlToken: 'Token Upload',
-    typoraAnonymous: 'Anonymous Upload',
     typoraToken: 'Token Upload (Recommended)',
     pythonScript: 'Python Script',
     pythonFullExample: 'Full Example',
@@ -364,7 +362,6 @@ export default {
     responseFormat: 'Response Format',
     successResponse: 'Success Response (code: 0)',
     uploadApi: 'Upload API',
-    anonymousApi: 'Anonymous API',
     batchApi: 'Batch API',
     // Code example comments
     pythonUsageExample: '# Usage example',

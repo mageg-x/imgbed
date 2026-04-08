@@ -111,18 +111,9 @@ onUnmounted(() => {
 
 async function loadConfig() {
   try {
-    const [uploadRes, siteRes] = await Promise.all([
-      fetch('/api/v1/config/upload').then(r => r.json()),
-      fetch('/api/v1/config/site').then(r => r.json())
-    ])
+    const uploadRes = await fetch('/api/v1/config/upload').then(r => r.json())
     if (uploadRes.code === 0 && uploadRes.data?.maxSize) {
       maxFileSize.value = uploadRes.data.maxSize
-    }
-    if (siteRes.code === 0 && siteRes.data) {
-      siteConfig.value = {
-        name: siteRes.data.name || 'ImgBed',
-        logo: siteRes.data.logo || ''
-      }
     }
   } catch { }
 }
@@ -283,7 +274,7 @@ async function removeItem(id) {
 
   if (item.status === 'done' && item.fileId) {
     try {
-      await ElMessageBox.confirm(t('home.confirmDeleteFile'), t('common.confirmDelete'), {
+      await ElMessageBox.confirm(t('home.confirmDeleteFile'), t('home.confirmDelete'), {
         confirmButtonText: t('common.delete'),
         cancelButtonText: t('common.cancel'),
         type: 'warning'
@@ -292,7 +283,7 @@ async function removeItem(id) {
       ElMessage.success(t('common.deleted'))
     } catch (err) {
       if (err?.response?.status === 404) {
-        ElMessage.info(t('home.fileDeletedOnServer'))
+        // 文件不存在，request.js 已显示过错误消息，这里不再重复显示
       } else if (err?.response?.status === 401) {
         ElMessage.error(t('common.sessionExpiredPleaseReLogin'))
         authStore.logout()
@@ -366,6 +357,14 @@ function getFileTypeIcon(type) {
 
 function isImageType(type) {
   return type?.startsWith('image/')
+}
+
+function isImageUrl(url, type) {
+  if (type?.startsWith('image/')) return true
+  if (!url) return false
+  const ext = url.split('?')[0].split('#')[0].toLowerCase()
+  const imageExts = ['.svg', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.ico']
+  return imageExts.some(e => ext.endsWith(e))
 }
 
 function hasImageError(itemId) {
@@ -533,8 +532,8 @@ function closeLangDropdown() {
 
             <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg overflow-hidden flex-shrink-0"
               :class="themeStore.isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-100'">
-              <img v-if="isImageType(item.type) && item.url && !hasImageError(item.id)" :src="item.url" class="w-full h-full object-cover" @error="handleImageError(item.id)" />
-              <Image v-else-if="isImageType(item.type) && item.url && hasImageError(item.id)" class="w-5 h-5 sm:w-6 sm:h-6 m-2 sm:m-3"
+              <img v-if="item.url && !hasImageError(item.id)" :src="item.url" class="w-full h-full object-cover" @error="handleImageError(item.id)" />
+              <component v-else-if="item.url && hasImageError(item.id)" :is="getFileTypeIcon(item.type)" class="w-5 h-5 sm:w-6 sm:h-6 m-2 sm:m-3"
                 :class="themeStore.isDark ? 'text-gray-500' : 'text-gray-400'" />
               <component v-else :is="getFileTypeIcon(item.type)" class="w-5 h-5 sm:w-6 sm:h-6 m-2 sm:m-3"
                 :class="themeStore.isDark ? 'text-gray-500' : 'text-gray-400'" />

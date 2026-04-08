@@ -47,6 +47,14 @@ func convertToCDNUrl(originalUrl string) string {
 	return fmt.Sprintf("%s/%s/%s", proxyUrl, encoded, filePath)
 }
 
+// GetCDNUrl 公开的 CDN URL 转换方法，供 handler 层使用
+func (s *FileService) GetCDNUrl(originalUrl string, channelType string) string {
+	if channelType == "local" {
+		return originalUrl
+	}
+	return convertToCDNUrl(originalUrl)
+}
+
 // parseSearchSource 解析搜索字符串，支持 "source:文件名" 格式
 // source 支持前缀模糊匹配（如 api_git 匹配 api_github、api_gitlab）
 // 文件名支持模糊匹配
@@ -153,7 +161,7 @@ func (s *FileService) CheckFileByChecksum(checksum string) (*model.File, error) 
 
 // Upload 上传单个文件
 func (s *FileService) Upload(ctx context.Context, file *multipart.FileHeader, channelID string, tags []string, source string, uploadedByToken string, clientIP string, userAgent string) (*model.UploadResult, error) {
-	allowedTypes := config.GetStringSlice("upload.allowedTypes")
+	allowedTypes := config.GetStringSlice("upload.allowed_types")
 
 	actualMimeType, err := utils.ValidateFileForUpload(file, allowedTypes)
 	if err != nil {
@@ -309,17 +317,23 @@ func (s *FileService) Upload(ctx context.Context, file *multipart.FileHeader, ch
 		fileURL = "/api/v1/file/" + fileID
 	}
 
+	// CDN 转换（local 渠道不转换）
+	cdnURL := fileURL
+	if string(driver.Type()) != "local" {
+		cdnURL = convertToCDNUrl(fileURL)
+	}
+
 	// 构建多格式链接
 	links := model.Links{
-		URL:      fileURL,
-		Markdown: fmt.Sprintf("![%s](%s)", file.Filename, fileURL),
-		HTML:     fmt.Sprintf(`<img src="%s" alt="%s">`, fileURL, file.Filename),
+		URL:      cdnURL,
+		Markdown: fmt.Sprintf("![%s](%s)", file.Filename, cdnURL),
+		HTML:     fmt.Sprintf(`<img src="%s" alt="%s">`, cdnURL, file.Filename),
 	}
 
 	return &model.UploadResult{
 		ID:          fileID,
 		Name:        file.Filename,
-		URL:         fileURL,
+		URL:         cdnURL,
 		Size:        result.Size,
 		Type:        mimeType,
 		Channel:     channelID,

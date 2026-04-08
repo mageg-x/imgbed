@@ -99,6 +99,14 @@ function isImageType(type_) {
   return type_?.startsWith('image/')
 }
 
+function isImageUrl(url, type_) {
+  if (type_?.startsWith('image/')) return true
+  if (!url) return false
+  const ext = url.split('?')[0].split('#')[0].toLowerCase()
+  const imageExts = ['.svg', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.ico']
+  return imageExts.some(e => ext.endsWith(e))
+}
+
 function hasImageError(fileId) {
   return imageErrors.value.has(fileId)
 }
@@ -315,8 +323,8 @@ async function downloadFile(file) {
           <div class="aspect-square flex items-center justify-center cursor-pointer"
             :class="themeStore.isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-50'"
             @click="isPreviewable(file.type) && openPreview(file)">
-            <img v-if="isImageType(file.type) && !hasImageError(file.id)" :src="file.url" :alt="file.name" class="w-full h-full object-cover" @error="handleImageError(file.id)" />
-            <Image v-else-if="isImageType(file.type) && hasImageError(file.id)" class="w-10 h-10 sm:w-12 sm:h-12"
+            <img v-if="file.url && !hasImageError(file.id)" :src="file.url" :alt="file.name" class="w-full h-full object-cover" @error="handleImageError(file.id)" />
+            <component v-else-if="file.url && hasImageError(file.id)" :is="getIcon(file.type)" class="w-10 h-10 sm:w-12 sm:h-12"
               :class="themeStore.isDark ? 'text-gray-600' : 'text-gray-400'" />
             <component v-else :is="getIcon(file.type)" class="w-10 h-10 sm:w-12 sm:h-12"
               :class="themeStore.isDark ? 'text-gray-600' : 'text-gray-400'" />
@@ -385,9 +393,9 @@ async function downloadFile(file) {
                     <div
                       class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center"
                       :class="themeStore.isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-100'">
-                      <img v-if="isImageType(file.type) && !hasImageError(file.id)" :src="file.url" :alt="file.name"
+                      <img v-if="file.url && !hasImageError(file.id)" :src="file.url" :alt="file.name"
                         class="w-full h-full object-cover" @error="handleImageError(file.id)" />
-                      <Image v-else-if="isImageType(file.type) && hasImageError(file.id)" class="w-4 h-4 sm:w-5 sm:h-5"
+                      <component v-else-if="file.url && hasImageError(file.id)" :is="getIcon(file.type)" class="w-4 h-4 sm:w-5 sm:h-5"
                         :class="themeStore.isDark ? 'text-gray-500' : 'text-gray-400'" />
                       <component v-else :is="getIcon(file.type)" class="w-4 h-4 sm:w-5 sm:h-5"
                         :class="themeStore.isDark ? 'text-gray-500' : 'text-gray-400'" />

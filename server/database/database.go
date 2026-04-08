@@ -166,7 +166,7 @@ func initDefaultData() error {
 		{"upload.max_size", "20971520"},
 		{"upload.chunk_size", "5242880"},
 		{"upload.default_channel", ""},
-		{"upload.allowed_types", ""},
+		{"upload.allowed_types", "image/*"},
 		{"upload.auto_retry", "true"},
 		{"upload.retry_count", "3"},
 

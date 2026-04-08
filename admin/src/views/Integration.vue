@@ -27,9 +27,6 @@ function getBaseUrl() {
   return window.location.origin
 }
 
-const curlUploadAnonymous = `curl -X POST ${getBaseUrl()}/api/v1/upload/anonymous \\
-  -F "file=@${'{filepath}'}"`
-
 const curlUploadToken = `curl -X POST ${getBaseUrl()}/api/v1/upload \\
   -H "X-API-Token: your_token" \\
   -H "X-API-Secret: your_secret" \\
@@ -38,7 +35,7 @@ const curlUploadToken = `curl -X POST ${getBaseUrl()}/api/v1/upload \\
 const pythonCode = `import requests
 
 class ImgBedClient:
-    def __init__(self, base_url, api_token=None, api_secret=None):
+    def __init__(self, base_url, api_token, api_secret):
         self.base_url = base_url
         self.api_token = api_token
         self.api_secret = api_secret
@@ -46,16 +43,11 @@ class ImgBedClient:
     def upload(self, image_path):
         with open(image_path, 'rb') as f:
             files = {'file': f}
-            headers = {}
-            url = f"{self.base_url}/api/v1/upload/anonymous"
-
-            if self.api_token and self.api_secret:
-                headers = {
-                    'X-API-Token': self.api_token,
-                    'X-API-Secret': self.api_secret
-                }
-                url = f"{self.base_url}/api/v1/upload"
-
+            headers = {
+                'X-API-Token': self.api_token,
+                'X-API-Secret': self.api_secret
+            }
+            url = f"{self.base_url}/api/v1/upload"
             response = requests.post(url, files=files, headers=headers)
             return response.json()
 
@@ -76,14 +68,15 @@ const javascriptCode = `<!DOCTYPE html>
         async function uploadImage(file) {
             const formData = new FormData();
             formData.append('file', file);
-            const headers = {};
-            let url = BASE_URL + '/api/v1/upload/anonymous';
-            if (API_TOKEN && API_SECRET) {
-                headers['X-API-Token'] = API_TOKEN;
-                headers['X-API-Secret'] = API_SECRET;
-                url = BASE_URL + '/api/v1/upload';
-            }
-            const response = await fetch(url, { method: 'POST', headers, body: formData });
+            const headers = {
+                'X-API-Token': API_TOKEN,
+                'X-API-Secret': API_SECRET
+            };
+            const response = await fetch(BASE_URL + '/api/v1/upload', {
+                method: 'POST',
+                headers,
+                body: formData
+            });
             return await response.json();
         }
         document.getElementById('editor').addEventListener('paste', async (e) => {
@@ -106,13 +99,7 @@ const javascriptCode = `<!DOCTYPE html>
 </body>
 </html>`
 
-const typoraAnonymous = `# Typora image upload service config
-# Settings -> Image -> Upload Service -> Custom Command
-curl -X POST ${getBaseUrl()}/api/v1/upload/anonymous \\
-  -F "file=@${'{filepath}'}" \\
-  | grep -o '"url":"[^"]*"' | cut -d'"' -f4`
-
-const typoraToken = `# Typora image upload service config (Recommended)
+const typoraToken = `# Typora image upload service config
 # Settings -> Image -> Upload Service -> Custom Command
 curl -X POST ${getBaseUrl()}/api/v1/upload \\
   -H "X-API-Token: your_token" \\
@@ -154,19 +141,17 @@ console.log('Upload success:', result.data.links.markdown);`
 const sections = computed(() => [
   {
     id: 'curl',
-    title: t('integration.curlAnonymous'),
+    title: 'cURL',
     icon: Terminal,
     items: [
-      { label: t('integration.curlAnonymous'), code: curlUploadAnonymous },
       { label: t('integration.curlToken'), code: curlUploadToken }
     ]
   },
   {
     id: 'typora',
-    title: t('integration.typoraAnonymous'),
+    title: 'Typora',
     icon: Image,
     items: [
-      { label: t('integration.typoraAnonymous'), code: typoraAnonymous },
       { label: t('integration.typoraToken'), code: typoraToken }
     ]
   },
@@ -270,15 +255,10 @@ const sections = computed(() => [
 }</pre>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
         <div class="p-3 rounded-lg" :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-50'">
           <span class="font-medium text-green-500">{{ t('integration.uploadApi') }}</span>
           <p class="mt-1 font-mono" :class="isDark ? 'text-gray-400' : 'text-gray-600'">POST /api/v1/upload</p>
-        </div>
-        <div class="p-3 rounded-lg" :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-50'">
-          <span class="font-medium text-blue-500">{{ t('integration.anonymousApi') }}</span>
-          <p class="mt-1 font-mono" :class="isDark ? 'text-gray-400' : 'text-gray-600'">POST /api/v1/upload/anonymous
-          </p>
         </div>
         <div class="p-3 rounded-lg" :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-50'">
           <span class="font-medium text-purple-500">{{ t('integration.batchApi') }}</span>

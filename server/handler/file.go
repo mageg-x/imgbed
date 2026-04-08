@@ -517,12 +517,14 @@ func (h *FileHandler) CheckChecksum(c *gin.Context) {
 		return
 	}
 
+	cdnURL := h.fileService.GetCDNUrl(file.URL, file.ChannelType)
+
 	response.Success(c, gin.H{
 		"exists": true,
 		"file": gin.H{
 			"id":   file.ID,
 			"name": file.Name,
-			"url":  file.URL,
+			"url":  cdnURL,
 			"size": file.Size,
 			"type": file.Type,
 		},
