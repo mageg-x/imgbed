@@ -61,9 +61,7 @@ func NewTelegramDriver(cfg *ChannelConfig) (StorageDriver, error) {
 		channelID:         channelID,
 		channelID2:        channelID2,
 		channelIDInternal: cfg.ID,
-		client: &http.Client{
-			Timeout: 60 * time.Second,
-		},
+		client:            NewProxyHTTPClient(ProxyURLFuncFromConfig(), 60*time.Second),
 	}, nil
 }
 

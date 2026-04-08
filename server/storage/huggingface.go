@@ -44,10 +44,10 @@ type lfsBatchResponse struct {
 }
 
 type lfsObject struct {
-	Oid     string       `json:"oid"`
-	Size    int64        `json:"size"`
+	Oid     string      `json:"oid"`
+	Size    int64       `json:"size"`
 	Error   *lfsError   `json:"error,omitempty"`
-	Actions *lfsActions  `json:"actions,omitempty"`
+	Actions *lfsActions `json:"actions,omitempty"`
 }
 
 type lfsError struct {
@@ -98,9 +98,7 @@ func NewHuggingFaceDriver(cfg *ChannelConfig) (StorageDriver, error) {
 		repoID:            repoID,
 		repoType:          repoType,
 		channelIDInternal: cfg.ID,
-		client: &http.Client{
-			Timeout: 120 * time.Second,
-		},
+		client:            NewProxyHTTPClient(ProxyURLFuncFromConfig(), 120*time.Second),
 	}, nil
 }
 
@@ -216,8 +214,8 @@ func (d *HuggingFaceDriver) preupload(path string, fileSize int64, sample string
 	reqBody := map[string]interface{}{
 		"files": []map[string]interface{}{
 			{
-				"path":  path,
-				"size":  fileSize,
+				"path":   path,
+				"size":   fileSize,
 				"sample": sample,
 			},
 		},

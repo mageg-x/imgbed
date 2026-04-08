@@ -1,0 +1,16 @@
+{
+  "name": "imgbed-proxy-worker",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "aws4fetch": "^1.0.17"
+  },
+  "devDependencies": {
+    "esbuild": "^0.20.0",
+    "wrangler": "^4.0.0"
+  },
+  "scripts": {
+    "build": "esbuild src/index.js --bundle --minify --format=esm --platform=browser --target=chrome90 --outfile=dist/bundle.js",
+    "deploy": "npm run build && wrangler deploy"
+  }
+}

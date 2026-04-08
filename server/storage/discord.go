@@ -52,9 +52,7 @@ func NewDiscordDriver(cfg *ChannelConfig) (StorageDriver, error) {
 		channelID:         channelID,
 		isNitro:           isNitro,
 		channelIDInternal: cfg.ID,
-		client: &http.Client{
-			Timeout: 60 * time.Second,
-		},
+		client:            NewProxyHTTPClient(ProxyURLFuncFromConfig(), 60*time.Second),
 	}, nil
 }
 

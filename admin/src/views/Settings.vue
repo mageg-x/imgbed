@@ -702,11 +702,9 @@ const jwtConfig = reactive({
           <div class="p-4 rounded-xl" :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-50'">
             <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
               <div>
-                <el-tooltip content="启用后将图片URL转换为CDN代理地址，实现加速访问" placement="top">
-                  <h3 class="font-medium cursor-help">CDN 代理加速</h3>
-                </el-tooltip>
+                <h3 class="font-medium">CDN 代理加速</h3>
                 <p class="text-sm mt-0.5" :class="isDark ? 'text-gray-400' : 'text-gray-500'">
-                  将图片直链转换为 CDN 代理地址，提升访问速度
+                  启用后同时开启下载加速和上传代理，解决被墙问题
                 </p>
               </div>
               <label class="flex items-center gap-2 cursor-pointer">
@@ -717,28 +715,44 @@ const jwtConfig = reactive({
 
             <div v-if="cdnConfig.enabled" class="space-y-4">
               <div>
-                <el-tooltip content="Cloudflare Worker 或其他 CDN 代理的基础地址" placement="top">
-                  <label class="block text-sm font-medium mb-2 cursor-help">代理地址</label>
-                </el-tooltip>
+                <label class="block text-sm font-medium mb-2">代理地址</label>
                 <input v-model="cdnConfig.proxyUrl" type="text" placeholder="https://img-proxy.xxx.workers.dev"
                   class="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm"
                   :class="isDark ? 'bg-[var(--bg-secondary)] border-[var(--border)]' : 'bg-white border-gray-200'" />
                 <p class="text-xs mt-1.5" :class="isDark ? 'text-gray-500' : 'text-gray-400'">
-                  填写 Cloudflare Worker 或类似 CDN 代理的基础地址
+                  填写 Cloudflare Worker 地址，下载加速和上传代理共用同一地址
                 </p>
               </div>
             </div>
           </div>
 
           <div class="p-4 rounded-xl" :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-50'">
-            <h3 class="font-medium mb-2">工作原理</h3>
-            <ul class="text-sm space-y-1" :class="isDark ? 'text-gray-400' : 'text-gray-500'">
-              <li>1. 上传图片时，原始直链存入数据库</li>
-              <li>2. 返回给客户端时，URL 会被转换为 CDN 代理地址</li>
-              <li>3. 格式：<code class="px-1 py-0.5 rounded text-xs"
-                  :class="isDark ? 'bg-gray-700' : 'bg-gray-200'">{proxyUrl}/{base58(原始基础URL)}/{文件名}</code></li>
-              <li>4. CDN 代理解码 base58 获取原始地址并拉取图片</li>
-            </ul>
+            <h3 class="font-medium mb-2">功能说明</h3>
+            <div class="text-sm space-y-3" :class="isDark ? 'text-gray-400' : 'text-gray-500'">
+              <div>
+                <span class="font-medium" :class="isDark ? 'text-gray-300' : 'text-gray-700'">下载加速：</span>
+                <ul class="ml-4 mt-1 space-y-1 list-disc">
+                  <li>将图片直链转换为 CDN 代理地址，提升访问速度</li>
+                  <li>格式：<code class="px-1 py-0.5 rounded text-xs" :class="isDark ? 'bg-gray-700' : 'bg-gray-200'">{proxyUrl}/{base58(原始URL)}/{文件名}</code></li>
+                </ul>
+              </div>
+              <div>
+                <span class="font-medium" :class="isDark ? 'text-gray-300' : 'text-gray-700'">上传代理：</span>
+                <ul class="ml-4 mt-1 space-y-1 list-disc">
+                  <li>代理上传请求到 Telegram/Discord/HuggingFace/S3/R2 等服务</li>
+                  <li>格式：<code class="px-1 py-0.5 rounded text-xs" :class="isDark ? 'bg-gray-700' : 'bg-gray-200'">{proxyUrl}/proxy/{base58(目标host)}/{路径}</code></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-4 rounded-xl" :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-50'">
+            <h3 class="font-medium mb-2">部署说明</h3>
+            <ol class="text-sm space-y-1 list-decimal list-inside" :class="isDark ? 'text-gray-400' : 'text-gray-500'">
+              <li>将 <code class="px-1 py-0.5 rounded text-xs" :class="isDark ? 'bg-gray-700' : 'bg-gray-200'">server/proxy/worker.js</code> 部署到 Cloudflare Workers</li>
+              <li>Worker 同时支持下载代理（根路径）和上传代理（/proxy/ 路径）</li>
+              <li>在此填写 Worker 地址并启用即可</li>
+            </ol>
           </div>
 
           <button @click="saveCdnConfig"

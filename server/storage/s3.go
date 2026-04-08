@@ -91,10 +91,13 @@ func NewS3Driver(cfg *ChannelConfig) (StorageDriver, error) {
 		urlEndpoint = strings.TrimPrefix(urlEndpoint, "http://")
 	}
 
-	// 加载AWS配置
+	// 创建自定义 HTTP 客户端（支持 S3 代理，重新计算签名）
+	httpClient := NewS3ProxyHTTPClient(ProxyURLFuncFromConfig(), accessKey, secretKey, region, "s3", 60*time.Second)
+
 	awsCfg, err := config.LoadDefaultConfig(context.Background(),
 		config.WithRegion(region),
 		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(accessKey, secretKey, "")),
+		config.WithHTTPClient(httpClient),
 	)
 	if err != nil {
 		utils.Errorf("new s3 driver: load aws config failed, error=%v", err)
@@ -150,10 +153,13 @@ func NewR2Driver(cfg *ChannelConfig) (StorageDriver, error) {
 	// R2的端点格式
 	endpoint := fmt.Sprintf("https://%s.r2.cloudflarestorage.com", accountID)
 
-	// 加载AWS配置
+	// 创建自定义 HTTP 客户端（支持 S3 代理，重新计算签名）
+	httpClient := NewS3ProxyHTTPClient(ProxyURLFuncFromConfig(), accessKey, secretKey, "auto", "s3", 60*time.Second)
+
 	awsCfg, err := config.LoadDefaultConfig(context.Background(),
 		config.WithRegion("auto"),
 		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(accessKey, secretKey, "")),
+		config.WithHTTPClient(httpClient),
 	)
 	if err != nil {
 		utils.Errorf("new r2 driver: load aws config failed, error=%v", err)
@@ -225,10 +231,10 @@ func (d *S3Driver) Upload(ctx context.Context, req *UploadRequest) (*UploadResul
 
 	// 上传到S3
 	_, err := d.client.PutObject(ctx, &s3.PutObjectInput{
-		Bucket:        aws.String(d.bucket),
-		Key:           aws.String(key),
-		Body:          req.Reader,
-		ContentType:   aws.String(mimeType),
+		Bucket:      aws.String(d.bucket),
+		Key:         aws.String(key),
+		Body:        req.Reader,
+		ContentType: aws.String(mimeType),
 	})
 	if err != nil {
 		utils.Errorf("s3 upload: put object failed, key=%s, error=%v", key, err)
