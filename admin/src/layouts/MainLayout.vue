@@ -49,42 +49,88 @@ function closeMobileMenu() {
     <div v-if="isMobileMenuOpen" @click="closeMobileMenu" class="fixed inset-0 bg-black/50 z-40 lg:hidden"></div>
 
     <!-- 侧边栏 -->
-    <aside class="fixed left-0 top-0 h-full flex flex-col transition-all duration-300 z-50" :class="[
-      isCollapsed ? 'w-[72px]' : ' w-52',
-      isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-    ]" :style="{ background: themeStore.isDark ? 'var(--bg-secondary)' : 'white' }">
+    <aside class="fixed left-0 top-0 h-full flex flex-col transition-all duration-300 z-50 shadow-2xl"
+      :class="[
+        isCollapsed ? 'w-[72px]' : ' w-56',
+        isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+      ]"
+      :style="{
+        background: themeStore.isDark
+          ? 'linear-gradient(180deg, #1e1e2e 0%, #181825 100%)'
+          : 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)',
+        borderRight: themeStore.isDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid #e2e8f0'
+      }">
 
       <!-- Logo -->
-      <div class="h-16 flex items-center gap-3 px-4 border-b pt-14 lg:pt-0" :style="{ borderColor: 'var(--border)' }">
-        <img src="/imgbed.webp" alt="Logo" class="w-10 h-10 rounded-xl flex-shrink-0 object-contain" />
+      <div class="h-16 flex items-center gap-3 px-4 pt-14 lg:pt-0">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30 flex-shrink-0">
+          <img src="/imgbed.webp" alt="Logo" class="w-6 h-6 object-contain" />
+        </div>
         <transition name="fade">
-          <span v-if="!isCollapsed" class="font-bold text-lg text-gradient whitespace-nowrap">ImgBed</span>
+          <span v-if="!isCollapsed" class="font-bold text-lg bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent whitespace-nowrap">
+            ImgBed
+          </span>
         </transition>
       </div>
 
+      <!-- 导航标签 -->
+      <div class="px-4 pb-2" v-if="!isCollapsed">
+        <p class="text-[10px] uppercase tracking-wider font-semibold" :class="themeStore.isDark ? 'text-gray-500' : 'text-gray-400'">
+          导航菜单
+        </p>
+      </div>
+
       <!-- 导航 -->
-      <nav class="flex-1 p-3 space-y-1 overflow-y-auto">
-        <router-link v-for="item in menuItems" :key="item.path" :to="item.path" @click="closeMobileMenu"
-          class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all group whitespace-nowrap"
-          :class="activeNav === item.path
-            ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-500/25'
-            : (themeStore.isDark ? 'text-gray-400 hover:text-white hover:bg-[var(--bg-hover)]' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100')">
-          <component :is="item.icon" class="w-5 h-5 flex-shrink-0" />
-          <transition name="fade">
-            <span v-if="!isCollapsed" class="font-medium">{{ item.label }}</span>
-          </transition>
-        </router-link>
+      <nav class="flex-1 px-3 overflow-y-auto">
+        <div class="space-y-1">
+          <router-link v-for="item in menuItems" :key="item.path" :to="item.path" @click="closeMobileMenu"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group whitespace-nowrap no-relative"
+            :class="activeNav === item.path
+              ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-500/30 -ml-1 pl-4'
+              : (themeStore.isDark
+                ? 'text-gray-400 hover:text-white hover:bg-white/[0.05]'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100')">
+            <!-- 激活指示器 -->
+            <div v-if="activeNav === item.path" class="absolute left-0 w-1 h-6 bg-white rounded-r-full"></div>
+
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center transition-all"
+              :class="activeNav === item.path
+                ? 'bg-white/20'
+                : (themeStore.isDark ? 'bg-white/[0.05]' : 'bg-gray-100')">
+              <component :is="item.icon" class="w-4 h-4 flex-shrink-0" />
+            </div>
+            <transition name="fade">
+              <span v-if="!isCollapsed" class="text-sm font-medium">{{ item.label }}</span>
+            </transition>
+          </router-link>
+        </div>
       </nav>
 
       <!-- 底部 -->
-      <div class="p-3 space-y-1 border-t" :style="{ borderColor: 'var(--border)' }">
+      <div class="p-3 border-t" :class="themeStore.isDark ? 'border-white/5' : 'border-gray-200'">
+        <!-- 折叠按钮 -->
         <button @click="isCollapsed = !isCollapsed"
-          class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all whitespace-nowrap"
-          :class="themeStore.isDark ? 'text-gray-400 hover:text-white hover:bg-[var(--bg-hover)]' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'">
-          <PanelLeftClose v-if="!isCollapsed" class="w-5 h-5 flex-shrink-0" />
-          <Maximize2 v-else class="w-5 h-5 flex-shrink-0" />
+          class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 mb-2"
+          :class="themeStore.isDark ? 'text-gray-400 hover:text-white hover:bg-white/[0.05]' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'">
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center" :class="themeStore.isDark ? 'bg-white/[0.05]' : 'bg-gray-100'">
+            <PanelLeftClose v-if="!isCollapsed" class="w-4 h-4" />
+            <Maximize2 v-else class="w-4 h-4" />
+          </div>
           <transition name="fade">
-            <span v-if="!isCollapsed">收起</span>
+            <span v-if="!isCollapsed" class="text-sm font-medium">收起菜单</span>
+          </transition>
+        </button>
+
+        <!-- 主题切换 -->
+        <button @click="themeStore.toggle"
+          class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200"
+          :class="themeStore.isDark ? 'text-gray-400 hover:text-white hover:bg-white/[0.05]' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'">
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center" :class="themeStore.isDark ? 'bg-white/[0.05]' : 'bg-gray-100'">
+            <Sun v-if="themeStore.isDark" class="w-4 h-4" />
+            <Moon v-else class="w-4 h-4" />
+          </div>
+          <transition name="fade">
+            <span v-if="!isCollapsed" class="text-sm font-medium">{{ themeStore.isDark ? '浅色模式' : '深色模式' }}</span>
           </transition>
         </button>
       </div>
@@ -99,11 +145,7 @@ function closeMobileMenu() {
         <div class="flex items-center justify-between gap-4">
           <h1 class="text-xl font-semibold pl-10 lg:pl-0">{{ route.meta?.title || '管理后台' }}</h1>
           <div class="flex items-center gap-2 sm:gap-4 flex-wrap">
-            <button @click="themeStore.toggle" class="p-2 rounded-lg transition-all border-0"
-              :class="themeStore.isDark ? 'text-gray-400 hover:text-white hover:bg-[var(--bg-hover)]' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'">
-              <Sun v-if="themeStore.isDark" class="w-5 h-5" />
-              <Moon v-else class="w-5 h-5" />
-            </button>
+
             <span class="text-sm px-3 py-1 rounded-lg hidden sm:inline"
               :class="themeStore.isDark ? 'bg-[var(--bg-hover)] text-gray-400' : 'bg-gray-100 text-gray-600'">
               管理员
@@ -149,5 +191,10 @@ function closeMobileMenu() {
 
 .page-leave-to {
   opacity: 0;
+}
+
+/* 去除 router-link 默认下划线 */
+nav a {
+  text-decoration: none !important;
 }
 </style>
