@@ -5,12 +5,14 @@ import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
 import { ElMessage } from 'element-plus'
-import { Lock, Sun, Moon, ArrowLeft, LogOut } from 'lucide-vue-next'
+import { Lock, Sun, Moon, ArrowLeft, LogOut, Globe } from 'lucide-vue-next'
+import { availableLocales, setLocale } from '@/i18n'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const router = useRouter()
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
+const isLangDropdownOpen = ref(false)
 
 const username = ref('')
 const password = ref('')
@@ -57,6 +59,15 @@ async function handleLogin() {
 function goHome() {
   window.location.href = '/'
 }
+
+function handleLocaleChange(lang) {
+  setLocale(lang)
+  isLangDropdownOpen.value = false
+}
+
+function closeLangDropdown() {
+  isLangDropdownOpen.value = false
+}
 </script>
 
 <template>
@@ -81,6 +92,36 @@ function goHome() {
       <Sun v-if="themeStore.isDark" class="w-5 h-5" />
       <Moon v-else class="w-5 h-5" />
     </button>
+
+    <!-- 语言切换下拉菜单 -->
+    <div class="absolute top-6 right-20 z-10">
+      <div class="relative">
+        <button @click="isLangDropdownOpen = !isLangDropdownOpen"
+          class="p-3 rounded-xl border transition-all"
+          :class="themeStore.isDark ? 'bg-[var(--bg-secondary)] border-[var(--border)] text-gray-400 hover:text-white' : 'bg-white border-gray-200 text-gray-600 hover:text-gray-900'">
+          <Globe class="w-5 h-5" />
+        </button>
+
+        <transition name="fade">
+          <div v-if="isLangDropdownOpen"
+            class="absolute right-0 mt-2 w-36 rounded-xl border shadow-xl overflow-hidden z-50"
+            :class="themeStore.isDark ? 'bg-[var(--bg-secondary)] border-[var(--border)]' : 'bg-white border-gray-200'">
+            <div @click="closeLangDropdown" class="fixed inset-0"></div>
+            <div class="relative">
+              <button v-for="lang in availableLocales" :key="lang.code"
+                @click="handleLocaleChange(lang.code)"
+                class="w-full px-4 py-2.5 text-left text-sm flex items-center justify-between transition-all"
+                :class="locale === lang.code
+                  ? (themeStore.isDark ? 'bg-indigo-500/20 text-indigo-400' : 'bg-indigo-50 text-indigo-600')
+                  : (themeStore.isDark ? 'text-gray-300 hover:bg-white/5' : 'text-gray-700 hover:bg-gray-50')">
+                <span>{{ lang.name }}</span>
+                <span v-if="locale === lang.code" class="w-2 h-2 rounded-full bg-indigo-500"></span>
+              </button>
+            </div>
+          </div>
+        </transition>
+      </div>
+    </div>
 
     <div class="w-full max-w-md relative z-10">
       <!-- Logo -->
@@ -160,3 +201,15 @@ function goHome() {
     </div>
   </div>
 </template>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.15s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>

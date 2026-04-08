@@ -49,7 +49,21 @@ export default {
     unknown: '未知错误',
     network: '网络错误，请检查网络连接',
     requestResourceNotFound: '请求的资源不存在',
-    requestFailed: '请求失败'
+    requestFailed: '请求失败',
+    upload: {
+      failed: '上传失败',
+      retryExhausted: '上传失败，已重试多次',
+      channelError: '存储渠道错误，请联系管理员',
+      quotaFull: '存储配额已满，请联系管理员',
+      rateLimit: '上传频率超限，请稍后再试',
+      methodNotAllowed: '请求方法不被允许',
+      accessDenied: '访问被拒绝，请检查权限',
+      networkError: '网络错误，请检查网络连接',
+      timeout: '上传超时，请稍后再试',
+      fileTooLarge: '文件过大，超过限制',
+      invalidFileType: '不支持的文件类型',
+      serverError: '服务器错误，请稍后重试'
+    }
   },
   routeTitle: {
     uploadFile: '上传文件',

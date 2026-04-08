@@ -9,13 +9,58 @@ import { fileApi } from '@/api/file'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Upload, Image, Folder, Link, Check, X, Trash2,
-  Sun, Moon, FileText, Film, Video, RefreshCw
+  Sun, Moon, FileText, Film, Video, RefreshCw, Globe
 } from 'lucide-vue-next'
+import { availableLocales, setLocale } from '@/i18n'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const router = useRouter()
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
+const isLangDropdownOpen = ref(false)
+
+// 解析上传错误，返回用户友好的错误消息
+function parseUploadError(err) {
+  const msg = err?.message || String(err)
+
+  // 根据错误消息内容匹配具体的用户友好错误
+  if (msg.includes('Method Not Allowed') || msg.includes('405')) {
+    return t('error.upload.methodNotAllowed')
+  }
+  if (msg.includes('AccessDenied') || msg.includes('access denied') || msg.includes('403')) {
+    return t('error.upload.accessDenied')
+  }
+  if (msg.includes('No such bucket') || msg.includes('BucketNotFound') || msg.includes('404')) {
+    return t('error.upload.channelError')
+  }
+  if (msg.includes('QuotaFull') || msg.includes('quota') || msg.includes('storage full')) {
+    return t('error.upload.quotaFull')
+  }
+  if (msg.includes('RateLimit') || msg.includes('rate limit') || msg.includes('429')) {
+    return t('error.upload.rateLimit')
+  }
+  if (msg.includes('timeout') || msg.includes('Timeout') || msg.includes('ETIMEDOUT')) {
+    return t('error.upload.timeout')
+  }
+  if (msg.includes('network') || msg.includes('Network') || msg.includes('ECONNREFUSED') || msg.includes('ENOTFOUND')) {
+    return t('error.upload.networkError')
+  }
+  if (msg.includes('retry') || msg.includes('Retry')) {
+    return t('error.upload.retryExhausted')
+  }
+  if (msg.includes('FileTooLarge') || msg.includes('EntityTooLarge') || msg.includes('file too large')) {
+    return t('error.upload.fileTooLarge')
+  }
+  if (msg.includes('InvalidContentType') || msg.includes('ContentType') || msg.includes('UnsupportedMediaType')) {
+    return t('error.upload.invalidFileType')
+  }
+  if (msg.includes('500') || msg.includes('InternalError') || msg.includes('500')) {
+    return t('error.upload.serverError')
+  }
+
+  // 默认返回通用错误消息
+  return t('error.upload.failed')
+}
 
 const uploadQueue = ref([])
 const isUploading = ref(false)
@@ -226,7 +271,7 @@ async function processQueue() {
       }
     } catch (err) {
       item.status = 'error'
-      item.error = err.message || t('home.uploadFailed')
+      item.error = parseUploadError(err)
     }
   }
   isUploading.value = false
@@ -330,6 +375,15 @@ function hasImageError(itemId) {
 function handleImageError(itemId) {
   imageErrors.value.add(itemId)
 }
+
+function handleLocaleChange(lang) {
+  setLocale(lang)
+  isLangDropdownOpen.value = false
+}
+
+function closeLangDropdown() {
+  isLangDropdownOpen.value = false
+}
 </script>
 
 <template>
@@ -363,6 +417,34 @@ function handleImageError(itemId) {
             <Sun v-if="themeStore.isDark" class="w-5 h-5" />
             <Moon v-else class="w-5 h-5" />
           </button>
+
+          <!-- 语言切换下拉菜单 -->
+          <div class="relative">
+            <button @click="isLangDropdownOpen = !isLangDropdownOpen"
+              class="p-2 rounded-lg transition-all"
+              :class="themeStore.isDark ? 'text-gray-400 hover:text-white hover:bg-white/5' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'">
+              <Globe class="w-5 h-5" />
+            </button>
+
+            <transition name="fade">
+              <div v-if="isLangDropdownOpen"
+                class="absolute right-0 mt-2 w-36 rounded-xl border shadow-xl overflow-hidden z-50"
+                :class="themeStore.isDark ? 'bg-[var(--bg-secondary)] border-[var(--border)]' : 'bg-white border-gray-200'">
+                <div @click="closeLangDropdown" class="fixed inset-0"></div>
+                <div class="relative">
+                  <button v-for="lang in availableLocales" :key="lang.code"
+                    @click="handleLocaleChange(lang.code)"
+                    class="w-full px-4 py-2.5 text-left text-sm flex items-center justify-between transition-all"
+                    :class="locale === lang.code
+                      ? (themeStore.isDark ? 'bg-indigo-500/20 text-indigo-400' : 'bg-indigo-50 text-indigo-600')
+                      : (themeStore.isDark ? 'text-gray-300 hover:bg-white/5' : 'text-gray-700 hover:bg-gray-50')">
+                    <span>{{ lang.name }}</span>
+                    <span v-if="locale === lang.code" class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                  </button>
+                </div>
+              </div>
+            </transition>
+          </div>
 
           <button v-if="!authStore.isAuthenticated" @click="router.push('/login')"
             class="ml-1 sm:ml-2 px-3 sm:px-4 py-2 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 transition-all shadow-lg shadow-indigo-500/25 flex items-center gap-1">
@@ -500,3 +582,15 @@ function handleImageError(itemId) {
     </main>
   </div>
 </template>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.15s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>
