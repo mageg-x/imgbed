@@ -773,14 +773,14 @@ const jwtConfig = reactive({
                 <span class="font-medium" :class="isDark ? 'text-gray-300' : 'text-gray-700'">{{ t('settings.cdn.downloadAcceleration') }}：</span>
                 <ul class="ml-4 mt-1 space-y-1 list-disc">
                   <li>{{ t('settings.cdn.downloadAccelerationDesc1') }}</li>
-                  <li>{{ t('settings.cdn.downloadAccelerationDesc2') }}</li>
+                  <li v-html="t('settings.cdn.downloadAccelerationDesc2')"></li>
                 </ul>
               </div>
               <div>
                 <span class="font-medium" :class="isDark ? 'text-gray-300' : 'text-gray-700'">{{ t('settings.cdn.uploadProxy') }}：</span>
                 <ul class="ml-4 mt-1 space-y-1 list-disc">
                   <li>{{ t('settings.cdn.uploadProxyDesc1') }}</li>
-                  <li>{{ t('settings.cdn.uploadProxyDesc2') }}</li>
+                  <li v-html="t('settings.cdn.uploadProxyDesc2')"></li>
                 </ul>
               </div>
             </div>
