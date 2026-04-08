@@ -6,25 +6,25 @@ const routes = [
     path: "/",
     name: "Home",
     component: () => import("@/views/Home.vue"),
-    meta: { title: "上传文件" },
+    meta: { title: 'routeTitle.uploadFile' },
   },
   {
     path: "/login",
     name: "Login",
     component: () => import("@/views/Login.vue"),
-    meta: { title: "登录" },
+    meta: { title: 'routeTitle.login' },
   },
   {
     path: "/gallery",
     name: "Gallery",
     component: () => import("@/views/Gallery.vue"),
-    meta: { title: "我的图库", requiresAuth: true },
+    meta: { title: 'routeTitle.gallery', requiresAuth: true },
   },
   {
     path: "/browse",
     name: "Browse",
     component: () => import("@/views/Browse.vue"),
-    meta: { title: "我的文件", requiresAuth: true },
+    meta: { title: 'routeTitle.browse', requiresAuth: true },
   },
 ];
 
@@ -40,12 +40,12 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore();
 
-  // 如果未初始化，先检查 session
+  // If not initialized, check session
   if (!authStore.isAuthenticated) {
     await authStore.checkSession()
   }
 
-  // 所有非登录页面都检测 admin 用户
+  // All non-login pages check for admin user
   if (to.name !== "Login" && authStore.user?.role === 'admin') {
     next({ name: "Login" });
     return

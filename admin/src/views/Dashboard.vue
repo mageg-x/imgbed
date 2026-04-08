@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import request from '@/api/request'
 import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
@@ -8,6 +9,7 @@ import {
   Folder, Monitor, Upload, Cloud, RefreshCw, TrendingUp, CheckCircle, BarChart3, PieChart, LineChart, Calendar
 } from 'lucide-vue-next'
 
+const { t } = useI18n()
 const router = useRouter()
 const loading = ref(false)
 const isDark = ref(true)
@@ -80,7 +82,7 @@ async function loadDashboard() {
       dashboard.value = res.data
     }
   } catch {
-    ElMessage.error('加载数据失败')
+    ElMessage.error(t('common.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -112,7 +114,7 @@ async function loadStats() {
     // 初始化图表
     initCharts()
   } catch (err) {
-    console.error('加载统计数据失败', err)
+    console.error('Failed to load stats', err)
   }
 }
 
@@ -137,7 +139,7 @@ function initCharts() {
         textStyle: { color: textColor }
       },
       series: [{
-        name: '渠道使用',
+        name: t('dashboard.channelStats'),
         type: 'pie',
         radius: ['40%', '70%'],
         avoidLabelOverlap: false,
@@ -164,7 +166,7 @@ function initCharts() {
       backgroundColor: bgColor,
       tooltip: { trigger: 'axis' },
       legend: {
-        data: ['上传数', '成功数'],
+        data: [t('dashboard.uploads') || 'Uploads', t('dashboard.success') || 'Success'],
         textStyle: { color: textColor }
       },
       grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
@@ -183,7 +185,7 @@ function initCharts() {
       },
       series: [
         {
-          name: '上传数',
+          name: t('dashboard.uploads') || 'Uploads',
           type: 'line',
           smooth: true,
           lineStyle: { width: 2 },
@@ -192,7 +194,7 @@ function initCharts() {
           itemStyle: { color: '#6366f1' }
         },
         {
-          name: '成功数',
+          name: t('dashboard.success') || 'Success',
           type: 'line',
           smooth: true,
           lineStyle: { width: 2 },
@@ -233,7 +235,7 @@ function initCharts() {
         splitLine: { lineStyle: { color: isDark.value ? '#374151' : '#e5e7eb' } }
       },
       series: [{
-        name: '成功率',
+        name: t('dashboard.successRate') || 'Success Rate',
         type: 'bar',
         barWidth: '60%',
         data: successRates,
@@ -262,7 +264,7 @@ function initCharts() {
       backgroundColor: bgColor,
       tooltip: { trigger: 'axis' },
       legend: {
-        data: ['上传数', '成功数'],
+        data: [t('dashboard.uploads') || 'Uploads', t('dashboard.success') || 'Success'],
         textStyle: { color: textColor }
       },
       grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
@@ -280,14 +282,14 @@ function initCharts() {
       },
       series: [
         {
-          name: '上传数',
+          name: t('dashboard.uploads') || 'Uploads',
           type: 'bar',
           barWidth: '40%',
           data: uploads,
           itemStyle: { color: '#6366f1', borderRadius: [4, 4, 0, 0] }
         },
         {
-          name: '成功数',
+          name: t('dashboard.success') || 'Success',
           type: 'bar',
           barWidth: '40%',
           data: success,
@@ -330,7 +332,7 @@ function getSuccessRateClass(rate) {
       <div class="card p-4 sm:p-6 hover-lift animate-fade-in">
         <div class="flex items-start justify-between">
           <div>
-            <p class="text-xs sm:text-sm font-medium" :class="isDark ? 'text-gray-400' : 'text-gray-500'">总文件数</p>
+            <p class="text-xs sm:text-sm font-medium" :class="isDark ? 'text-gray-400' : 'text-gray-500'">{{ t('dashboard.totalFiles') }}</p>
             <p class="text-2xl sm:text-3xl font-bold mt-1">{{ dashboard.totalFiles?.toLocaleString() || 0 }}</p>
           </div>
           <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center">
@@ -340,31 +342,31 @@ function getSuccessRateClass(rate) {
         <div class="mt-2 sm:mt-3 flex items-center gap-1 text-xs sm:text-sm"
           :class="isDark ? 'text-gray-400' : 'text-gray-500'">
           <TrendingUp class="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />
-          <span>全部文件</span>
+          <span>{{ t('dashboard.allFiles') || 'All Files' }}</span>
         </div>
       </div>
 
       <div class="card p-4 sm:p-6 hover-lift animate-fade-in delay-100">
         <div class="flex items-start justify-between">
           <div>
-            <p class="text-xs sm:text-sm font-medium" :class="isDark ? 'text-gray-400' : 'text-gray-500'">总存储量</p>
+            <p class="text-xs sm:text-sm font-medium" :class="isDark ? 'text-gray-400' : 'text-gray-500'">{{ t('dashboard.totalStorage') }}</p>
             <p class="text-2xl sm:text-3xl font-bold mt-1">{{ formatSize(dashboard.totalSize) }}</p>
           </div>
           <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-purple-500/10 flex items-center justify-center">
             <Monitor class="w-5 h-5 sm:w-6 sm:h-6 text-purple-500" />
           </div>
         </div>
-        <div class="mt-2 sm:mt-3">
-          <div class="progress-bar">
-            <div class="progress" style="width: 35%"></div>
-          </div>
+        <div class="mt-2 sm:mt-3 flex items-center gap-1 text-xs sm:text-sm"
+          :class="isDark ? 'text-gray-400' : 'text-gray-500'">
+          <TrendingUp class="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />
+          <span>{{ t('dashboard.storage') || 'Storage' }}</span>
         </div>
       </div>
 
       <div class="card p-4 sm:p-6 hover-lift animate-fade-in delay-200">
         <div class="flex items-start justify-between">
           <div>
-            <p class="text-xs sm:text-sm font-medium" :class="isDark ? 'text-gray-400' : 'text-gray-500'">今日上传</p>
+            <p class="text-xs sm:text-sm font-medium" :class="isDark ? 'text-gray-400' : 'text-gray-500'">{{ t('dashboard.todayUploads') }}</p>
             <p class="text-2xl sm:text-3xl font-bold mt-1">{{ dashboard.todayUploads || 0 }}</p>
           </div>
           <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-green-500/10 flex items-center justify-center">
@@ -372,14 +374,14 @@ function getSuccessRateClass(rate) {
           </div>
         </div>
         <p class="text-xs sm:text-sm mt-2 sm:mt-3" :class="isDark ? 'text-gray-400' : 'text-gray-500'">
-          流量 {{ formatSize(dashboard.todaySize) }}
+          {{ t('dashboard.bandwidth') || 'Bandwidth' }} {{ formatSize(dashboard.todaySize) }}
         </p>
       </div>
 
       <div class="card p-4 sm:p-6 hover-lift animate-fade-in delay-300">
         <div class="flex items-start justify-between">
           <div>
-            <p class="text-xs sm:text-sm font-medium" :class="isDark ? 'text-gray-400' : 'text-gray-500'">活跃渠道</p>
+            <p class="text-xs sm:text-sm font-medium" :class="isDark ? 'text-gray-400' : 'text-gray-500'">{{ t('dashboard.activeChannels') || 'Active Channels' }}</p>
             <p class="text-2xl sm:text-3xl font-bold mt-1">{{ dashboard.enabledChannels || 0 }}</p>
           </div>
           <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center">
@@ -387,7 +389,7 @@ function getSuccessRateClass(rate) {
           </div>
         </div>
         <p class="text-xs sm:text-sm mt-2 sm:mt-3" :class="isDark ? 'text-gray-400' : 'text-gray-500'">
-          共 {{ dashboard.channelStatuses?.length || 0 }} 个渠道
+          {{ t('dashboard.totalChannels') || 'Total' }} {{ dashboard.channelStatuses?.length || 0 }} {{ t('dashboard.channels') || 'channels' }}
         </p>
       </div>
     </div>
@@ -397,7 +399,7 @@ function getSuccessRateClass(rate) {
       <div class="card p-4 sm:p-6 hover-lift animate-fade-in">
         <div class="flex items-start justify-between">
           <div>
-            <p class="text-xs sm:text-sm font-medium" :class="isDark ? 'text-gray-400' : 'text-gray-500'">总成功率</p>
+            <p class="text-xs sm:text-sm font-medium" :class="isDark ? 'text-gray-400' : 'text-gray-500'">{{ t('dashboard.overallSuccessRate') || 'Success Rate' }}</p>
             <p class="text-2xl sm:text-3xl font-bold mt-1" :class="getSuccessRateClass(stats.overview.successRate)">
               {{ (stats.overview.successRate || 0).toFixed(1) }}%
             </p>
@@ -416,39 +418,37 @@ function getSuccessRateClass(rate) {
       <div class="card p-4 sm:p-6 hover-lift animate-fade-in delay-100">
         <div class="flex items-start justify-between">
           <div>
-            <p class="text-xs sm:text-sm font-medium" :class="isDark ? 'text-gray-400' : 'text-gray-500'">总成功数</p>
-            <p class="text-2xl sm:text-3xl font-bold mt-1 text-green-500">{{ (stats.overview.totalSuccess ||
-              0).toLocaleString() }}</p>
+            <p class="text-xs sm:text-sm font-medium" :class="isDark ? 'text-gray-400' : 'text-gray-500'">{{ t('dashboard.totalSuccess') || 'Total Success' }}</p>
+            <p class="text-2xl sm:text-3xl font-bold mt-1 text-green-500">{{ (stats.overview.totalSuccess || 0).toLocaleString() }}</p>
           </div>
           <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-green-500/10 flex items-center justify-center">
             <CheckCircle class="w-5 h-5 sm:w-6 sm:h-6 text-green-500" />
           </div>
         </div>
         <p class="text-xs sm:text-sm mt-2 sm:mt-3" :class="isDark ? 'text-gray-400' : 'text-gray-500'">
-          成功上传次数
+          {{ t('dashboard.successfulUploads') || 'Successful uploads' }}
         </p>
       </div>
 
       <div class="card p-4 sm:p-6 hover-lift animate-fade-in delay-200">
         <div class="flex items-start justify-between">
           <div>
-            <p class="text-xs sm:text-sm font-medium" :class="isDark ? 'text-gray-400' : 'text-gray-500'">总失败数</p>
-            <p class="text-2xl sm:text-3xl font-bold mt-1 text-red-500">{{ (stats.overview.totalFailed ||
-              0).toLocaleString() }}</p>
+            <p class="text-xs sm:text-sm font-medium" :class="isDark ? 'text-gray-400' : 'text-gray-500'">{{ t('dashboard.totalFailed') || 'Total Failed' }}</p>
+            <p class="text-2xl sm:text-3xl font-bold mt-1 text-red-500">{{ (stats.overview.totalFailed || 0).toLocaleString() }}</p>
           </div>
           <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-red-500/10 flex items-center justify-center">
             <BarChart3 class="w-5 h-5 sm:w-6 sm:h-6 text-red-500" />
           </div>
         </div>
         <p class="text-xs sm:text-sm mt-2 sm:mt-3" :class="isDark ? 'text-gray-400' : 'text-gray-500'">
-          失败上传次数
+          {{ t('dashboard.failedUploads') || 'Failed uploads' }}
         </p>
       </div>
 
       <div class="card p-4 sm:p-6 hover-lift animate-fade-in delay-300">
         <div class="flex items-start justify-between">
           <div>
-            <p class="text-xs sm:text-sm font-medium" :class="isDark ? 'text-gray-400' : 'text-gray-500'">总上传数</p>
+            <p class="text-xs sm:text-sm font-medium" :class="isDark ? 'text-gray-400' : 'text-gray-500'">{{ t('dashboard.totalUploads') || 'Total Uploads' }}</p>
             <p class="text-2xl sm:text-3xl font-bold mt-1">{{ (stats.overview.totalUploads || 0).toLocaleString() }}</p>
           </div>
           <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center">
@@ -456,7 +456,7 @@ function getSuccessRateClass(rate) {
           </div>
         </div>
         <p class="text-xs sm:text-sm mt-2 sm:mt-3" :class="isDark ? 'text-gray-400' : 'text-gray-500'">
-          累计上传次数
+          {{ t('dashboard.cumulativeUploads') || 'Cumulative uploads' }}
         </p>
       </div>
     </div>
@@ -468,9 +468,9 @@ function getSuccessRateClass(rate) {
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-base sm:text-lg font-semibold flex items-center gap-2">
             <LineChart class="w-5 h-5 text-indigo-500" />
-            上传趋势
+            {{ t('dashboard.uploadTrend') }}
           </h2>
-          <el-tooltip content="刷新数据" placement="top">
+          <el-tooltip :content="t('common.refresh')" placement="top">
             <button @click="loadStats" class="p-2 rounded-lg transition-all hover:bg-[var(--bg-hover)]"
               :class="isDark ? 'text-gray-400' : 'text-gray-600'">
               <RefreshCw class="w-4 h-4" />
@@ -485,9 +485,9 @@ function getSuccessRateClass(rate) {
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-base sm:text-lg font-semibold flex items-center gap-2">
             <BarChart3 class="w-5 h-5 text-green-500" />
-            渠道成功率
+            {{ t('dashboard.channelSuccessRate') || 'Channel Success Rate' }}
           </h2>
-          <el-tooltip content="刷新数据" placement="top">
+          <el-tooltip :content="t('common.refresh')" placement="top">
             <button @click="loadStats" class="p-2 rounded-lg transition-all hover:bg-[var(--bg-hover)]"
               :class="isDark ? 'text-gray-400' : 'text-gray-600'">
               <RefreshCw class="w-4 h-4" />
@@ -504,9 +504,9 @@ function getSuccessRateClass(rate) {
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-base sm:text-lg font-semibold flex items-center gap-2">
             <PieChart class="w-5 h-5 text-purple-500" />
-            渠道分布
+            {{ t('dashboard.channelDistribution') || 'Channel Distribution' }}
           </h2>
-          <el-tooltip content="刷新数据" placement="top">
+          <el-tooltip :content="t('common.refresh')" placement="top">
             <button @click="loadStats" class="p-2 rounded-lg transition-all hover:bg-[var(--bg-hover)]"
               :class="isDark ? 'text-gray-400' : 'text-gray-600'">
               <RefreshCw class="w-4 h-4" />
@@ -521,9 +521,9 @@ function getSuccessRateClass(rate) {
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-base sm:text-lg font-semibold flex items-center gap-2">
             <Calendar class="w-5 h-5 text-cyan-500" />
-            每周上传统计
+            {{ t('dashboard.weeklyUploadStats') || 'Weekly Upload Stats' }}
           </h2>
-          <el-tooltip content="刷新数据" placement="top">
+          <el-tooltip :content="t('common.refresh')" placement="top">
             <button @click="loadStats" class="p-2 rounded-lg transition-all hover:bg-[var(--bg-hover)]"
               :class="isDark ? 'text-gray-400' : 'text-gray-600'">
               <RefreshCw class="w-4 h-4" />
@@ -537,8 +537,8 @@ function getSuccessRateClass(rate) {
     <!-- 渠道状态 -->
     <div class="card p-4 sm:p-6 animate-fade-in">
       <div class="flex items-center justify-between mb-4 sm:mb-6">
-        <h2 class="text-base sm:text-lg font-semibold">渠道状态</h2>
-        <el-tooltip content="刷新数据" placement="top">
+        <h2 class="text-base sm:text-lg font-semibold">{{ t('dashboard.channelStatus') || 'Channel Status' }}</h2>
+        <el-tooltip :content="t('common.refresh')" placement="top">
           <button @click="loadDashboard" class="p-2 rounded-lg transition-all hover:bg-[var(--bg-hover)]"
             :class="isDark ? 'text-gray-400' : 'text-gray-600'">
             <RefreshCw class="w-4 h-4" />
@@ -553,9 +553,9 @@ function getSuccessRateClass(rate) {
       <div v-else-if="!dashboard.channelStatuses?.length" class="text-center py-8 sm:py-12">
         <Cloud class="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-2 sm:mb-3"
           :class="isDark ? 'text-gray-600' : 'text-gray-400'" />
-        <p class="text-sm" :class="isDark ? 'text-gray-400' : 'text-gray-500'">暂无渠道</p>
+        <p class="text-sm" :class="isDark ? 'text-gray-400' : 'text-gray-500'">{{ t('channels.noChannels') }}</p>
         <button @click="router.push('/channels')" class="mt-2 sm:mt-3 text-sm text-indigo-500 hover:text-indigo-600">
-          去添加 →
+          {{ t('channels.addFirstChannel') }} →
         </button>
       </div>
 
@@ -596,17 +596,15 @@ function getSuccessRateClass(rate) {
                 'bg-red-100 text-red-700': channel.status === 'error',
                 'bg-gray-100 text-gray-500': !channel.status
               }">
-                {{ channel.status === 'healthy' ? '正常' : channel.status === 'warning' ? '警告' : channel.status ===
-                  'error' ? '错误' : '未知' }}
+                {{ channel.status === 'healthy' ? t('common.normal') : channel.status === 'warning' ? t('common.warning') : channel.status === 'error' ? t('common.error') : 'Unknown' }}
               </span>
             </div>
           </div>
 
           <div class="space-y-1.5 sm:space-y-2 pl-2">
             <div class="flex items-center justify-between text-xs sm:text-sm">
-              <span :class="isDark ? 'text-gray-400' : 'text-gray-500'">存储使用</span>
-              <span class="text-xs sm:text-sm font-medium">{{ formatSize(channel.usedSpace) }} / {{
-                formatSize(channel.totalSpace) }}</span>
+              <span :class="isDark ? 'text-gray-400' : 'text-gray-500'">{{ t('channels.storageUsage') || 'Storage' }}</span>
+              <span class="text-xs sm:text-sm font-medium">{{ formatSize(channel.usedSpace) }} / {{ formatSize(channel.totalSpace) }}</span>
             </div>
             <div class="progress-bar">
               <div class="progress" :style="{
@@ -621,38 +619,38 @@ function getSuccessRateClass(rate) {
 
     <!-- 快捷入口 -->
     <div class="card p-4 sm:p-6 animate-fade-in delay-400">
-      <h2 class="text-base sm:text-lg font-semibold mb-3 sm:mb-4">快捷入口</h2>
+      <h2 class="text-base sm:text-lg font-semibold mb-3 sm:mb-4">{{ t('dashboard.quickAccess') || 'Quick Access' }}</h2>
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-        <el-tooltip content="管理所有上传文件" placement="top">
+        <el-tooltip :content="t('files.title')" placement="top">
           <button @click="router.push('/files')"
             class="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-xl border transition-all hover:border-indigo-500 hover:shadow-lg"
             :class="isDark ? 'border-[var(--border)] hover:bg-[var(--bg-hover)]' : 'border-gray-200 hover:bg-gray-50'">
             <Folder class="w-4 h-4 sm:w-5 sm:h-5 text-indigo-500" />
-            <span class="font-medium text-xs sm:text-sm">文件管理</span>
+            <span class="font-medium text-xs sm:text-sm">{{ t('nav.files') }}</span>
           </button>
         </el-tooltip>
-        <el-tooltip content="配置存储渠道" placement="top">
+        <el-tooltip :content="t('channels.title')" placement="top">
           <button @click="router.push('/channels')"
             class="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-xl border transition-all hover:border-indigo-500 hover:shadow-lg"
             :class="isDark ? 'border-[var(--border)] hover:bg-[var(--bg-hover)]' : 'border-gray-200 hover:bg-gray-50'">
             <Cloud class="w-4 h-4 sm:w-5 sm:h-5 text-purple-500" />
-            <span class="font-medium text-xs sm:text-sm">渠道管理</span>
+            <span class="font-medium text-xs sm:text-sm">{{ t('nav.channels') }}</span>
           </button>
         </el-tooltip>
-        <el-tooltip content="管理 API 访问令牌" placement="top">
+        <el-tooltip :content="t('tokens.title')" placement="top">
           <button @click="router.push('/tokens')"
             class="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-xl border transition-all hover:border-indigo-500 hover:shadow-lg"
             :class="isDark ? 'border-[var(--border)] hover:bg-[var(--bg-hover)]' : 'border-gray-200 hover:bg-gray-50'">
             <Monitor class="w-4 h-4 sm:w-5 sm:h-5 text-cyan-500" />
-            <span class="font-medium text-xs sm:text-sm">API Token</span>
+            <span class="font-medium text-xs sm:text-sm">{{ t('nav.tokens') }}</span>
           </button>
         </el-tooltip>
-        <el-tooltip content="系统参数配置" placement="top">
+        <el-tooltip :content="t('settings.title')" placement="top">
           <button @click="router.push('/settings')"
             class="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-xl border transition-all hover:border-indigo-500 hover:shadow-lg"
             :class="isDark ? 'border-[var(--border)] hover:bg-[var(--bg-hover)]' : 'border-gray-200 hover:bg-gray-50'">
             <Monitor class="w-4 h-4 sm:w-5 sm:h-5 text-orange-500" />
-            <span class="font-medium text-xs sm:text-sm">系统设置</span>
+            <span class="font-medium text-xs sm:text-sm">{{ t('nav.settings') }}</span>
           </button>
         </el-tooltip>
       </div>

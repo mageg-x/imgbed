@@ -1,28 +1,32 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
 import {
   Home, Folder, Network, Key, Settings, Sun, Moon,
-  Menu, X, PanelLeftClose, Maximize2, LogOut, Code
+  Menu, X, PanelLeftClose, Maximize2, LogOut, Code, Globe
 } from 'lucide-vue-next'
+import { availableLocales, setLocale } from '@/i18n'
 
+const { t, locale } = useI18n()
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
 const isCollapsed = ref(false)
 const isMobileMenuOpen = ref(false)
+const isLangDropdownOpen = ref(false)
 
-const menuItems = [
-  { path: '/home', label: '仪表盘', icon: Home },
-  { path: '/files', label: '文件管理', icon: Folder },
-  { path: '/channels', label: '渠道管理', icon: Network },
-  { path: '/tokens', label: 'API Token', icon: Key },
-  { path: '/integration', label: '集成示例', icon: Code },
-  { path: '/settings', label: '系统设置', icon: Settings }
-]
+const menuItems = computed(() => [
+  { path: '/home', label: t('nav.dashboard'), icon: Home },
+  { path: '/files', label: t('nav.files'), icon: Folder },
+  { path: '/channels', label: t('nav.channels'), icon: Network },
+  { path: '/tokens', label: t('nav.tokens'), icon: Key },
+  { path: '/integration', label: t('nav.integration'), icon: Code },
+  { path: '/settings', label: t('nav.settings'), icon: Settings }
+])
 
 const activeNav = computed(() => route.path)
 
@@ -33,6 +37,15 @@ function handleLogout() {
 
 function closeMobileMenu() {
   isMobileMenuOpen.value = false
+}
+
+function handleLocaleChange(lang) {
+  setLocale(lang)
+  isLangDropdownOpen.value = false
+}
+
+function closeLangDropdown() {
+  isLangDropdownOpen.value = false
 }
 </script>
 
@@ -76,7 +89,7 @@ function closeMobileMenu() {
       <!-- 导航标签 -->
       <div class="px-4 pb-2" v-if="!isCollapsed">
         <p class="text-[10px] uppercase tracking-wider font-semibold" :class="themeStore.isDark ? 'text-gray-500' : 'text-gray-400'">
-          导航菜单
+          {{ t('nav.menu') || 'Menu' }}
         </p>
       </div>
 
@@ -117,7 +130,7 @@ function closeMobileMenu() {
             <Maximize2 v-else class="w-4 h-4" />
           </div>
           <transition name="fade">
-            <span v-if="!isCollapsed" class="text-sm font-medium">收起菜单</span>
+            <span v-if="!isCollapsed" class="text-sm font-medium">{{ t('common.collapse') || 'Collapse' }}</span>
           </transition>
         </button>
 
@@ -130,7 +143,7 @@ function closeMobileMenu() {
             <Moon v-else class="w-4 h-4" />
           </div>
           <transition name="fade">
-            <span v-if="!isCollapsed" class="text-sm font-medium">{{ themeStore.isDark ? '浅色模式' : '深色模式' }}</span>
+            <span v-if="!isCollapsed" class="text-sm font-medium">{{ themeStore.isDark ? t('settings.lightTheme') : t('settings.darkTheme') }}</span>
           </transition>
         </button>
       </div>
@@ -143,18 +156,50 @@ function closeMobileMenu() {
       <header class="sticky top-0 z-40 border-b backdrop-blur-xl px-4 sm:px-6 py-4"
         :class="themeStore.isDark ? 'bg-[var(--bg-primary)]/80 border-[var(--border)]' : 'bg-white/80 border-gray-200'">
         <div class="flex items-center justify-between gap-4">
-          <h1 class="text-xl font-semibold pl-10 lg:pl-0">{{ route.meta?.title || '管理后台' }}</h1>
+          <h1 class="text-xl font-semibold pl-10 lg:pl-0">{{ route.meta?.title ? t(route.meta.title) : t('nav.dashboard') }}</h1>
           <div class="flex items-center gap-2 sm:gap-4 flex-wrap">
+
+            <!-- 语言切换下拉菜单 -->
+            <div class="relative">
+              <button @click="isLangDropdownOpen = !isLangDropdownOpen"
+                class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all border"
+                :class="themeStore.isDark
+                  ? 'bg-[var(--bg-secondary)] border-[var(--border)] text-white hover:bg-[var(--bg-hover)]'
+                  : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-100'">
+                <Globe class="w-4 h-4" />
+                <span class="hidden sm:inline">{{ availableLocales.find(l => l.code === locale)?.name }}</span>
+              </button>
+
+              <!-- 下拉菜单 -->
+              <transition name="fade">
+                <div v-if="isLangDropdownOpen"
+                  class="absolute right-0 mt-2 w-40 rounded-xl border shadow-xl overflow-hidden z-50"
+                  :class="themeStore.isDark ? 'bg-[var(--bg-secondary)] border-[var(--border)]' : 'bg-white border-gray-200'">
+                  <div @click="closeLangDropdown" class="fixed inset-0"></div>
+                  <div class="relative">
+                    <button v-for="lang in availableLocales" :key="lang.code"
+                      @click="handleLocaleChange(lang.code)"
+                      class="w-full px-4 py-2.5 text-left text-sm flex items-center justify-between transition-all"
+                      :class="locale === lang.code
+                        ? (themeStore.isDark ? 'bg-indigo-500/20 text-indigo-400' : 'bg-indigo-50 text-indigo-600')
+                        : (themeStore.isDark ? 'text-gray-300 hover:bg-white/5' : 'text-gray-700 hover:bg-gray-50')">
+                      <span>{{ lang.name }}</span>
+                      <span v-if="locale === lang.code" class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                    </button>
+                  </div>
+                </div>
+              </transition>
+            </div>
 
             <span class="text-sm px-3 py-1 rounded-lg hidden sm:inline"
               :class="themeStore.isDark ? 'bg-[var(--bg-hover)] text-gray-400' : 'bg-gray-100 text-gray-600'">
-              管理员
+              {{ t('common.admin') || 'Admin' }}
             </span>
             <button @click="handleLogout"
               class="px-2 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all border-0 whitespace-nowrap"
               :class="themeStore.isDark ? 'bg-red-500/10 text-red-500 hover:bg-red-500/20' : 'bg-red-50 text-red-600 hover:bg-red-100'">
               <LogOut class="w-4 h-4 inline" />
-              <span class="hidden sm:inline ml-1">退出</span>
+              <span class="hidden sm:inline ml-1">{{ t('nav.logout') }}</span>
             </button>
           </div>
         </div>

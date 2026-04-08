@@ -1,11 +1,13 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { tokenApi } from '@/api/token'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Key, Plus, RefreshCw, Trash2, Check, X, Copy, AlertTriangle, Eye, EyeOff, Shield
 } from 'lucide-vue-next'
 
+const { t } = useI18n()
 const isDark = ref(true)
 const tokens = ref([])
 const loading = ref(false)
@@ -20,21 +22,21 @@ const form = ref({
   expiresIn: 0
 })
 
-const permissionOptions = [
-  { label: '上传', value: 'upload' },
-  { label: '下载', value: 'download' },
-  { label: '读取', value: 'read' },
-  { label: '删除', value: 'delete' },
-  { label: '全部', value: '*' }
-]
+const permissionOptions = computed(() => [
+  { label: t('tokens.permissionUpload'), value: 'upload' },
+  { label: t('tokens.permissionDownload'), value: 'download' },
+  { label: t('tokens.permissionRead'), value: 'read' },
+  { label: t('tokens.permissionDelete'), value: 'delete' },
+  { label: t('tokens.permissionAll'), value: '*' }
+])
 
-const expiryOptions = [
-  { label: '永不过期', value: 0 },
-  { label: '7 天', value: 7 },
-  { label: '30 天', value: 30 },
-  { label: '90 天', value: 90 },
-  { label: '365 天', value: 365 }
-]
+const expiryOptions = computed(() => [
+  { label: t('tokens.neverExpire'), value: 0 },
+  { label: t('tokens.days7'), value: 7 },
+  { label: t('tokens.days30'), value: 30 },
+  { label: t('tokens.days90'), value: 90 },
+  { label: t('tokens.days365'), value: 365 }
+])
 
 onMounted(() => {
   isDark.value = !document.documentElement.classList.contains('light')
@@ -53,7 +55,7 @@ async function loadTokens() {
         : t.permissions
     }))
   } catch {
-    ElMessage.error('加载 Token 列表失败')
+    ElMessage.error(t('common.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -70,7 +72,7 @@ function openCreateDialog() {
 
 async function createToken() {
   if (!form.value.name) {
-    ElMessage.warning('请输入 Token 名称')
+    ElMessage.warning(t('tokens.pleaseInputTokenName'))
     return
   }
 
@@ -81,43 +83,43 @@ async function createToken() {
     showTokenDialog.value = true
     loadTokens()
   } catch {
-    ElMessage.error('创建失败')
+    ElMessage.error(t('common.operateFailed'))
   }
 }
 
 async function deleteToken(token) {
   try {
-    await ElMessageBox.confirm(`确定要删除 Token「${token.name}」吗？删除后无法恢复。`, '删除确认', { type: 'warning' })
+    await ElMessageBox.confirm(t('tokens.deleteConfirm', { name: token.name }), t('common.confirm'), { type: 'warning' })
     await tokenApi.delete(token.token)
-    ElMessage.success('删除成功')
+    ElMessage.success(t('common.deleteSuccess'))
     loadTokens()
   } catch (e) {
-    if (e !== 'cancel') ElMessage.error('删除失败')
+    if (e !== 'cancel') ElMessage.error(t('common.deleteFailed'))
   }
 }
 
 async function toggleToken(token) {
   try {
     await tokenApi.toggle(token.token, !token.enabled)
-    ElMessage.success(token.enabled ? '已禁用' : '已启用')
+    ElMessage.success(token.enabled ? t('common.disabled') : t('common.enabled'))
     loadTokens()
   } catch {
-    ElMessage.error('操作失败')
+    ElMessage.error(t('common.operateFailed'))
   }
 }
 
 async function copyToClipboard(text) {
   try {
     await navigator.clipboard.writeText(text)
-    ElMessage.success('已复制到剪贴板')
+    ElMessage.success(t('common.copyToClipboard'))
   } catch {
-    ElMessage.error('复制失败')
+    ElMessage.error(t('common.copyFailed'))
   }
 }
 
 function formatDate(timestamp) {
-  if (!timestamp || timestamp === 0) return '永不过期'
-  return new Date(timestamp * 1000).toLocaleString('zh-CN')
+  if (!timestamp || timestamp === 0) return t('tokens.neverExpire')
+  return new Date(timestamp * 1000).toLocaleString()
 }
 
 function isExpired(token) {
@@ -126,7 +128,13 @@ function isExpired(token) {
 }
 
 function getPermissionLabel(perm) {
-  const map = { upload: '上传', download: '下载', read: '读取', delete: '删除', '*': '全部' }
+  const map = {
+    upload: t('tokens.permissionUpload'),
+    download: t('tokens.permissionDownload'),
+    read: t('tokens.permissionRead'),
+    delete: t('tokens.permissionDelete'),
+    '*': t('tokens.permissionAll')
+  }
   return map[perm] || perm
 }
 
@@ -151,7 +159,7 @@ function toggleSecretVisibility(token) {
     <!-- 操作按钮 -->
     <div class="flex items-center justify-between gap-2">
       <div class="flex items-center gap-2 sm:gap-3">
-        <el-tooltip content="刷新列表" placement="top">
+        <el-tooltip :content="t('common.refresh')" placement="top">
           <button @click="loadTokens" class="p-2 sm:p-2.5 rounded-xl border transition-all hover:border-indigo-500"
             :class="isDark ? 'border-[var(--border)] bg-[var(--bg-secondary)]' : 'border-gray-200 bg-white'">
             <RefreshCw class="w-4 h-4 sm:w-5 sm:h-5" />
@@ -160,7 +168,7 @@ function toggleSecretVisibility(token) {
         <button @click="openCreateDialog"
           class="btn-gradient px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl flex items-center gap-1 sm:gap-2 text-sm">
           <Plus class="w-4 h-4 sm:w-5 sm:h-5" />
-          <span class="hidden sm:inline">创建 Token</span>
+          <span class="hidden sm:inline">{{ t('tokens.createToken') }}</span>
         </button>
       </div>
     </div>
@@ -171,18 +179,17 @@ function toggleSecretVisibility(token) {
       <div class="flex items-start gap-2">
         <Shield class="w-4 h-4 sm:w-5 sm:h-5 text-indigo-500 flex-shrink-0 mt-0.5" />
         <p class="text-xs sm:text-sm flex-1">
-          <span class="font-medium text-indigo-500">使用说明</span>
-          <span :class="isDark ? 'text-gray-400' : 'text-gray-600'"> API Token 用于程序化访问。请在请求头中添加 </span>
+          <span class="font-medium text-indigo-500">{{ t('tokens.usageGuide') }}</span>
+          <span :class="isDark ? 'text-gray-400' : 'text-gray-600'"> {{ t('tokens.usageTip') }} </span>
           <code class="px-1 py-0.5 sm:px-1.5 sm:py-0.5 rounded text-xs sm:text-sm font-mono"
             :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-100'">
-            X-API-Token
+            {{ t('tokens.apiToken') }}
           </code>
-          <span :class="isDark ? 'text-gray-400' : 'text-gray-600'"> 和 </span>
+          <span :class="isDark ? 'text-gray-400' : 'text-gray-600'"> {{ t('common.and') }} </span>
           <code class="px-1 py-0.5 sm:px-1.5 sm:py-0.5 rounded text-xs sm:text-sm font-mono"
             :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-100'">
-            X-API-Secret
+            {{ t('tokens.apiSecret') }}
           </code>
-          <span :class="isDark ? 'text-gray-400' : 'text-gray-600'"> 进行认证。</span>
         </p>
       </div>
     </div>
@@ -197,9 +204,9 @@ function toggleSecretVisibility(token) {
         :class="isDark ? 'bg-[var(--bg-secondary)]' : 'bg-gray-100'">
         <Key class="w-10 h-10 sm:w-12 sm:h-12" :class="isDark ? 'text-gray-600' : 'text-gray-400'" />
       </div>
-      <p class="text-sm sm:text-base" :class="isDark ? 'text-gray-400' : 'text-gray-500'">暂无 Token</p>
+      <p class="text-sm sm:text-base" :class="isDark ? 'text-gray-400' : 'text-gray-500'">{{ t('tokens.noTokens') }}</p>
       <button @click="openCreateDialog" class="mt-3 btn-gradient px-5 sm:px-6 py-2 rounded-xl text-sm">
-        创建第一个 Token
+        {{ t('tokens.createFirstToken') }}
       </button>
     </div>
 
@@ -231,7 +238,7 @@ function toggleSecretVisibility(token) {
                   </span>
                   <span class="text-xs font-medium"
                     :class="isExpired(token) ? 'text-red-500' : token.enabled ? 'text-emerald-500' : 'text-gray-400'">
-                    {{ isExpired(token) ? '已过期' : token.enabled ? '正常' : '已禁用' }}
+                    {{ isExpired(token) ? t('tokens.expired') : token.enabled ? t('common.normal') : t('common.disabled') }}
                   </span>
                 </div>
               </div>
@@ -255,7 +262,7 @@ function toggleSecretVisibility(token) {
 
           <!-- 权限 -->
           <div class="mb-3">
-            <p class="text-xs font-medium mb-2" :class="isDark ? 'text-indigo-400' : 'text-indigo-600'">权限</p>
+            <p class="text-xs font-medium mb-2" :class="isDark ? 'text-indigo-400' : 'text-indigo-600'">{{ t('tokens.permissions') }}</p>
             <div class="flex flex-wrap gap-1.5">
               <span v-for="perm in token.permissions" :key="perm"
                 class="px-2.5 py-1 rounded-lg text-xs font-medium bg-gradient-to-r text-white shadow-sm"
@@ -268,15 +275,15 @@ function toggleSecretVisibility(token) {
           <!-- 信息网格 -->
           <div class="grid grid-cols-2 gap-2 mb-4">
             <div>
-              <p class="text-xs font-medium" :class="isDark ? 'text-indigo-400' : 'text-indigo-600'">过期时间</p>
+              <p class="text-xs font-medium" :class="isDark ? 'text-indigo-400' : 'text-indigo-600'">{{ t('tokens.expiresIn') }}</p>
               <p class="text-xs font-medium mt-0.5" :class="isExpired(token) ? 'text-red-500' : isDark ? 'text-gray-300' : 'text-gray-600'">
                 {{ formatDate(token.expiresAt) }}
               </p>
             </div>
             <div>
-              <p class="text-xs font-medium" :class="isDark ? 'text-indigo-400' : 'text-indigo-600'">最后使用</p>
+              <p class="text-xs font-medium" :class="isDark ? 'text-indigo-400' : 'text-indigo-600'">{{ t('tokens.lastUsed') }}</p>
               <p class="text-xs font-medium mt-0.5" :class="isDark ? 'text-gray-300' : 'text-gray-600'">
-                {{ token.lastUsedAt ? formatDate(token.lastUsedAt) : '从未' }}
+                {{ token.lastUsedAt ? formatDate(token.lastUsedAt) : t('tokens.never') }}
               </p>
             </div>
           </div>
@@ -284,18 +291,18 @@ function toggleSecretVisibility(token) {
           <!-- 操作按钮 -->
           <div class="flex justify-center gap-2 sm:gap-3 md:gap-4">
             <button @click="toggleToken(token)"
-              class="w-14 h-10 rounded-xl transition-all flex items-center justify-center gap-1.5"
+              class=" px-4 h-10 rounded-xl transition-all flex items-center justify-center gap-1.5"
               :class="token.enabled
                 ? 'bg-red-500/10 text-red-500 hover:bg-red-500/20 border border-red-500/20'
                 : 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 border border-emerald-500/20'">
               <X v-if="token.enabled" class="w-3.5 h-3.5" />
               <Check v-else class="w-3.5 h-3.5" />
-              <span class="text-xs">{{ token.enabled ? '禁用' : '启用' }}</span>
+              <span class="text-xs">{{ token.enabled ? t('common.disabled2') : t('common.enabled2') }}</span>
             </button>
             <button @click="deleteToken(token)"
-              class="w-14 h-10 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all border border-red-500/20 flex items-center justify-center gap-1.5">
+              class="px-4 h-10 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all border border-red-500/20 flex items-center justify-center gap-1.5">
               <Trash2 class="w-3.5 h-3.5" />
-              <span class="text-xs">删除</span>
+              <span class="text-xs">{{ t('common.delete') }}</span>
             </button>
           </div>
         </div>
@@ -303,19 +310,19 @@ function toggleSecretVisibility(token) {
     </div>
 
     <!-- 创建弹窗 -->
-    <el-dialog v-model="showDialog" title="创建 API Token" width="90vw" class="!max-w-[480px] token-dialog" :close-on-click-modal="false">
+    <el-dialog v-model="showDialog" :title="t('tokens.createToken')" width="90vw" class="!max-w-[480px] token-dialog" :close-on-click-modal="false">
       <div class="space-y-4">
         <!-- 名称 -->
         <div>
-          <label class="block text-xs sm:text-sm font-medium mb-2">名称</label>
-          <input v-model="form.name" type="text" placeholder="请输入 Token 名称"
+          <label class="block text-xs sm:text-sm font-medium mb-2">{{ t('tokens.tokenName') }}</label>
+          <input v-model="form.name" type="text" :placeholder="t('tokens.pleaseInputTokenName')"
             class="w-full px-4 py-2.5 rounded-xl border transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm"
             :class="isDark ? 'bg-[var(--bg-hover)] border-[var(--border)] text-white' : 'bg-gray-50 border-gray-200 text-gray-800'" />
         </div>
 
         <!-- 权限 -->
         <div>
-          <label class="block text-xs sm:text-sm font-medium mb-2">权限</label>
+          <label class="block text-xs sm:text-sm font-medium mb-2">{{ t('tokens.permissions') }}</label>
           <div class="flex flex-wrap gap-2">
             <button v-for="opt in permissionOptions" :key="opt.value" @click="
               form.permissions.includes(opt.value)
@@ -333,7 +340,7 @@ function toggleSecretVisibility(token) {
 
         <!-- 有效期 -->
         <div>
-          <label class="block text-xs sm:text-sm font-medium mb-2">有效期</label>
+          <label class="block text-xs sm:text-sm font-medium mb-2">{{ t('tokens.expiresIn') }}</label>
           <div class="flex flex-wrap gap-2">
             <button v-for="opt in expiryOptions" :key="opt.value" @click="form.expiresIn = opt.value"
               class="px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all border"
@@ -349,20 +356,20 @@ function toggleSecretVisibility(token) {
       <template #footer>
         <div class="flex flex-col sm:flex-row justify-end gap-2">
           <button @click="showDialog = false" class="px-4 py-2 rounded-xl transition-all"
-            :class="isDark ? 'hover:bg-[var(--bg-hover)]' : 'hover:bg-gray-100'">取消</button>
-          <button @click="createToken" class="btn-gradient px-4 py-2 rounded-xl">创建</button>
+            :class="isDark ? 'hover:bg-[var(--bg-hover)]' : 'hover:bg-gray-100'">{{ t('common.cancel') }}</button>
+          <button @click="createToken" class="btn-gradient px-4 py-2 rounded-xl">{{ t('common.create') }}</button>
         </div>
       </template>
     </el-dialog>
 
     <!-- Token 创建成功弹窗 -->
-    <el-dialog v-model="showTokenDialog" title="Token 创建成功" width="90vw" class="!max-w-[480px] token-dialog" :close-on-click-modal="false">
+    <el-dialog v-model="showTokenDialog" :title="t('tokens.createSuccess')" width="90vw" class="!max-w-[480px] token-dialog" :close-on-click-modal="false">
       <div class="p-4 rounded-2xl border-2 border-red-500/30 bg-red-500/10 mb-4">
         <div class="flex items-start gap-3">
           <AlertTriangle class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
           <div>
-            <p class="text-sm text-red-500 font-bold mb-1">重要提示</p>
-            <p class="text-xs sm:text-sm text-red-400">Secret 仅显示一次，关闭后将无法再次查看！请务必立即复制并安全保存。</p>
+            <p class="text-sm text-red-500 font-bold mb-1">{{ t('common.warning') }}</p>
+            <p class="text-xs sm:text-sm text-red-400">{{ t('tokens.tokenCreatedWarning') }}</p>
           </div>
         </div>
       </div>
@@ -405,7 +412,7 @@ function toggleSecretVisibility(token) {
 
       <template #footer>
         <button @click="showTokenDialog = false"
-          class="btn-gradient px-4 py-2.5 rounded-xl w-full sm:w-auto font-medium">我已安全保存</button>
+          class="btn-gradient px-4 py-2.5 rounded-xl w-full sm:w-auto font-medium">{{ t('tokens.iHaveSaved') }}</button>
       </template>
     </el-dialog>
   </div>

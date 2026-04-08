@@ -1,11 +1,13 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
 import { ElMessage } from 'element-plus'
 import { Lock, Sun, Moon, ArrowLeft, LogOut } from 'lucide-vue-next'
 
+const { t } = useI18n()
 const router = useRouter()
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
@@ -36,7 +38,7 @@ async function handleLogout() {
 
 async function handleLogin() {
   if (!username.value || !password.value) {
-    ElMessage.warning('请输入用户名和密码')
+    ElMessage.warning(t('login.pleaseInputUsername'))
     return
   }
 
@@ -45,10 +47,10 @@ async function handleLogin() {
   loading.value = false
 
   if (res.success) {
-    ElMessage.success('登录成功')
+    ElMessage.success(t('login.loginSuccess'))
     router.push({ name: 'Dashboard' })
   } else {
-    ElMessage.error(res.message || '登录失败')
+    ElMessage.error(res.message || t('login.loginFailed'))
   }
 }
 
@@ -90,7 +92,7 @@ function goHome() {
             :class="themeStore.isDark ? 'text-white' : 'text-gray-800'">Bed</span>
         </h1>
         <p class="text-sm mt-2" :class="themeStore.isDark ? 'text-gray-400' : 'text-gray-500'">
-          管理后台
+          {{ t('login.title') }}
         </p>
       </div>
 
@@ -105,15 +107,15 @@ function goHome() {
             <Lock class="w-8 h-8 text-red-500" />
           </div>
           <h3 class="text-lg font-medium mb-2" :class="themeStore.isDark ? 'text-white' : 'text-gray-800'">
-            无访问权限
+            {{ t('login.noPermission') || 'No Permission' }}
           </h3>
           <p class="text-sm mb-6" :class="themeStore.isDark ? 'text-gray-400' : 'text-gray-500'">
-            您当前以 {{ authStore.user?.username || 'user' }} 身份登录<br>管理后台需要 admin 权限
+            {{ t('login.currentUser', { username: authStore.user?.username || 'user' }) }}
           </p>
           <button @click="handleLogout"
             class="w-full py-3 rounded-xl font-medium text-white bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 transition-all shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2">
             <LogOut class="w-4 h-4" />
-            退出并重新登录
+            {{ t('login.logoutAndReLogin') }}
           </button>
         </div>
 
@@ -121,11 +123,11 @@ function goHome() {
         <form v-else @submit.prevent="handleLogin" class="space-y-4">
           <div>
             <label class="block text-sm font-medium mb-2"
-              :class="themeStore.isDark ? 'text-gray-300' : 'text-gray-700'">用户名</label>
+              :class="themeStore.isDark ? 'text-gray-300' : 'text-gray-700'">{{ t('login.username') }}</label>
             <div class="relative">
               <Lock class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5"
                 :class="themeStore.isDark ? 'text-gray-500' : 'text-gray-400'" />
-              <input v-model="username" type="text" placeholder="请输入用户名"
+              <input v-model="username" type="text" :placeholder="t('login.username')"
                 class="w-full pl-12 pr-4 py-3 rounded-xl border transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                 :class="themeStore.isDark ? 'bg-[var(--bg-hover)] border-[var(--border)] text-white placeholder-gray-500' : 'bg-gray-50 border-gray-200 text-gray-800'" />
             </div>
@@ -133,11 +135,11 @@ function goHome() {
 
           <div>
             <label class="block text-sm font-medium mb-2"
-              :class="themeStore.isDark ? 'text-gray-300' : 'text-gray-700'">密码</label>
+              :class="themeStore.isDark ? 'text-gray-300' : 'text-gray-700'">{{ t('login.password') }}</label>
             <div class="relative">
               <Lock class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5"
                 :class="themeStore.isDark ? 'text-gray-500' : 'text-gray-400'" />
-              <input v-model="password" type="password" placeholder="请输入密码"
+              <input v-model="password" type="password" :placeholder="t('login.password')"
                 class="w-full pl-12 pr-4 py-3 rounded-xl border transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                 :class="themeStore.isDark ? 'bg-[var(--bg-hover)] border-[var(--border)] text-white placeholder-gray-500' : 'bg-gray-50 border-gray-200 text-gray-800'"
                 @keyup.enter="handleLogin" />
@@ -146,13 +148,13 @@ function goHome() {
 
           <button type="submit" :disabled="loading"
             class="w-full py-3 rounded-xl font-medium text-white bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 transition-all shadow-lg shadow-indigo-500/25 disabled:opacity-50 disabled:cursor-not-allowed">
-            <span v-if="loading">登录中...</span>
-            <span v-else>登 录</span>
+            <span v-if="loading">{{ t('common.loading') }}</span>
+            <span v-else>{{ t('login.loginButton') }}</span>
           </button>
         </form>
 
         <div class="mt-6 text-center text-sm" :class="themeStore.isDark ? 'text-gray-500' : 'text-gray-400'">
-          默认账号: admin / admin
+          {{ t('login.defaultAccount') }}: admin / admin
         </div>
       </div>
     </div>

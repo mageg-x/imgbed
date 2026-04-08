@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
 import { fileApi } from '@/api/file'
@@ -10,6 +11,7 @@ import {
   RefreshCw, Search, Grid3x3, List, ArrowLeft, Sun, Moon, Copy, Download
 } from 'lucide-vue-next'
 
+const { t } = useI18n()
 const router = useRouter()
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
@@ -52,7 +54,7 @@ async function loadFiles() {
       total.value = res.data?.total || 0
     }
   } catch {
-    ElMessage.error('加载文件失败')
+    ElMessage.error(t('browse.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -117,33 +119,33 @@ async function copyUrl(url) {
       ? url
       : getOrigin() + url
     await navigator.clipboard.writeText(fullUrl)
-    ElMessage.success('链接已复制')
+    ElMessage.success(t('common.linkCopied'))
   } catch {
-    ElMessage.error('复制失败')
+    ElMessage.error(t('common.copyFailed'))
   }
 }
 
 async function deleteFile(file) {
   try {
-    await ElMessageBox.confirm(`确定要删除「${file.name}」吗？`, '删除确认', { type: 'warning' })
+    await ElMessageBox.confirm(t('browse.deleteConfirm', { 0: file.name }), t('browse.confirmDelete'), { type: 'warning' })
     await fileApi.deleteFile(file.id)
-    ElMessage.success('删除成功')
+    ElMessage.success(t('common.deleteSuccess'))
     loadFiles()
   } catch (e) {
-    if (e !== 'cancel') ElMessage.error('删除失败')
+    if (e !== 'cancel') ElMessage.error(t('common.deleteFailed'))
   }
 }
 
 async function deleteSelected() {
   if (!hasSelection.value) return
   try {
-    await ElMessageBox.confirm(`确定要删除选中的 ${selected.value.length} 个文件吗？`, '批量删除', { type: 'warning' })
+    await ElMessageBox.confirm(t('browse.batchDeleteConfirm', { 0: selected.value.length }), t('browse.batchDeleteTitle'), { type: 'warning' })
     await fileApi.deleteMultiple(selected.value.map(f => f.id))
-    ElMessage.success('删除成功')
+    ElMessage.success(t('common.deleteSuccess'))
     selected.value = []
     loadFiles()
   } catch (e) {
-    if (e !== 'cancel') ElMessage.error('删除失败')
+    if (e !== 'cancel') ElMessage.error(t('common.deleteFailed'))
   }
 }
 
@@ -162,9 +164,9 @@ async function downloadFile(file) {
     link.href = url
     link.download = file.name
     link.click()
-    ElMessage.success('下载开始')
+    ElMessage.success(t('common.downloadStart'))
   } catch {
-    ElMessage.error('下载失败')
+    ElMessage.error(t('common.downloadFailed'))
   }
 }
 </script>
@@ -176,7 +178,7 @@ async function downloadFile(file) {
       :class="themeStore.isDark ? 'bg-[var(--bg-primary)]/80 border-[var(--border)]' : 'bg-white/80 border-gray-200'">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
         <div class="flex items-center gap-3 sm:gap-4">
-          <el-tooltip content="返回首页" placement="bottom">
+          <el-tooltip :content="t('common.backToHome')" placement="bottom">
             <button @click="router.push('/')" class="p-2 rounded-lg transition-all"
               :class="themeStore.isDark ? 'hover:bg-white/5 text-gray-400' : 'hover:bg-gray-100 text-gray-600'">
               <ArrowLeft class="w-5 h-5" />
@@ -186,20 +188,20 @@ async function downloadFile(file) {
             <img src="/imgbed.webp" alt="ImgBed"
               class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl object-cover shadow-lg shadow-indigo-500/30" />
             <span class="text-lg sm:text-xl font-bold">
-              <span class="text-gradient">我的文件</span>
+              <span class="text-gradient">{{ t('browse.title') }}</span>
             </span>
           </div>
         </div>
 
         <div class="flex items-center gap-1 sm:gap-2">
-          <el-tooltip :content="themeStore.isDark ? '切换亮色模式' : '切换暗色模式'" placement="bottom">
+          <el-tooltip :content="themeStore.isDark ? t('common.switchToLightMode') : t('common.switchToDarkMode')" placement="bottom">
             <button @click="themeStore.toggle" class="p-2 rounded-lg transition-all"
               :class="themeStore.isDark ? 'text-gray-400 hover:text-white hover:bg-white/5' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'">
               <Sun v-if="themeStore.isDark" class="w-5 h-5" />
               <Moon v-else class="w-5 h-5" />
             </button>
           </el-tooltip>
-          <el-tooltip content="刷新" placement="bottom">
+          <el-tooltip :content="t('common.refresh')" placement="bottom">
             <button @click="loadFiles" class="p-2 rounded-lg transition-all"
               :class="themeStore.isDark ? 'text-gray-400 hover:text-white hover:bg-white/5' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'">
               <RefreshCw class="w-5 h-5" />
@@ -218,7 +220,7 @@ async function downloadFile(file) {
         <div class="relative flex-1 min-w-[200px]">
           <Search class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5"
             :class="themeStore.isDark ? 'text-gray-500' : 'text-gray-400'" />
-          <input v-model="search" type="text" placeholder="搜索文件..."
+          <input v-model="search" type="text" :placeholder="t('browse.searchPlaceholder')"
             class="w-full pl-12 pr-4 py-2.5 rounded-xl border transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
             :class="themeStore.isDark ? 'bg-[var(--bg-hover)] border-[var(--border)] text-white placeholder-gray-500' : 'bg-gray-50 border-gray-200 text-gray-800'"
             @keyup.enter="handleSearch" />
@@ -246,17 +248,17 @@ async function downloadFile(file) {
       <div v-if="hasSelection" class="max-w-7xl mx-auto px-4 sm:px-6 py-2">
         <div
           class="rounded-xl border border-indigo-500/50 bg-indigo-500/10 p-3 sm:p-4 flex items-center gap-3 sm:gap-4">
-          <span class="text-indigo-500 font-medium text-sm sm:text-base">已选择 {{ selected.length }} 个文件</span>
+          <span class="text-indigo-500 font-medium text-sm sm:text-base">{{ t('browse.selectedCount', { 0: selected.length }) }}</span>
           <div class="flex-1"></div>
-          <el-tooltip content="删除选中文件" placement="top">
+          <el-tooltip :content="t('browse.deleteSelectedTip')" placement="top">
             <button @click="deleteSelected"
               class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-all text-sm">
-              批量删除
+              {{ t('browse.batchDelete') }}
             </button>
           </el-tooltip>
           <button @click="selected = []" class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-all text-sm"
             :class="themeStore.isDark ? 'bg-[var(--bg-hover)] hover:bg-[var(--bg-secondary)]' : 'bg-gray-200 hover:bg-gray-300'">
-            取消
+            {{ t('browse.cancel') }}
           </button>
         </div>
       </div>
@@ -278,11 +280,11 @@ async function downloadFile(file) {
           :class="themeStore.isDark ? 'bg-[var(--bg-secondary)]' : 'bg-gray-100'">
           <Folder class="w-10 h-10 sm:w-12 sm:h-12" :class="themeStore.isDark ? 'text-gray-600' : 'text-gray-400'" />
         </div>
-        <p class="text-base sm:text-lg mb-3 sm:mb-4" :class="themeStore.isDark ? 'text-gray-400' : 'text-gray-500'">暂无文件
+        <p class="text-base sm:text-lg mb-3 sm:mb-4" :class="themeStore.isDark ? 'text-gray-400' : 'text-gray-500'">{{ t('browse.noFiles') }}
         </p>
         <button @click="router.push('/')"
           class="px-5 sm:px-6 py-2 sm:py-2.5 rounded-xl text-white bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 transition-all shadow-lg shadow-indigo-500/25">
-          去上传
+          {{ t('browse.goUpload') }}
         </button>
       </div>
 
@@ -319,19 +321,19 @@ async function downloadFile(file) {
 
           <!-- 操作 -->
           <div class="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-all flex gap-1">
-            <el-tooltip content="复制链接" placement="top">
+            <el-tooltip :content="t('common.copyLink')" placement="top">
               <button @click.stop="copyUrl(file.url)"
                 class="p-1.5 rounded-lg bg-white/90 backdrop-blur-sm border shadow-sm hover:bg-white transition-all">
                 <Link class="w-4 h-4 text-indigo-500" />
               </button>
             </el-tooltip>
-            <el-tooltip content="下载" placement="top">
+            <el-tooltip :content="t('common.download')" placement="top">
               <button @click.stop="downloadFile(file)"
                 class="p-1.5 rounded-lg bg-white/90 backdrop-blur-sm border shadow-sm hover:bg-white transition-all">
                 <Download class="w-4 h-4 text-green-500" />
               </button>
             </el-tooltip>
-            <el-tooltip content="删除" placement="top">
+            <el-tooltip :content="t('common.delete')" placement="top">
               <button @click.stop="deleteFile(file)"
                 class="p-1.5 rounded-lg bg-white/90 backdrop-blur-sm border shadow-sm hover:bg-white transition-all">
                 <Trash2 class="w-4 h-4 text-red-500" />
@@ -350,13 +352,13 @@ async function downloadFile(file) {
               <tr>
                 <th class="w-10 p-3 sm:p-4"></th>
                 <th class="text-left p-3 sm:p-4 text-sm font-medium"
-                  :class="themeStore.isDark ? 'text-gray-400' : 'text-gray-500'">文件名</th>
+                  :class="themeStore.isDark ? 'text-gray-400' : 'text-gray-500'">{{ t('browse.fileName') }}</th>
                 <th class="text-left p-3 sm:p-4 text-sm font-medium w-24"
-                  :class="themeStore.isDark ? 'text-gray-400' : 'text-gray-500'">大小</th>
+                  :class="themeStore.isDark ? 'text-gray-400' : 'text-gray-500'">{{ t('browse.fileSize') }}</th>
                 <th class="text-left p-3 sm:p-4 text-sm font-medium w-40 hidden sm:table-cell"
-                  :class="themeStore.isDark ? 'text-gray-400' : 'text-gray-500'">上传时间</th>
+                  :class="themeStore.isDark ? 'text-gray-400' : 'text-gray-500'">{{ t('browse.uploadTime') }}</th>
                 <th class="text-right p-3 sm:p-4 text-sm font-medium w-24"
-                  :class="themeStore.isDark ? 'text-gray-400' : 'text-gray-500'">操作</th>
+                  :class="themeStore.isDark ? 'text-gray-400' : 'text-gray-500'">{{ t('browse.operation') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -390,19 +392,19 @@ async function downloadFile(file) {
                 </td>
                 <td class="p-3 sm:p-4">
                   <div class="flex items-center justify-end gap-1">
-                    <el-tooltip content="复制链接" placement="top">
+                    <el-tooltip :content="t('common.copyLink')" placement="top">
                       <button @click="copyUrl(file.url)"
                         class="p-1.5 sm:p-2 rounded-lg transition-all hover:bg-indigo-500/10">
                         <Copy class="w-4 h-4 text-indigo-500" />
                       </button>
                     </el-tooltip>
-                    <el-tooltip content="下载" placement="top">
+                    <el-tooltip :content="t('common.download')" placement="top">
                       <button @click="downloadFile(file)"
                         class="p-1.5 sm:p-2 rounded-lg transition-all hover:bg-green-500/10">
                         <Download class="w-4 h-4 text-green-500" />
                       </button>
                     </el-tooltip>
-                    <el-tooltip content="删除" placement="top">
+                    <el-tooltip :content="t('common.delete')" placement="top">
                       <button @click="deleteFile(file)"
                         class="p-1.5 sm:p-2 rounded-lg transition-all hover:bg-red-500/10">
                         <Trash2 class="w-4 h-4 text-red-500" />
@@ -431,7 +433,7 @@ async function downloadFile(file) {
     </main>
 
     <!-- 预览弹窗 -->
-    <el-dialog v-model="previewVisible" title="文件预览" width="800px">
+    <el-dialog v-model="previewVisible" :title="t('browse.filePreview')" width="800px">
       <div v-if="previewFile" class="flex flex-col items-center">
         <img v-if="previewFile.type?.startsWith('image/')" :src="previewFile.url" :alt="previewFile.name"
           class="max-w-full max-h-[60vh] object-contain rounded-lg" />

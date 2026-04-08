@@ -1,11 +1,13 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
 import { ElMessage } from 'element-plus'
 import { Lock, Sun, Moon, Image, LogOut } from 'lucide-vue-next'
 
+const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
@@ -39,31 +41,31 @@ async function handleLogout() {
 async function handleLogin() {
   if (mode.value === 'user') {
     if (!password.value) {
-      ElMessage.warning('请输入访问密码')
+      ElMessage.warning(t('login.pleaseInputAccessPassword'))
       return
     }
     loading.value = true
     const res = await authStore.login(password.value)
     loading.value = false
     if (res.success) {
-      ElMessage.success('登录成功')
+      ElMessage.success(t('login.loginSuccess'))
       router.push(route.query.redirect || '/')
     } else {
-      ElMessage.error(res.message || '登录失败')
+      ElMessage.error(res.message || t('login.loginFailed'))
     }
   } else {
     if (!username.value || !password.value) {
-      ElMessage.warning('请输入用户名和密码')
+      ElMessage.warning(t('login.pleaseInputUsernameAndPassword'))
       return
     }
     loading.value = true
     const res = await authStore.adminLogin({ username: username.value, password: password.value })
     loading.value = false
     if (res.success) {
-      ElMessage.success('管理员登录成功')
+      ElMessage.success(t('login.adminLoginSuccess'))
       window.location.href = '/admin/'
     } else {
-      ElMessage.error(res.message || '登录失败')
+      ElMessage.error(res.message || t('login.loginFailed'))
     }
   }
 }
@@ -80,7 +82,7 @@ async function handleLogin() {
     </div>
 
     <!-- 主题切换 -->
-    <el-tooltip :content="themeStore.isDark ? '切换亮色模式' : '切换暗色模式'" placement="bottom">
+    <el-tooltip :content="themeStore.isDark ? t('common.switchToLightMode') : t('common.switchToDarkMode')" placement="bottom">
       <button @click="themeStore.toggle"
         class="absolute top-4 right-4 sm:top-6 sm:right-6 p-2.5 sm:p-3 rounded-xl border transition-all z-10"
         :class="themeStore.isDark ? 'bg-[var(--bg-secondary)] border-[var(--border)] text-gray-400 hover:text-white' : 'bg-white border-gray-200 text-gray-600 hover:text-gray-900'">
@@ -99,7 +101,7 @@ async function handleLogin() {
             :class="themeStore.isDark ? 'text-white' : 'text-gray-800'">Bed</span>
         </h1>
         <p class="text-xs sm:text-sm mt-1.5 sm:mt-2" :class="themeStore.isDark ? 'text-gray-400' : 'text-gray-500'">
-          开源文件托管解决方案
+          {{ t('login.subtitle') }}
         </p>
       </div>
 
@@ -114,15 +116,15 @@ async function handleLogin() {
             <Lock class="w-8 h-8 text-red-500" />
           </div>
           <h3 class="text-lg font-medium mb-2" :class="themeStore.isDark ? 'text-white' : 'text-gray-800'">
-            无访问权限
+            {{ t('login.accessDenied') }}
           </h3>
           <p class="text-sm mb-6" :class="themeStore.isDark ? 'text-gray-400' : 'text-gray-500'">
-            您当前以管理员身份登录<br>请退出后使用用户密码登录
+            {{ t('login.adminLoggedInTip') }}
           </p>
           <button @click="handleLogout"
             class="w-full py-3 rounded-xl font-medium text-white bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 transition-all shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2">
             <LogOut class="w-4 h-4" />
-            退出并重新登录
+            {{ t('login.logoutAndReLogin') }}
           </button>
         </div>
 
@@ -134,25 +136,25 @@ async function handleLogin() {
             <button @click="mode = 'user'" class="flex-1 py-2 rounded-lg text-sm font-medium transition-all" :class="mode === 'user'
               ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg'
               : (themeStore.isDark ? 'text-gray-400' : 'text-gray-600')">
-              <span class="hidden sm:inline">用户登录</span>
-              <span class="sm:hidden">用户</span>
+              <span class="hidden sm:inline">{{ t('login.userLogin') }}</span>
+              <span class="sm:hidden">{{ t('login.user') }}</span>
             </button>
             <button @click="mode = 'admin'" class="flex-1 py-2 rounded-lg text-sm font-medium transition-all" :class="mode === 'admin'
               ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg'
               : (themeStore.isDark ? 'text-gray-400' : 'text-gray-600')">
-              <span class="hidden sm:inline">管理登录</span>
-              <span class="sm:hidden">管理</span>
+              <span class="hidden sm:inline">{{ t('login.adminLogin') }}</span>
+              <span class="sm:hidden">{{ t('login.admin') }}</span>
             </button>
           </div>
 
           <form @submit.prevent="handleLogin" class="space-y-4">
             <div v-if="mode === 'admin'">
               <label class="block text-sm font-medium mb-2"
-                :class="themeStore.isDark ? 'text-gray-300' : 'text-gray-700'">用户名</label>
+                :class="themeStore.isDark ? 'text-gray-300' : 'text-gray-700'">{{ t('login.username') }}</label>
               <div class="relative">
                 <Lock class="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5"
                   :class="themeStore.isDark ? 'text-gray-500' : 'text-gray-400'" />
-                <input v-model="username" type="text" placeholder="请输入用户名"
+                <input v-model="username" type="text" :placeholder="t('login.pleaseInputUsername')"
                   class="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 rounded-xl border transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                   :class="themeStore.isDark ? 'bg-[var(--bg-hover)] border-[var(--border)] text-white placeholder-gray-500' : 'bg-gray-50 border-gray-200 text-gray-800'" />
               </div>
@@ -161,12 +163,12 @@ async function handleLogin() {
             <div>
               <label class="block text-sm font-medium mb-2"
                 :class="themeStore.isDark ? 'text-gray-300' : 'text-gray-700'">
-                {{ mode === 'admin' ? '密码' : '访问密码' }}
+                {{ mode === 'admin' ? t('login.password') : t('login.accessPassword') }}
               </label>
               <div class="relative">
                 <Lock class="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5"
                   :class="themeStore.isDark ? 'text-gray-500' : 'text-gray-400'" />
-                <input v-model="password" type="password" :placeholder="mode === 'admin' ? '请输入密码' : '请输入访问密码'"
+                <input v-model="password" type="password" :placeholder="mode === 'admin' ? t('login.pleaseInputPassword') : t('login.pleaseInputAccessPassword')"
                   class="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 rounded-xl border transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                   :class="themeStore.isDark ? 'bg-[var(--bg-hover)] border-[var(--border)] text-white placeholder-gray-500' : 'bg-gray-50 border-gray-200 text-gray-800'" />
               </div>
@@ -174,8 +176,8 @@ async function handleLogin() {
 
             <button type="submit" :disabled="loading"
               class="w-full py-2.5 sm:py-3 rounded-xl font-medium text-white bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 transition-all shadow-lg shadow-indigo-500/25 disabled:opacity-50 disabled:cursor-not-allowed">
-              <span v-if="loading">登录中...</span>
-              <span v-else>登 录</span>
+              <span v-if="loading">{{ t('login.loggingIn') }}...</span>
+              <span v-else>{{ t('login.login') }}</span>
             </button>
           </form>
         </template>
@@ -183,7 +185,7 @@ async function handleLogin() {
         <div class="mt-4 sm:mt-6 text-center">
           <router-link to="/" class="text-xs sm:text-sm transition-all"
             :class="themeStore.isDark ? 'text-gray-400 hover:text-indigo-400' : 'text-gray-500 hover:text-indigo-600'">
-            返回首页
+            {{ t('common.backToHome') }}
           </router-link>
         </div>
       </div>

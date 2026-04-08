@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted, computed, watchEffect } from 'vue'
+import { useI18n } from 'vue-i18n'
 import request from '@/api/request'
 import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
 import {
@@ -10,6 +11,7 @@ import {
 import { VueDatePicker } from '@vuepic/vue-datepicker'
 import '@vuepic/vue-datepicker/dist/main.css'
 
+const { t } = useI18n()
 const isDark = ref(true)
 const origin = window.location.origin
 const files = ref([])
@@ -59,10 +61,10 @@ function closeCopyMenu() {
 async function copyText(text, label) {
   try {
     await navigator.clipboard.writeText(text)
-    ElMessage.success(`${label}已复制`)
+    ElMessage.success(t('common.copyToClipboard'))
     closeCopyMenu()
   } catch {
-    ElMessage.error('复制失败')
+    ElMessage.error(t('common.copyFailed'))
   }
 }
 
@@ -72,7 +74,7 @@ async function copyFileUrl(file) {
   if (!url || file.channelType === 'local') {
     url = `${window.location.origin}/api/v1/file/${file.id}`
   }
-  await copyText(url, '链接')
+  await copyText(url, t('common.link'))
 }
 
 function getLinks(file) {
@@ -118,11 +120,11 @@ watchEffect(() => {
 
 // 快速筛选预设
 const filterPresets = [
-  { label: '全部', value: 0 },
-  { label: '7天前', value: 7 },
-  { label: '30天前', value: 30 },
-  { label: '90天前', value: 90 },
-  { label: '1年前', value: 365 },
+  { label: t('common.all'), value: 0 },
+  { label: t('files.daysAgo', [7]), value: 7 },
+  { label: t('files.daysAgo', [30]), value: 30 },
+  { label: t('files.daysAgo', [90]), value: 90 },
+  { label: t('files.oneYearAgo'), value: 365 },
 ]
 
 onMounted(() => {
@@ -147,7 +149,7 @@ async function loadFiles() {
       total.value = res.data?.total || 0
     }
   } catch {
-    ElMessage.error('加载文件失败')
+    ElMessage.error(t('common.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -205,17 +207,17 @@ async function selectAllFiltered() {
   }
 
   try {
-    ElMessage.info('正在获取筛选结果...')
+    ElMessage.info(t('files.fetchingFilterResults'))
     const res = await request.get('/files/ids', { params })
     if (res.code === 0 && res.data?.ids) {
       const ids = res.data.ids
       const existingIds = new Set(selected.value.map(f => f.id))
       const newFiles = files.value.filter(f => ids.includes(f.id) && !existingIds.has(f.id))
       selected.value = [...selected.value, ...newFiles]
-      ElMessage.success(`已选择 ${ids.length} 个文件`)
+      ElMessage.success(t('files.selectedCount', [ids.length]))
     }
   } catch {
-    ElMessage.error('获取筛选结果失败')
+    ElMessage.error(t('files.fetchFilterFailed'))
   }
 }
 
@@ -233,6 +235,10 @@ async function openFileDetail(file) {
   }
   if (file.links?.url && file.links.url.startsWith('/')) {
     file.links.url = origin + file.links.url
+  }
+  // 原始链接也可能是相对路径
+  if (file.originalUrl && file.originalUrl.startsWith('/')) {
+    file.originalUrl = origin + file.originalUrl
   }
   detailFile.value = file
 }
@@ -301,12 +307,12 @@ function downloadFile(file) {
 
 async function deleteFile(file) {
   try {
-    await ElMessageBox.confirm(`确定要删除「${file.name}」吗？`, '删除确认', { type: 'warning' })
+    await ElMessageBox.confirm(t('files.deleteConfirm', { name: file.name }), t('files.deleteConfirmTitle'), { type: 'warning' })
     await request.delete(`/admin/files/${file.id}`)
-    ElMessage.success('删除成功')
+    ElMessage.success(t('common.deleteSuccess'))
     loadFiles()
   } catch (e) {
-    if (e !== 'cancel') ElMessage.error('删除失败')
+    if (e !== 'cancel') ElMessage.error(t('common.deleteFailed'))
   }
 }
 
@@ -316,7 +322,7 @@ async function deleteSelected() {
     const previewFiles = selected.value.slice(0, 5)
     const hasMore = selected.value.length > 5
     let message = `<div class="max-h-48 overflow-y-auto">`
-    message += `<p class="mb-2">以下 ${selected.value.length} 个文件将被删除：</p>`
+    message += `<p class="mb-2">${t('files.batchDeleteTip', [selected.value.length])}</p>`
     message += `<ul class="space-y-1 text-sm">`
     for (const file of previewFiles) {
       message += `<li class="flex items-center gap-2">
@@ -325,33 +331,33 @@ async function deleteSelected() {
       </li>`
     }
     if (hasMore) {
-      message += `<li class="text-gray-400">... 还有 ${selected.value.length - 5} 个文件</li>`
+      message += `<li class="text-gray-400">${t('files.moreFiles', [selected.value.length - 5])}</li>`
     }
     message += `</ul></div>`
 
-    await ElMessageBox.confirm(message, '批量删除确认', {
+    await ElMessageBox.confirm(message, t('files.batchDeleteConfirm'), {
       type: 'warning',
       dangerouslyUseHTMLString: true,
-      confirmButtonText: '确认删除',
-      cancelButtonText: '取消'
+      confirmButtonText: t('common.confirmDelete'),
+      cancelButtonText: t('common.cancel')
     })
 
     const loading = ElLoading.service({
       lock: true,
-      text: `正在删除 ${selected.value.length} 个文件...`,
+      text: t('files.deleting', [selected.value.length]),
       background: 'rgba(0, 0, 0, 0.7)'
     })
 
     try {
       await request.delete('/admin/files', { data: { ids: selected.value.map(f => f.id) } })
-      ElMessage.success(`成功删除 ${selected.value.length} 个文件`)
+      ElMessage.success(t('files.deleteSuccess', [selected.value.length]))
       selected.value = []
       loadFiles()
     } finally {
       loading.close()
     }
   } catch (e) {
-    if (e !== 'cancel') ElMessage.error('删除失败')
+    if (e !== 'cancel') ElMessage.error(t('common.deleteFailed'))
   }
 }
 
@@ -383,10 +389,10 @@ async function previewCleanup() {
     if (res.code === 0) {
       cleanupPreview.value = res.data
     } else {
-      ElMessage.error(res.message || '预览失败')
+      ElMessage.error(res.message || t('files.previewFailed'))
     }
   } catch {
-    ElMessage.error('预览失败')
+    ElMessage.error(t('files.previewFailed'))
   } finally {
     cleanupLoading.value = false
   }
@@ -396,8 +402,8 @@ async function previewCleanup() {
 async function executeCleanup() {
   try {
     await ElMessageBox.confirm(
-      `确定要删除 ${cleanupPreview.value?.count || 0} 个文件吗？将释放 ${formatSize(cleanupPreview.value?.totalSize || 0)} 空间。`,
-      '确认清理',
+      t('files.cleanupConfirm', [cleanupPreview.value?.count || 0, formatSize(cleanupPreview.value?.totalSize || 0)]),
+      t('files.cleanupConfirmTitle'),
       { type: 'warning' }
     )
 
@@ -411,14 +417,14 @@ async function executeCleanup() {
 
     const res = await request.post('/files/cleanup', params)
     if (res.code === 0) {
-      ElMessage.success(`清理完成！已删除 ${res.data.deletedCount} 个文件`)
+      ElMessage.success(t('files.cleanupComplete', [res.data.deletedCount]))
       cleanupVisible.value = false
       loadFiles()
     } else {
-      ElMessage.error(res.message || '清理失败')
+      ElMessage.error(res.message || t('files.cleanupFailed'))
     }
   } catch (e) {
-    if (e !== 'cancel') ElMessage.error('清理失败')
+    if (e !== 'cancel') ElMessage.error(t('files.cleanupFailed'))
   } finally {
     cleanupLoading.value = false
   }
@@ -435,7 +441,7 @@ async function executeCleanup() {
       <div class="relative flex-1 min-w-[150px] sm:min-w-[200px]">
         <Search class="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5"
           :class="isDark ? 'text-gray-500' : 'text-gray-400'" />
-        <input v-model="search" type="text" placeholder="搜索文件..."
+        <input v-model="search" type="text" :placeholder="t('files.searchPlaceholder')"
           class="w-full pl-10 sm:pl-12 pr-4 py-2 sm:py-2.5 rounded-xl border transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm"
           :class="isDark ? 'bg-[var(--bg-hover)] border-[var(--border)] text-white placeholder-gray-500' : 'bg-gray-50 border-gray-200 text-gray-800'"
           @keyup.enter="handleSearch" />
@@ -454,34 +460,34 @@ async function executeCleanup() {
 
       <!-- 日期范围 -->
       <div class="flex items-center gap-2">
-        <VueDatePicker v-model="startDate" placeholder="开始日期" format="YYYY-MM-DD" class="!w-auto !text-xs sm:!text-sm rounded-xl border" 
-          :class="isDark ? 'bg-[var(--bg-hover)] border-[var(--border)] text-white' : 'bg-gray-50 border-gray-200 text-gray-800'" 
+        <VueDatePicker v-model="startDate" :placeholder="t('files.startDate')" format="YYYY-MM-DD" class="!w-auto !text-xs sm:!text-sm rounded-xl border"
+          :class="isDark ? 'bg-[var(--bg-hover)] border-[var(--border)] text-white' : 'bg-gray-50 border-gray-200 text-gray-800'"
           @update:modelValue="handleDateConfirm" />
-        <span class="text-xs sm:text-sm" :class="isDark ? 'text-gray-400' : 'text-gray-500'">至</span>
-        <VueDatePicker v-model="endDate" placeholder="结束日期" format="YYYY-MM-DD" class="!w-auto !text-xs sm:!text-sm rounded-xl border" 
-          :class="isDark ? 'bg-[var(--bg-hover)] border-[var(--border)] text-white' : 'bg-gray-50 border-gray-200 text-gray-800'" 
+        <span class="text-xs sm:text-sm" :class="isDark ? 'text-gray-400' : 'text-gray-500'">{{ t('common.to') }}</span>
+        <VueDatePicker v-model="endDate" :placeholder="t('files.endDate')" format="YYYY-MM-DD" class="!w-auto !text-xs sm:!text-sm rounded-xl border"
+          :class="isDark ? 'bg-[var(--bg-hover)] border-[var(--border)] text-white' : 'bg-gray-50 border-gray-200 text-gray-800'"
           @update:modelValue="handleDateConfirm" />
       </div>
 
       <!-- 清理按钮 -->
-      <el-tooltip content="一键清理旧文件" placement="top">
+      <el-tooltip :content="t('files.oneClickCleanup')" placement="top">
         <button @click="openCleanup"
           class="flex sm:ml-auto items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all text-sm border border-red-500/30">
           <Zap class="w-4 h-4" />
-          <span class="hidden sm:inline">一键清理</span>
+          <span class="hidden sm:inline">{{ t('files.oneClickCleanup') }}</span>
         </button>
       </el-tooltip>
 
       <!-- 视图切换 -->
       <div class="flex items-center rounded-xl p-1" :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-100'">
-        <el-tooltip content="网格视图" placement="top">
+        <el-tooltip :content="t('files.gridView')" placement="top">
           <button @click="viewMode = 'grid'" class="p-1.5 sm:p-2 rounded-lg transition-all" :class="viewMode === 'grid'
             ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg'
             : (isDark ? 'text-gray-400' : 'text-gray-600')">
             <Grid3x3 class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
         </el-tooltip>
-        <el-tooltip content="列表视图" placement="top">
+        <el-tooltip :content="t('files.listView')" placement="top">
           <button @click="viewMode = 'list'" class="p-1.5 sm:p-2 rounded-lg transition-all" :class="viewMode === 'list'
             ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg'
             : (isDark ? 'text-gray-400' : 'text-gray-600')">
@@ -490,7 +496,7 @@ async function executeCleanup() {
         </el-tooltip>
       </div>
 
-      <el-tooltip content="刷新列表" placement="top">
+      <el-tooltip :content="t('files.refreshList')" placement="top">
         <button @click="loadFiles" class="p-2 sm:p-2.5 rounded-xl border transition-all hover:border-indigo-500"
           :class="isDark ? 'border-[var(--border)] bg-[var(--bg-secondary)]' : 'border-gray-200 bg-white'">
           <RefreshCw class="w-4 h-4 sm:w-5 sm:h-5" />
@@ -501,14 +507,14 @@ async function executeCleanup() {
     <!-- 当前筛选状态 -->
     <div v-if="olderThan > 0 || (startDate && endDate)" class="flex items-center gap-2 text-sm"
       :class="isDark ? 'text-gray-400' : 'text-gray-500'">
-      <span>当前筛选：</span>
+      <span>{{ t('files.currentFilter') }}:</span>
       <span v-if="olderThan > 0" class="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-500">
-        {{ olderThan }}天前
+        {{ t('files.daysAgo', [olderThan]) }}
       </span>
       <span v-if="startDate && endDate" class="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-500">
-        {{ startDate }} 至 {{ endDate }}
+        {{ startDate }} {{ t('common.to') }} {{ endDate }}
       </span>
-      <button @click="clearDateFilter" class="ml-2 text-indigo-500 hover:underline">清除筛选</button>
+      <button @click="clearDateFilter" class="ml-2 text-indigo-500 hover:underline">{{ t('files.clearFilter') }}</button>
     </div>
 
     <!-- 全选工具栏 -->
@@ -516,39 +522,39 @@ async function executeCleanup() {
       :class="isDark ? 'text-gray-400' : 'text-gray-500'">
       <input ref="selectAllRef" type="checkbox" :checked="isAllCurrentPageSelected" @change="toggleSelectAllCurrentPage"
         class="w-5 h-5 rounded cursor-pointer accent-indigo-500" />
-      <el-tooltip content="选择当前页所有文件" placement="top">
+      <el-tooltip :content="t('files.selectAllCurrentPage')" placement="top">
         <button @click="selectAllCurrentPage"
           class="flex items-center gap-1 px-2 py-1 rounded-lg transition-all hover:bg-indigo-500/10 hover:text-indigo-500">
           <CheckSquare class="w-4 h-4" />
-          <span>全选当前页</span>
+          <span>{{ t('files.selectCurrentPage') }}</span>
         </button>
       </el-tooltip>
-      <el-tooltip content="选择所有符合筛选条件的文件" placement="top">
+      <el-tooltip :content="t('files.selectAllFiltered')" placement="top">
         <button @click="selectAllFiltered"
           class="flex items-center gap-1 px-2 py-1 rounded-lg transition-all hover:bg-indigo-500/10 hover:text-indigo-500">
           <CheckSquare class="w-4 h-4" />
-          <span>全选筛选结果</span>
+          <span>{{ t('files.selectFiltered') }}</span>
         </button>
       </el-tooltip>
       <span class="text-xs" :class="isDark ? 'text-gray-600' : 'text-gray-400'">|</span>
-      <span class="text-xs">共 {{ total }} 个文件</span>
+      <span class="text-xs">{{ t('files.totalFiles', [total]) }}</span>
     </div>
 
     <!-- 批量操作 -->
     <transition name="slide">
       <div v-if="hasSelection"
         class="rounded-xl border border-indigo-500/50 bg-indigo-500/10 p-3 sm:p-4 flex items-center gap-2 sm:gap-4">
-        <span class="text-indigo-500 font-medium text-sm">已选择 {{ selected.length }} 个文件</span>
+        <span class="text-indigo-500 font-medium text-sm">{{ t('files.selected', [selected.length]) }}</span>
         <div class="flex-1"></div>
-        <el-tooltip content="删除选中文件" placement="top">
+        <el-tooltip :content="t('files.deleteSelectedFiles')" placement="top">
           <button @click="deleteSelected"
             class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-all text-sm">
-            批量删除
+            {{ t('files.batchDelete') }}
           </button>
         </el-tooltip>
         <button @click="selected = []" class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-all text-sm"
           :class="isDark ? 'bg-[var(--bg-hover)] hover:bg-[var(--bg-secondary)]' : 'bg-gray-200 hover:bg-gray-300'">
-          取消
+          {{ t('common.cancel') }}
         </button>
       </div>
     </transition>
@@ -566,7 +572,7 @@ async function executeCleanup() {
         :class="isDark ? 'bg-[var(--bg-secondary)]' : 'bg-gray-100'">
         <Folder class="w-10 h-10 sm:w-12 sm:h-12" :class="isDark ? 'text-gray-600' : 'text-gray-400'" />
       </div>
-      <p class="text-sm sm:text-base" :class="isDark ? 'text-gray-400' : 'text-gray-500'">暂无文件</p>
+      <p class="text-sm sm:text-base" :class="isDark ? 'text-gray-400' : 'text-gray-500'">{{ t('files.noFiles') }}</p>
     </div>
 
     <!-- 网格视图 -->
@@ -600,22 +606,22 @@ async function executeCleanup() {
           </div>
           <!-- 按钮：始终显示在底部 -->
           <div class="flex justify-center gap-2 mt-2">
-            <el-tooltip content="详情" placement="top">
+            <el-tooltip :content="t('common.details')" placement="top">
               <button @click.stop="openFileDetail(file)" class="p-1.5 mx-2 rounded-lg hover:bg-black/10 transition-all">
                 <Info class="w-4 h-4 text-blue-500" />
               </button>
             </el-tooltip>
-            <el-tooltip content="复制" placement="top">
+            <el-tooltip :content="t('common.copy')" placement="top">
               <button @click.stop="copyFileUrl(file)" class="p-1.5 rounded-lg hover:bg-black/10 transition-all">
                 <Link class="w-4 h-4 text-indigo-500" />
               </button>
             </el-tooltip>
-            <el-tooltip content="下载" placement="top">
+            <el-tooltip :content="t('common.download')" placement="top">
               <button @click.stop="downloadFile(file)" class="p-1.5 rounded-lg hover:bg-black/10 transition-all">
                 <Download class="w-4 h-4 text-green-500" />
               </button>
             </el-tooltip>
-            <el-tooltip content="删除" placement="top">
+            <el-tooltip :content="t('common.delete')" placement="top">
               <button @click.stop="deleteFile(file)" class="p-1.5 rounded-lg hover:bg-black/10 transition-all">
                 <Trash2 class="w-4 h-4 text-red-500" />
               </button>
@@ -635,13 +641,13 @@ async function executeCleanup() {
               <th class="w-10 p-3 sm:p-4"></th>
               <th class="text-left p-3 sm:p-4 text-sm font-medium w-16 sm:w-32"
                 :class="isDark ? 'text-gray-400' : 'text-gray-500'">
-                文件名</th>
+                {{ t('files.fileName') }}</th>
               <th class="text-center p-3 sm:p-4 text-sm font-medium w-20 sm:w-24 hidden sm:table-cell"
-                :class="isDark ? 'text-gray-400' : 'text-gray-500'">大小</th>
+                :class="isDark ? 'text-gray-400' : 'text-gray-500'">{{ t('files.fileSize') }}</th>
               <th class="text-center p-3 sm:p-4 text-sm font-medium w-32 sm:w-40 hidden sm:table-cell"
-                :class="isDark ? 'text-gray-400' : 'text-gray-500'">上传时间</th>
+                :class="isDark ? 'text-gray-400' : 'text-gray-500'">{{ t('files.uploadTime') }}</th>
               <th class="text-center p-1 sm:p-4 text-sm font-medium w-28 sm:w-40"
-                :class="isDark ? 'text-gray-400' : 'text-gray-500'">操作</th>
+                :class="isDark ? 'text-gray-400' : 'text-gray-500'">{{ t('common.operation') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -676,21 +682,21 @@ async function executeCleanup() {
               </td>
               <td class="p-1 sm:p-4 w-28 sm:w-40 whitespace-nowrap">
                 <div class="flex items-center  justify-around gap-0 sm:gap-1 flex-shrink-0">
-                  <el-tooltip content="详情" placement="top">
+                  <el-tooltip :content="t('common.details')" placement="top">
                     <button @click="openFileDetail(file)"
                       class="p-0.5 rounded-lg transition-all hover:bg-blue-500/10 border"
                       :class="isDark ? 'border-[var(--border)]' : 'border-gray-200'">
                       <Info class="w-3 h-3 text-blue-500" />
                     </button>
                   </el-tooltip>
-                  <el-tooltip content="复制链接" placement="top">
+                  <el-tooltip :content="t('files.copyLink')" placement="top">
                     <button @click="copyFileUrl(file)"
                       class="p-0.5 rounded-lg transition-all hover:bg-indigo-500/10 border"
                       :class="isDark ? 'border-[var(--border)]' : 'border-gray-200'">
                       <Copy class="w-3 h-3 text-indigo-500" />
                     </button>
                   </el-tooltip>
-                  <el-tooltip content="下载" placement="top">
+                  <el-tooltip :content="t('common.download')" placement="top">
                     <button @click="downloadFile(file)"
                       class="p-0.5 rounded-lg transition-all hover:bg-green-500/10 border"
                       :class="isDark ? 'border-[var(--border)]' : 'border-gray-200'">
@@ -708,11 +714,11 @@ async function executeCleanup() {
                       <button v-if="isPreviewable(file.type)" @click="openPreview(file)"
                         class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all hover:bg-indigo-500/10 text-left"
                         :class="isDark ? 'text-gray-300' : 'text-gray-700'">
-                        <Eye class="w-4 h-4 text-indigo-500" /> 预览
+                        <Eye class="w-4 h-4 text-indigo-500" /> {{ t('common.preview') }}
                       </button>
                       <button @click="deleteFile(file)"
                         class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all hover:bg-red-500/10 text-left text-red-500">
-                        <Trash2 class="w-4 h-4" /> 删除
+                        <Trash2 class="w-4 h-4" /> {{ t('common.delete') }}
                       </button>
                     </div>
                   </el-popover>
@@ -739,7 +745,7 @@ async function executeCleanup() {
   </div>
 
   <!-- 预览弹窗 -->
-  <el-dialog v-model="previewVisible" title="文件预览" width="90vw" class="!max-w-[800px]" :class="isDark ? 'dark' : ''">
+  <el-dialog v-model="previewVisible" :title="t('files.filePreview')" width="90vw" class="!max-w-[800px]" :class="isDark ? 'dark' : ''">
     <div v-if="previewFile" class="flex flex-col items-center">
       <img v-if="previewFile.type?.startsWith('image/')" :src="previewFile.url || `/api/v1/file/${previewFile.id}`"
         :alt="previewFile.name" class="max-w-full max-h-[50vh] sm:max-h-[60vh] object-contain rounded-lg" />
@@ -758,22 +764,22 @@ async function executeCleanup() {
   </el-dialog>
 
   <!-- 清理弹窗 -->
-  <el-dialog v-model="cleanupVisible" title="一键清理旧文件" width="90vw" class="!max-w-[600px]" :class="isDark ? 'dark' : ''">
+  <el-dialog v-model="cleanupVisible" :title="t('files.oneClickCleanup')" width="90vw" class="!max-w-[600px]" :class="isDark ? 'dark' : ''">
     <div class="space-y-3 sm:space-y-4">
       <div class="p-3 sm:p-4 rounded-xl" :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-50'">
         <p class="text-xs sm:text-sm" :class="isDark ? 'text-gray-400' : 'text-gray-500'">
-          将清理符合以下条件的文件：
+          {{ t('files.cleanupCondition') }}
         </p>
         <div class="mt-2 flex flex-wrap gap-2">
           <span v-if="olderThan > 0" class="px-2 py-1 rounded bg-indigo-500/10 text-indigo-500 text-xs sm:text-sm">
-            {{ olderThan }}天前的文件
+            {{ t('files.daysAgoFiles', [olderThan]) }}
           </span>
           <span v-else-if="startDate && endDate"
             class="px-2 py-1 rounded bg-indigo-500/10 text-indigo-500 text-xs sm:text-sm">
-            {{ startDate }} 至 {{ endDate }}
+            {{ startDate }} {{ t('common.to') }} {{ endDate }}
           </span>
           <span v-else class="px-2 py-1 rounded bg-gray-500/10 text-gray-500 text-xs sm:text-sm">
-            所有文件
+            {{ t('files.allFiles') }}
           </span>
         </div>
       </div>
@@ -783,18 +789,17 @@ async function executeCleanup() {
         <div class="grid grid-cols-2 gap-2 sm:gap-3">
           <div class="p-3 sm:p-4 rounded-xl text-center" :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-50'">
             <p class="text-xl sm:text-2xl font-bold text-red-500">{{ cleanupPreview.count }}</p>
-            <p class="text-xs mt-1" :class="isDark ? 'text-gray-400' : 'text-gray-500'">文件数量</p>
+            <p class="text-xs mt-1" :class="isDark ? 'text-gray-400' : 'text-gray-500'">{{ t('files.fileCount') }}</p>
           </div>
           <div class="p-3 sm:p-4 rounded-xl text-center" :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-50'">
             <p class="text-xl sm:text-2xl font-bold text-red-500">{{ formatSize(cleanupPreview.totalSize) }}</p>
-            <p class="text-xs mt-1" :class="isDark ? 'text-gray-400' : 'text-gray-500'">将释放空间</p>
+            <p class="text-xs mt-1" :class="isDark ? 'text-gray-400' : 'text-gray-500'">{{ t('files.willReleaseSpace') }}</p>
           </div>
         </div>
 
         <!-- 预览列表 -->
         <div v-if="cleanupPreview.preview?.length > 0">
-          <p class="text-xs sm:text-sm font-medium mb-2" :class="isDark ? 'text-gray-400' : 'text-gray-500'">预览（前{{
-            cleanupPreview.preview.length }}个）：</p>
+          <p class="text-xs sm:text-sm font-medium mb-2" :class="isDark ? 'text-gray-400' : 'text-gray-500'">{{ t('files.previewTip', [cleanupPreview.preview.length]) }}</p>
           <div class="max-h-32 sm:max-h-40 overflow-y-auto rounded-lg border"
             :class="isDark ? 'border-[var(--border)]' : 'border-gray-200'">
             <div v-for="f in cleanupPreview.preview" :key="f.id"
@@ -814,18 +819,18 @@ async function executeCleanup() {
         <button @click="previewCleanup" :disabled="cleanupLoading"
           class="px-4 py-2 rounded-xl border transition-all text-sm"
           :class="isDark ? 'border-[var(--border)] hover:bg-[var(--bg-hover)]' : 'border-gray-200 hover:bg-gray-50'">
-          {{ cleanupPreview ? '刷新预览' : '预览' }}
+          {{ cleanupPreview ? t('files.refreshPreview') : t('common.preview') }}
         </button>
         <button v-if="cleanupPreview" @click="executeCleanup" :disabled="cleanupLoading || cleanupPreview.count === 0"
           class="px-4 py-2 rounded-xl bg-red-500 text-white hover:bg-red-600 transition-all text-sm disabled:opacity-50">
-          确认清理
+          {{ t('files.confirmCleanup') }}
         </button>
       </div>
     </div>
   </el-dialog>
 
   <!-- 文件详情弹窗 -->
-  <el-dialog v-model="detailVisible" title="文件详情" width="90vw" :class="isDark ? 'dark' : ''"
+  <el-dialog v-model="detailVisible" :title="t('files.fileDetails')" width="90vw" :class="isDark ? 'dark' : ''"
     class="!max-w-[500px] sm:!max-w-[500px]">
     <div v-if="detailLoading" class="flex justify-center py-8">
       <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
@@ -842,47 +847,47 @@ async function executeCleanup() {
       <div class="space-y-2 sm:space-y-3">
         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b gap-1"
           :class="isDark ? 'border-[var(--border)]' : 'border-gray-100'">
-          <span class="text-xs sm:text-sm" :class="isDark ? 'text-gray-400' : 'text-gray-500'">文件名</span>
+          <span class="text-xs sm:text-sm" :class="isDark ? 'text-gray-400' : 'text-gray-500'">{{ t('files.fileName') }}</span>
           <span class="text-xs sm:text-sm font-medium truncate" :title="detailFile.name">{{ detailFile.name }}</span>
         </div>
         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b gap-1"
           :class="isDark ? 'border-[var(--border)]' : 'border-gray-100'">
-          <span class="text-xs sm:text-sm" :class="isDark ? 'text-gray-400' : 'text-gray-500'">文件大小</span>
+          <span class="text-xs sm:text-sm" :class="isDark ? 'text-gray-400' : 'text-gray-500'">{{ t('files.fileSize') }}</span>
           <span class="text-xs sm:text-sm font-medium">{{ formatSize(detailFile.size) }}</span>
         </div>
         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b gap-1"
           :class="isDark ? 'border-[var(--border)]' : 'border-gray-100'">
-          <span class="text-xs sm:text-sm" :class="isDark ? 'text-gray-400' : 'text-gray-500'">文件类型</span>
+          <span class="text-xs sm:text-sm" :class="isDark ? 'text-gray-400' : 'text-gray-500'">{{ t('files.fileType') }}</span>
           <span class="text-xs sm:text-sm" :class="isDark ? 'text-gray-300' : 'text-gray-600'">{{ detailFile.type ||
-            '未知'
+            t('common.unknown')
             }}</span>
         </div>
         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b gap-1"
           :class="isDark ? 'border-[var(--border)]' : 'border-gray-100'">
-          <span class="text-xs sm:text-sm" :class="isDark ? 'text-gray-400' : 'text-gray-500'">存储渠道</span>
+          <span class="text-xs sm:text-sm" :class="isDark ? 'text-gray-400' : 'text-gray-500'">{{ t('files.storageChannel') }}</span>
           <span class="text-xs sm:text-sm" :class="isDark ? 'text-gray-300' : 'text-gray-600'">{{ detailFile.channelType
             || '-' }}</span>
         </div>
         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b gap-1"
           :class="isDark ? 'border-[var(--border)]' : 'border-gray-100'">
-          <span class="text-xs sm:text-sm" :class="isDark ? 'text-gray-400' : 'text-gray-500'">上传时间</span>
+          <span class="text-xs sm:text-sm" :class="isDark ? 'text-gray-400' : 'text-gray-500'">{{ t('files.uploadTime') }}</span>
           <span class="text-xs sm:text-sm">{{ formatDate(detailFile.createdAt || detailFile.uploadedAt) }}</span>
         </div>
         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b gap-1"
           :class="isDark ? 'border-[var(--border)]' : 'border-gray-100'">
-          <span class="text-xs sm:text-sm" :class="isDark ? 'text-gray-400' : 'text-gray-500'">来源</span>
+          <span class="text-xs sm:text-sm" :class="isDark ? 'text-gray-400' : 'text-gray-500'">{{ t('common.source') }}</span>
           <span class="text-xs sm:text-sm">{{ detailFile.source || '-' }}</span>
         </div>
         <div v-if="detailFile.accessCount !== undefined"
           class="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b gap-1"
           :class="isDark ? 'border-[var(--border)]' : 'border-gray-100'">
-          <span class="text-xs sm:text-sm" :class="isDark ? 'text-gray-400' : 'text-gray-500'">访问次数</span>
+          <span class="text-xs sm:text-sm" :class="isDark ? 'text-gray-400' : 'text-gray-500'">{{ t('common.accessCount') }}</span>
           <span class="text-xs sm:text-sm font-medium">{{ detailFile.accessCount }}</span>
         </div>
         <div v-if="detailFile.checksum"
           class="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b gap-1"
           :class="isDark ? 'border-[var(--border)]' : 'border-gray-100'">
-          <span class="text-xs sm:text-sm" :class="isDark ? 'text-gray-400' : 'text-gray-500'">文件校验</span>
+          <span class="text-xs sm:text-sm" :class="isDark ? 'text-gray-400' : 'text-gray-500'">{{ t('files.checksum') }}</span>
           <span class="text-xs sm:text-sm font-mono truncate max-w-[200px] sm:max-w-none"
             :class="isDark ? 'text-gray-300' : 'text-gray-600'" :title="detailFile.checksum">{{
               detailFile.checksum.substring(0, 16) }}...</span>
@@ -892,26 +897,26 @@ async function executeCleanup() {
       <!-- 链接操作 -->
       <div class="pt-2 space-y-3">
         <div>
-          <p class="text-xs sm:text-sm mb-1" :class="isDark ? 'text-gray-400' : 'text-gray-500'">原始链接</p>
+          <p class="text-xs sm:text-sm mb-1" :class="isDark ? 'text-gray-400' : 'text-gray-500'">{{ t('files.originalLink') }}</p>
           <div class="flex flex-col sm:flex-row gap-2">
             <input :value="detailFile.originalUrl || ''" readonly
               class="flex-1 px-3 py-2 rounded-lg border text-xs sm:text-sm min-w-0"
               :class="isDark ? 'bg-[var(--bg-hover)] border-[var(--border)] text-gray-300' : 'bg-gray-50 border-gray-200'" />
-            <button @click="copyText(detailFile.originalUrl, '原始链接')"
+            <button @click="copyText(detailFile.originalUrl, t('files.originalLink'))"
               class="px-4 py-2 rounded-lg bg-gray-500 text-white hover:bg-gray-600 transition-all text-xs sm:text-sm whitespace-nowrap">
-              复制
+              {{ t('common.copy') }}
             </button>
           </div>
         </div>
         <div>
-          <p class="text-xs sm:text-sm mb-1" :class="isDark ? 'text-gray-400' : 'text-gray-500'">CDN 链接（转换后）</p>
+          <p class="text-xs sm:text-sm mb-1" :class="isDark ? 'text-gray-400' : 'text-gray-500'">{{ t('files.cdnLink') }}</p>
           <div class="flex flex-col sm:flex-row gap-2">
             <input :value="detailFile.url || detailFile.links?.url || ''" readonly
               class="flex-1 px-3 py-2 rounded-lg border text-xs sm:text-sm min-w-0"
               :class="isDark ? 'bg-[var(--bg-hover)] border-[var(--border)] text-gray-300' : 'bg-gray-50 border-gray-200'" />
-            <button @click="copyText(detailFile.url || detailFile.links?.url, 'CDN链接')"
+            <button @click="copyText(detailFile.url || detailFile.links?.url, t('files.cdnLink'))"
               class="px-4 py-2 rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 transition-all text-xs sm:text-sm whitespace-nowrap">
-              复制
+              {{ t('common.copy') }}
             </button>
           </div>
         </div>

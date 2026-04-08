@@ -1,11 +1,14 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { channelApi } from '@/api/channel'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Network, Plus, Edit2, Trash2, RefreshCw, Check, X,
   AlertTriangle, Upload, Clock, Folder, Send, Cloud, HardDrive
 } from 'lucide-vue-next'
+
+const { t } = useI18n()
 
 const isDark = ref(true)
 const channels = ref([])
@@ -15,14 +18,14 @@ const dialogType = ref('create')
 const editingChannel = ref(null)
 const testingId = ref(null)
 
-const channelTypes = [
-  { value: 'local', label: '本地存储' },
+const channelTypes = computed(() => [
+  { value: 'local', label: t('channels.localStorage') },
   { value: 'telegram', label: 'Telegram' },
   { value: 'cfr2', label: 'Cloudflare R2' },
-  { value: 's3', label: 'S3 兼容存储' },
+  { value: 's3', label: t('channels.s3Compatible') },
   { value: 'discord', label: 'Discord' },
   { value: 'huggingface', label: 'HuggingFace' }
-]
+])
 
 const form = ref({
   name: '',
@@ -46,7 +49,7 @@ async function loadChannels() {
       channels.value = res.data || []
     }
   } catch {
-    ElMessage.error('加载渠道失败')
+    ElMessage.error(t('channels.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -90,33 +93,33 @@ function openEditDialog(channel) {
 
 async function saveChannel() {
   if (!form.value.name) {
-    ElMessage.warning('请输入渠道名称')
+    ElMessage.warning(t('channels.pleaseInputChannelName'))
     return
   }
 
   try {
     if (dialogType.value === 'create') {
       await channelApi.create(form.value)
-      ElMessage.success('创建成功')
+      ElMessage.success(t('common.createSuccess'))
     } else {
       await channelApi.update(editingChannel.value, form.value)
-      ElMessage.success('更新成功')
+      ElMessage.success(t('common.updateSuccess'))
     }
     showDialog.value = false
     loadChannels()
   } catch (e) {
-    ElMessage.error(e.message || '操作失败')
+    ElMessage.error(e.message || t('common.operateFailed'))
   }
 }
 
 async function deleteChannel(channel) {
   try {
-    await ElMessageBox.confirm(`确定要删除渠道「${channel.name}」吗？`, '删除确认', { type: 'warning' })
+    await ElMessageBox.confirm(t('channels.deleteConfirm', { name: channel.name }), t('common.confirmDelete'), { type: 'warning' })
     await channelApi.delete(channel.id)
-    ElMessage.success('删除成功')
+    ElMessage.success(t('common.deleteSuccess'))
     loadChannels()
   } catch (e) {
-    if (e !== 'cancel') ElMessage.error('删除失败')
+    if (e !== 'cancel') ElMessage.error(t('common.deleteFailed'))
   }
 }
 
@@ -127,10 +130,10 @@ async function toggleChannel(channel) {
     } else {
       await channelApi.enable(channel.id)
     }
-    ElMessage.success(channel.enabled ? '已禁用' : '已启用')
+    ElMessage.success(channel.enabled ? t('common.disabled2') : t('common.enabled2'))
     loadChannels()
   } catch {
-    ElMessage.error('操作失败')
+    ElMessage.error(t('common.operateFailed'))
   }
 }
 
@@ -139,21 +142,21 @@ async function testChannel(channel) {
   try {
     const res = await channelApi.test(channel.id)
     if (res.data?.success) {
-      ElMessage.success('连接成功')
+      ElMessage.success(t('channels.connectionSuccess'))
     } else {
-      const errorMsg = res.data?.error || res.data?.message || '连接失败'
+      const errorMsg = res.data?.error || res.data?.message || t('channels.connectionFailed')
       const errorDetail = res.data?.detail || ''
       const fullError = errorDetail ? `${errorMsg}\n${errorDetail}` : errorMsg
-      ElMessageBox.alert(fullError, '测试失败', {
-        confirmButtonText: '确定',
+      ElMessageBox.alert(fullError, t('channels.testFailed'), {
+        confirmButtonText: t('common.confirm'),
         type: 'error',
         customClass: isDark.value ? 'dark-message-box' : ''
       })
     }
   } catch (err) {
-    const errorMsg = err.response?.data?.message || err.message || '测试失败'
-    ElMessageBox.alert(errorMsg, '测试失败', {
-      confirmButtonText: '确定',
+    const errorMsg = err.response?.data?.message || err.message || t('channels.testFailed')
+    ElMessageBox.alert(errorMsg, t('channels.testFailed'), {
+      confirmButtonText: t('common.confirm'),
       type: 'error',
       customClass: isDark.value ? 'dark-message-box' : ''
     })
@@ -171,7 +174,7 @@ function formatSize(bytes) {
 }
 
 function getTypeLabel(type) {
-  return channelTypes.find(t => t.value === type)?.label || type
+  return channelTypes.value.find(t => t.value === type)?.label || type
 }
 
 function getTypeIcon(type) {
@@ -202,13 +205,13 @@ function getStatusColor(status) {
         <select
           class="px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm"
           :class="isDark ? 'bg-[var(--bg-secondary)] border-[var(--border)] text-white' : 'bg-white border-gray-200 text-gray-800'">
-          <option value="">全部类型</option>
+          <option value="">{{ t('channels.allTypes') }}</option>
           <option v-for="t in channelTypes" :key="t.value" :value="t.value">{{ t.label }}</option>
         </select>
       </div>
 
       <div class="flex items-center gap-2 sm:gap-3">
-        <el-tooltip content="刷新列表" placement="top">
+        <el-tooltip :content="t('common.refresh')" placement="top">
           <button @click="loadChannels" class="p-2 sm:p-2.5 rounded-xl border transition-all hover:border-indigo-500"
             :class="isDark ? 'border-[var(--border)] bg-[var(--bg-secondary)]' : 'border-gray-200 bg-white'">
             <RefreshCw class="w-4 h-4 sm:w-5 sm:h-5" />
@@ -217,7 +220,7 @@ function getStatusColor(status) {
         <button @click="openCreateDialog"
           class="btn-gradient px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl flex items-center gap-1 sm:gap-2 text-sm">
           <Plus class="w-4 h-4 sm:w-5 sm:h-5" />
-          <span class="hidden sm:inline">添加渠道</span>
+          <span class="hidden sm:inline">{{ t('channels.addChannel') }}</span>
         </button>
       </div>
     </div>
@@ -232,9 +235,9 @@ function getStatusColor(status) {
         :class="isDark ? 'bg-[var(--bg-secondary)]' : 'bg-gray-100'">
         <Network class="w-10 h-10 sm:w-12 sm:h-12" :class="isDark ? 'text-gray-600' : 'text-gray-400'" />
       </div>
-      <p class="text-sm sm:text-base" :class="isDark ? 'text-gray-400' : 'text-gray-500'">暂无渠道</p>
+      <p class="text-sm sm:text-base" :class="isDark ? 'text-gray-400' : 'text-gray-500'">{{ t('channels.noChannels') }}</p>
       <button @click="openCreateDialog" class="mt-3 btn-gradient px-5 sm:px-6 py-2 rounded-xl text-sm">
-        添加第一个渠道
+        {{ t('channels.addFirstChannel') }}
       </button>
     </div>
 
@@ -265,7 +268,7 @@ function getStatusColor(status) {
               'bg-gray-500': !channel.enabled
             }"></span>
             <span class="text-xs font-medium" :class="getStatusColor(channel.status)">
-              {{ channel.enabled ? (channel.status || '正常') : '已禁用' }}
+              {{ channel.enabled ? (channel.status || t('common.normal')) : t('common.disabled') }}
             </span>
           </div>
         </div>
@@ -275,23 +278,23 @@ function getStatusColor(status) {
           <span class="px-2 py-0.5 sm:py-1 rounded-lg text-xs font-medium" :class="channel.enabled
             ? 'bg-green-500/10 text-green-500'
             : 'bg-gray-500/10 text-gray-500'">
-            {{ channel.enabled ? '已启用' : '已禁用' }}
+            {{ channel.enabled ? t('common.enabled') : t('common.disabled') }}
           </span>
           <span class="px-2 py-0.5 sm:py-1 rounded-lg text-xs font-medium bg-indigo-500/10 text-indigo-500">
-            权重 {{ channel.weight || 100 }}
+            {{ t('channels.weight') }} {{ channel.weight || 100 }}
           </span>
         </div>
 
         <!-- 存储 -->
         <div class="mb-3 sm:mb-4">
           <div class="flex items-center justify-between text-xs sm:text-sm mb-1.5 sm:mb-2">
-            <span :class="isDark ? 'text-gray-400' : 'text-gray-500'">存储使用</span>
+            <span :class="isDark ? 'text-gray-400' : 'text-gray-500'">{{ t('channels.storageUsage') }}</span>
             <span class="text-xs sm:text-sm">
               <template v-if="channel.quotaEnabled && (channel.quotaLimit || channel.totalSpace)">
                 {{ formatSize(channel.usedSpace) }} / {{ formatSize(channel.quotaLimit || channel.totalSpace) }}
               </template>
               <template v-else>
-                {{ formatSize(channel.usedSpace) }} / 无限制
+                {{ formatSize(channel.usedSpace) }} / {{ t('channels.noLimit') }}
               </template>
             </span>
           </div>
@@ -310,49 +313,49 @@ function getStatusColor(status) {
             <Upload class="w-3 h-3 sm:w-4 sm:h-4 mx-auto mb-0.5 sm:mb-1"
               :class="isDark ? 'text-gray-500' : 'text-gray-400'" />
             <p class="font-medium">{{ channel.dailyUploads || 0 }}</p>
-            <p class="text-xs" :class="isDark ? 'text-gray-500' : 'text-gray-400'">今日</p>
+            <p class="text-xs" :class="isDark ? 'text-gray-500' : 'text-gray-400'">{{ t('channels.today') }}</p>
           </div>
           <div class="p-1.5 sm:p-2 rounded-lg" :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-50'">
             <Clock class="w-3 h-3 sm:w-4 sm:h-4 mx-auto mb-0.5 sm:mb-1"
               :class="isDark ? 'text-gray-500' : 'text-gray-400'" />
             <p class="font-medium">{{ channel.hourlyUploads || 0 }}</p>
-            <p class="text-xs" :class="isDark ? 'text-gray-500' : 'text-gray-400'">小时</p>
+            <p class="text-xs" :class="isDark ? 'text-gray-500' : 'text-gray-400'">{{ t('channels.hour') }}</p>
           </div>
           <div class="p-1.5 sm:p-2 rounded-lg" :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-50'">
             <AlertTriangle class="w-3 h-3 sm:w-4 sm:h-4 mx-auto mb-0.5 sm:mb-1"
               :class="isDark ? 'text-gray-500' : 'text-gray-400'" />
             <p class="font-medium">{{ channel.quotaThreshold || 90 }}%</p>
-            <p class="text-xs" :class="isDark ? 'text-gray-500' : 'text-gray-400'">阈值</p>
+            <p class="text-xs" :class="isDark ? 'text-gray-500' : 'text-gray-400'">{{ t('channels.threshold') }}</p>
           </div>
         </div>
 
         <!-- 操作 -->
         <div class="flex items-center gap-0.5 sm:gap-2 pt-3 sm:pt-4 border-t overflow-hidden"
           :style="{ borderColor: 'var(--border)' }">
-          <el-tooltip :content="channel.enabled ? '禁用此渠道' : '启用此渠道'" placement="top">
+          <el-tooltip :content="channel.enabled ? t('common.disabled2') : t('common.enabled2')" placement="top">
             <button @click="toggleChannel(channel)"
               class="flex-1 min-w-0 px-1.5 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all truncate"
               :class="channel.enabled
                 ? 'text-red-500 hover:bg-red-500/10'
                 : 'text-green-500 hover:bg-green-500/10'">
-              {{ channel.enabled ? '禁用' : '启用' }}
+              {{ channel.enabled ? t('common.disabled2') : t('common.enabled2') }}
             </button>
           </el-tooltip>
-          <el-tooltip content="测试连接" placement="top">
+          <el-tooltip :content="t('channels.testConnection')" placement="top">
             <button @click="testChannel(channel)" :disabled="testingId === channel.id"
               class="flex-1 min-w-0 px-1.5 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all truncate"
               :class="isDark ? 'hover:bg-[var(--bg-hover)]' : 'hover:bg-gray-100'">
-              {{ testingId === channel.id ? '测试中' : '测试' }}
+              {{ testingId === channel.id ? t('common.testing') : t('common.test') }}
             </button>
           </el-tooltip>
-          <el-tooltip content="编辑渠道" placement="top">
+          <el-tooltip :content="t('channels.editChannel')" placement="top">
             <button @click="openEditDialog(channel)"
               class="flex-1 min-w-0 px-1.5 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all truncate"
               :class="isDark ? 'hover:bg-[var(--bg-hover)]' : 'hover:bg-gray-100'">
-              编辑
+              {{ t('common.edit') }}
             </button>
           </el-tooltip>
-          <el-tooltip :content="channel.type === 'local' ? '本地存储渠道不能删除' : '删除渠道'" placement="top">
+          <el-tooltip :content="channel.type === 'local' ? t('channels.localChannelCannotDelete') : t('common.delete')" placement="top">
             <button @click="deleteChannel(channel)" :disabled="channel.type === 'local'"
               class="flex-shrink-0 p-1.5 sm:p-1.5 rounded-lg transition-all flex items-center justify-center" :class="channel.type === 'local'
                 ? 'text-gray-400 cursor-not-allowed'
@@ -365,7 +368,7 @@ function getStatusColor(status) {
     </div>
 
     <!-- 添加/编辑弹窗 -->
-    <el-dialog v-model="showDialog" :title="dialogType === 'create' ? '添加渠道' : '编辑渠道'" width="520px"
+    <el-dialog v-model="showDialog" :title="dialogType === 'create' ? t('channels.addChannel') : t('channels.editChannel')" width="520px"
       class="!max-w-[95vw] channel-dialog" :close-on-click-modal="false">
       <div class="max-h-[70vh] overflow-y-auto pr-1 -mr-1">
 
@@ -376,18 +379,18 @@ function getStatusColor(status) {
               <Network class="w-4 h-4 text-white" />
             </div>
             <div>
-              <h3 class="text-sm font-semibold">基本信息</h3>
-              <p class="text-xs" :class="isDark ? 'text-gray-500' : 'text-gray-400'">渠道名称和存储类型</p>
+              <h3 class="text-sm font-semibold">{{ t('channels.basicInfo') }}</h3>
+              <p class="text-xs" :class="isDark ? 'text-gray-500' : 'text-gray-400'">{{ t('channels.basicInfoTip') }}</p>
             </div>
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-medium mb-1.5" :class="isDark ? 'text-gray-400' : 'text-gray-500'">渠道名称</label>
-              <input v-model="form.name" type="text" placeholder="我的存储"
+              <label class="block text-xs font-medium mb-1.5" :class="isDark ? 'text-gray-400' : 'text-gray-500'">{{ t('channels.channelName') }}</label>
+              <input v-model="form.name" type="text" :placeholder="t('channels.channelNamePlaceholder')"
                 class="dialog-input w-full" />
             </div>
             <div>
-              <label class="block text-xs font-medium mb-1.5" :class="isDark ? 'text-gray-400' : 'text-gray-500'">存储类型</label>
+              <label class="block text-xs font-medium mb-1.5" :class="isDark ? 'text-gray-400' : 'text-gray-500'">{{ t('channels.storageType') }}</label>
               <select v-model="form.type" :disabled="dialogType === 'edit'" class="dialog-input w-full">
                 <option v-for="t in channelTypes" :key="t.value" :value="t.value">{{ t.label }}</option>
               </select>
@@ -402,8 +405,8 @@ function getStatusColor(status) {
               <Folder class="w-4 h-4 text-white" />
             </div>
             <div>
-              <h3 class="text-sm font-semibold">分配权重</h3>
-              <p class="text-xs" :class="isDark ? 'text-gray-500' : 'text-gray-400'">决定上传分发比例</p>
+              <h3 class="text-sm font-semibold">{{ t('channels.weightConfig') }}</h3>
+              <p class="text-xs" :class="isDark ? 'text-gray-500' : 'text-gray-400'">{{ t('channels.weightTip') }}</p>
             </div>
           </div>
           <div class="flex items-center gap-4">
@@ -423,15 +426,15 @@ function getStatusColor(status) {
               <component :is="getTypeIcon(form.type)" class="w-4 h-4 text-white" />
             </div>
             <div>
-              <h3 class="text-sm font-semibold">连接配置</h3>
-              <p class="text-xs" :class="isDark ? 'text-gray-500' : 'text-gray-400'">{{ getTypeLabel(form.type) }} 相关设置</p>
+              <h3 class="text-sm font-semibold">{{ t('channels.connectionConfig') }}</h3>
+              <p class="text-xs" :class="isDark ? 'text-gray-500' : 'text-gray-400'">{{ getTypeLabel(form.type) }} {{ t('channels.connectionSettings') }}</p>
             </div>
           </div>
 
           <div class="space-y-2.5">
             <template v-if="form.type === 'local'">
               <div>
-                <label class="dialog-label">存储路径</label>
+                <label class="dialog-label">{{ t('channels.storagePath') }}</label>
                 <input v-model="form.config.path" placeholder="./data" class="dialog-input w-full" />
               </div>
             </template>
@@ -514,7 +517,7 @@ function getStatusColor(status) {
               </div>
               <label class="flex items-center gap-2 cursor-pointer py-1">
                 <input type="checkbox" v-model="form.config.isNitro" class="w-4 h-4 rounded accent-amber-500" />
-                <span class="text-sm" :class="isDark ? 'text-gray-400' : 'text-gray-500'">Nitro 会员（支持 25MB 上传）</span>
+                <span class="text-sm" :class="isDark ? 'text-gray-400' : 'text-gray-500'">{{ t('channels.nitroTip') }}</span>
               </label>
             </template>
 
@@ -549,8 +552,8 @@ function getStatusColor(status) {
                 <HardDrive class="w-4 h-4 text-white" />
               </div>
               <div>
-                <h3 class="text-sm font-semibold">配额限制</h3>
-                <p class="text-xs" :class="isDark ? 'text-gray-500' : 'text-gray-400'">可选的限制策略</p>
+                <h3 class="text-sm font-semibold">{{ t('channels.quotaConfig') }}</h3>
+                <p class="text-xs" :class="isDark ? 'text-gray-500' : 'text-gray-400'">{{ t('channels.quotaTip') }}</p>
               </div>
             </div>
             <label class="relative inline-flex items-center cursor-pointer">
@@ -565,15 +568,15 @@ function getStatusColor(status) {
           <div v-if="form.quota.enabled" class="mt-3 pt-3 border-t" :class="isDark ? 'border-gray-700/50' : 'border-gray-200'">
             <div class="grid grid-cols-3 gap-2.5">
               <div>
-                <label class="dialog-label">存储上限 (GB)</label>
+                <label class="dialog-label">{{ t('channels.storageLimit') }}</label>
                 <input v-model.number="form.quota.limitGB" type="number" min="0" placeholder="0" class="dialog-input w-full" />
               </div>
               <div>
-                <label class="dialog-label">告警阈值%</label>
+                <label class="dialog-label">{{ t('channels.alarmThreshold') }}</label>
                 <input v-model.number="form.quota.threshold" type="number" min="1" max="100" placeholder="90" class="dialog-input w-full" />
               </div>
               <div>
-                <label class="dialog-label">每日上传</label>
+                <label class="dialog-label">{{ t('channels.dailyUpload') }}</label>
                 <input v-model.number="form.rateLimit.dailyUploadLimit" type="number" min="0" placeholder="0" class="dialog-input w-full" />
               </div>
             </div>
@@ -585,10 +588,10 @@ function getStatusColor(status) {
         <div class="flex justify-end gap-3 pt-3 border-t" :class="isDark ? 'border-gray-700/50' : 'border-gray-200'">
           <button @click="showDialog = false" class="px-5 py-2.5 rounded-xl transition-all text-sm font-medium"
             :class="isDark ? 'bg-gray-700/50 hover:bg-gray-600/50 text-gray-300' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'">
-            取消
+            {{ t('common.cancel') }}
           </button>
           <button @click="saveChannel" class="btn-gradient px-6 py-2.5 rounded-xl text-sm font-medium shadow-lg">
-            {{ dialogType === 'create' ? '创建渠道' : '保存修改' }}
+            {{ dialogType === 'create' ? t('channels.addChannel') : t('common.save') }}
           </button>
         </div>
       </template>

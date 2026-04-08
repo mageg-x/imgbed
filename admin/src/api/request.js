@@ -1,12 +1,31 @@
 import axios from "axios";
 import { useAuthStore } from "@/stores/auth";
 import { ElMessage } from "element-plus";
+import i18n from "@/i18n";
 
 const request = axios.create({
   baseURL: "/api/v1",
   timeout: 30000,
   withCredentials: true,
 });
+
+// 获取翻译后的错误消息
+function getTranslatedErrorMessage(data) {
+  const { t } = i18n.global;
+
+  // 如果后端返回了 code，尝试翻译
+  if (data?.code !== undefined && data?.code !== 0) {
+    const codeKey = `error.code.${data.code}`;
+    const translated = t(codeKey);
+    // 如果翻译结果和 key 相同，说明没有找到翻译，使用后端消息
+    if (translated !== codeKey) {
+      return translated;
+    }
+  }
+
+  // 否则使用后端返回的 message
+  return data?.message || t('error.requestFailed');
+}
 
 request.interceptors.response.use(
   (response) => {
@@ -29,13 +48,13 @@ request.interceptors.response.use(
         window.location.href = "/admin/login";
         return;
       } else if (status === 404) {
-        ElMessage.error("请求的资源不存在");
+        ElMessage.error(i18n.global.t('error.requestResourceNotFound'));
       } else {
-        ElMessage.error(data?.message || "请求失败");
+        ElMessage.error(getTranslatedErrorMessage(data));
       }
       return Promise.reject(data);
     }
-    ElMessage.error("网络错误，请检查网络连接");
+    ElMessage.error(i18n.global.t('error.network'));
     return Promise.reject(error);
   },
 );

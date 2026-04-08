@@ -1,7 +1,10 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElTag } from 'element-plus'
 import { Code, Copy, Check, FileText, Terminal, Braces, Image } from 'lucide-vue-next'
+
+const { t } = useI18n()
 
 const isDark = ref(true)
 const copiedSection = ref('')
@@ -13,7 +16,7 @@ onMounted(() => {
 function copyToClipboard(code, section) {
   navigator.clipboard.writeText(code).then(() => {
     copiedSection.value = section
-    ElMessage.success('已复制到剪贴板')
+    ElMessage.success(t('common.copyToClipboard'))
     setTimeout(() => {
       copiedSection.value = ''
     }, 2000)
@@ -56,16 +59,16 @@ class ImgBedClient:
             response = requests.post(url, files=files, headers=headers)
             return response.json()
 
-# 使用示例
+# Usage example
 client = ImgBedClient("${getBaseUrl()}", "your_token", "your_secret")
 result = client.upload("image.jpg")
 if result['code'] == 0:
-    print(f"上传成功: {result['data']['links']['markdown']}")`
+    print(f"Upload success: {result['data']['links']['markdown']}")`
 
 const javascriptCode = `<!DOCTYPE html>
 <html>
 <body>
-    <textarea id="editor" placeholder="在这里写文章，Ctrl+V 粘贴图片..."></textarea>
+    <textarea id="editor" placeholder="Write your article here, paste images with Ctrl+V..."></textarea>
     <script>
         const BASE_URL = '${getBaseUrl()}';
         const API_TOKEN = 'your_token';
@@ -103,14 +106,14 @@ const javascriptCode = `<!DOCTYPE html>
 </body>
 </html>`
 
-const typoraAnonymous = `# Typora 图片上传服务配置
-# 设置 -> 图像 -> 上传服务 -> Custom Command
+const typoraAnonymous = `# Typora image upload service config
+# Settings -> Image -> Upload Service -> Custom Command
 curl -X POST ${getBaseUrl()}/api/v1/upload/anonymous \\
   -F "file=@${'{filepath}'}" \\
   | grep -o '"url":"[^"]*"' | cut -d'"' -f4`
 
-const typoraToken = `# Typora 图片上传服务配置 (推荐)
-# 设置 -> 图像 -> 上传服务 -> Custom Command
+const typoraToken = `# Typora image upload service config (Recommended)
+# Settings -> Image -> Upload Service -> Custom Command
 curl -X POST ${getBaseUrl()}/api/v1/upload \\
   -H "X-API-Token: your_token" \\
   -H "X-API-Secret: your_secret" \\
@@ -143,44 +146,44 @@ class ImgBedClient {
     }
 }
 
-// 使用示例
+// Usage example
 const client = new ImgBedClient('${getBaseUrl()}', 'your_token', 'your_secret');
 const result = await client.upload('./image.jpg');
-console.log('上传成功:', result.data.links.markdown);`
+console.log('Upload success:', result.data.links.markdown);`
 
-const sections = [
+const sections = computed(() => [
   {
     id: 'curl',
-    title: 'CURL 命令行',
+    title: t('integration.curlAnonymous'),
     icon: Terminal,
     items: [
-      { label: '匿名上传', code: curlUploadAnonymous },
-      { label: 'Token 上传', code: curlUploadToken }
+      { label: t('integration.curlAnonymous'), code: curlUploadAnonymous },
+      { label: t('integration.curlToken'), code: curlUploadToken }
     ]
   },
   {
     id: 'typora',
-    title: 'Typora 集成',
+    title: t('integration.typoraAnonymous'),
     icon: Image,
     items: [
-      { label: '匿名上传', code: typoraAnonymous },
-      { label: 'Token 上传 (推荐)', code: typoraToken }
+      { label: t('integration.typoraAnonymous'), code: typoraAnonymous },
+      { label: t('integration.typoraToken'), code: typoraToken }
     ]
   },
   {
     id: 'python',
-    title: 'Python 脚本',
+    title: t('integration.pythonScript'),
     icon: Code,
     items: [
-      { label: '完整示例', code: pythonCode }
+      { label: t('integration.pythonFullExample'), code: pythonCode }
     ]
   },
   {
     id: 'javascript',
-    title: 'JavaScript/HTML',
+    title: t('integration.javascriptHtml'),
     icon: Braces,
     items: [
-      { label: '粘贴上传示例', code: javascriptCode }
+      { label: t('integration.javascriptPasteUpload'), code: javascriptCode }
     ]
   },
   {
@@ -188,33 +191,31 @@ const sections = [
     title: 'Node.js',
     icon: Terminal,
     items: [
-      { label: '完整示例', code: nodejsCode }
+      { label: t('integration.nodejsFullExample'), code: nodejsCode }
     ]
   }
-]
+])
 </script>
 
 <template>
-  <div class="space-y-4 sm:space-y-6">
+  <div class="space-y-4  sm:space-y-6">
     <!-- Token 提示 -->
-    <div class="p-4 rounded-xl border"
+    <div class="p-4  rounded-xl border"
       :class="isDark ? 'bg-indigo-500/10 border-indigo-500/30' : 'bg-indigo-50 border-indigo-200'">
       <div class="flex items-start gap-3">
         <FileText class="w-5 h-5 text-indigo-500 mt-0.5 flex-shrink-0" />
         <div>
-          <p class="font-medium text-sm">获取 API Token</p>
+          <p class="font-medium text-sm">{{ t('integration.getApiToken') }}</p>
           <p class="text-xs mt-1" :class="isDark ? 'text-gray-400' : 'text-gray-600'">
-            在
-            <router-link to="/tokens" class="text-indigo-500 hover:underline">API Token 管理</router-link>
-            页面创建 Token，然后替换示例中的 your_token 和 your_secret
+            {{ t('integration.getApiTokenTip') }}
           </p>
         </div>
       </div>
     </div>
 
     <!-- 集成示例列表 -->
-    <div class="space-y-6">
-      <div v-for="section in sections" :key="section.id" class="card">
+    <div class="space-y-6 p-4">
+      <div v-for="section in sections" :key="section.id" class="card p-4">
         <div class="flex items-center gap-2 mb-4">
           <component :is="section.icon" class="w-5 h-5 text-indigo-500" />
           <h3 class="text-lg font-semibold">{{ section.title }}</h3>
@@ -231,7 +232,7 @@ const sections = [
                 :class="isDark ? 'bg-[var(--bg-hover)] hover:bg-[var(--bg-secondary)]' : 'bg-gray-100 hover:bg-gray-200'">
                 <Check v-if="copiedSection === section.id + idx" class="w-3.5 h-3.5 text-green-500" />
                 <Copy v-else class="w-3.5 h-3.5" />
-                {{ copiedSection === section.id + idx ? '已复制' : '复制' }}
+                {{ copiedSection === section.id + idx ? t('common.copied') : t('common.copy') }}
               </button>
             </div>
             <pre class="p-4 rounded-xl text-xs overflow-x-auto font-mono"
@@ -242,14 +243,14 @@ const sections = [
     </div>
 
     <!-- 响应格式说明 -->
-    <div class="card">
+    <div class="card p-4">
       <div class="flex items-center gap-2 mb-4">
         <Code class="w-5 h-5 text-indigo-500" />
-        <h3 class="text-lg font-semibold">响应格式</h3>
+        <h3 class="text-lg font-semibold">{{ t('integration.responseFormat') }}</h3>
       </div>
 
       <div class="bg-green-500/10 border border-green-500/30 rounded-xl p-4 mb-4">
-        <p class="text-xs font-medium text-green-400 mb-2">成功响应 (code: 0)</p>
+        <p class="text-xs font-medium text-green-400 mb-2">{{ t('integration.successResponse') }}</p>
         <pre class="text-xs font-mono overflow-x-auto" :class="isDark ? 'text-gray-300' : 'text-gray-700'">{
   "code": 0,
   "message": "success",
@@ -271,16 +272,16 @@ const sections = [
 
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
         <div class="p-3 rounded-lg" :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-50'">
-          <span class="font-medium text-green-500">上传接口</span>
+          <span class="font-medium text-green-500">{{ t('integration.uploadApi') }}</span>
           <p class="mt-1 font-mono" :class="isDark ? 'text-gray-400' : 'text-gray-600'">POST /api/v1/upload</p>
         </div>
         <div class="p-3 rounded-lg" :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-50'">
-          <span class="font-medium text-blue-500">匿名接口</span>
+          <span class="font-medium text-blue-500">{{ t('integration.anonymousApi') }}</span>
           <p class="mt-1 font-mono" :class="isDark ? 'text-gray-400' : 'text-gray-600'">POST /api/v1/upload/anonymous
           </p>
         </div>
         <div class="p-3 rounded-lg" :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-50'">
-          <span class="font-medium text-purple-500">批量接口</span>
+          <span class="font-medium text-purple-500">{{ t('integration.batchApi') }}</span>
           <p class="mt-1 font-mono" :class="isDark ? 'text-gray-400' : 'text-gray-600'">POST /api/v1/upload/multiple</p>
         </div>
       </div>

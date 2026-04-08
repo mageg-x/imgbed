@@ -1,12 +1,14 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { fileApi } from '@/api/file'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
 import { ElMessage } from 'element-plus'
 import { Image, Folder, Link, RefreshCw, Sun, Moon, ArrowLeft, X, Copy, Grid3x3, List, Search } from 'lucide-vue-next'
 
+const { t } = useI18n()
 const router = useRouter()
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
@@ -26,13 +28,13 @@ function getOrigin() {
   return window.location.origin
 }
 
-const filterPresets = [
-  { label: '全部', value: 0 },
-  { label: '今天', value: -1 },
-  { label: '7天内', value: 7 },
-  { label: '30天内', value: 30 },
-  { label: '90天内', value: 90 },
-]
+const filterPresets = computed(() => [
+  { label: t('gallery.all'), value: 0 },
+  { label: t('gallery.today'), value: -1 },
+  { label: t('gallery.days7'), value: 7 },
+  { label: t('gallery.days30'), value: 30 },
+  { label: t('gallery.days90'), value: 90 },
+])
 
 onMounted(async () => {
   themeStore.init()
@@ -42,7 +44,7 @@ onMounted(async () => {
   }
   const authenticated = await authStore.checkSession()
   if (!authenticated) {
-    ElMessage.warning('请先登录')
+    ElMessage.warning(t('common.pleaseLoginFirst'))
     router.push('/login')
     return
   }
@@ -67,7 +69,7 @@ async function loadGallery() {
       total.value = res.data?.total || 0
     }
   } catch {
-    ElMessage.error('加载图库失败')
+    ElMessage.error(t('gallery.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -103,9 +105,9 @@ async function copyUrl(url) {
       ? url
       : getOrigin() + url
     await navigator.clipboard.writeText(fullUrl)
-    ElMessage.success('链接已复制')
+    ElMessage.success(t('common.linkCopied'))
   } catch {
-    ElMessage.error('复制失败')
+    ElMessage.error(t('common.copyFailed'))
   }
 }
 
@@ -141,7 +143,7 @@ function formatSize(bytes) {
       :class="themeStore.isDark ? 'bg-[var(--bg-primary)]/80 border-[var(--border)]' : 'bg-white/80 border-gray-200'">
       <div class=" px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
         <div class="flex items-center gap-3 sm:gap-4">
-          <el-tooltip content="返回首页" placement="bottom">
+          <el-tooltip :content="t('common.backToHome')" placement="bottom">
             <button @click="router.push('/')" class="p-2 rounded-lg transition-all"
               :class="themeStore.isDark ? 'hover:bg-white/5 text-gray-400' : 'hover:bg-gray-100 text-gray-600'">
               <ArrowLeft class="w-5 h-5" />
@@ -151,7 +153,7 @@ function formatSize(bytes) {
             <img src="/imgbed.webp" alt="ImgBed"
               class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl object-cover shadow-lg shadow-indigo-500/30" />
             <span class="text-lg sm:text-xl font-bold">
-              <span class="text-gradient">我的图库</span>
+              <span class="text-gradient">{{ t('gallery.title') }}</span>
             </span>
           </div>
         </div>
@@ -159,14 +161,14 @@ function formatSize(bytes) {
         <div class="flex items-center gap-1 sm:gap-2">
           <div class="flex items-center rounded-lg border overflow-hidden"
             :class="themeStore.isDark ? 'border-[var(--border)]' : 'border-gray-200'">
-            <el-tooltip content="网格视图" placement="bottom">
+            <el-tooltip :content="t('gallery.gridView')" placement="bottom">
               <button @click="setViewMode('grid')" class="p-1.5 sm:p-2 transition-all" :class="viewMode === 'grid'
                 ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white'
                 : (themeStore.isDark ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900')">
                 <Grid3x3 class="w-4 h-4" />
               </button>
             </el-tooltip>
-            <el-tooltip content="列表视图" placement="bottom">
+            <el-tooltip :content="t('gallery.listView')" placement="bottom">
               <button @click="setViewMode('list')" class="p-1.5 sm:p-2 transition-all" :class="viewMode === 'list'
                 ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white'
                 : (themeStore.isDark ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900')">
@@ -174,14 +176,14 @@ function formatSize(bytes) {
               </button>
             </el-tooltip>
           </div>
-          <el-tooltip :content="themeStore.isDark ? '切换亮色模式' : '切换暗色模式'" placement="bottom">
+          <el-tooltip :content="themeStore.isDark ? t('common.switchToLightMode') : t('common.switchToDarkMode')" placement="bottom">
             <button @click="themeStore.toggle" class="p-2 rounded-lg transition-all"
               :class="themeStore.isDark ? 'text-gray-400 hover:text-white hover:bg-white/5' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'">
               <Sun v-if="themeStore.isDark" class="w-5 h-5" />
               <Moon v-else class="w-5 h-5" />
             </button>
           </el-tooltip>
-          <el-tooltip content="刷新" placement="bottom">
+          <el-tooltip :content="t('common.refresh')" placement="bottom">
             <button @click="loadGallery" class="p-2 rounded-lg transition-all"
               :class="themeStore.isDark ? 'text-gray-400 hover:text-white hover:bg-white/5' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'">
               <RefreshCw class="w-5 h-5" />
@@ -198,7 +200,7 @@ function formatSize(bytes) {
           <div class="relative flex-1">
             <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
               :class="themeStore.isDark ? 'text-gray-500' : 'text-gray-400'" />
-            <input v-model="search" type="text" placeholder="搜索文件名..." @keyup.enter="handleSearch"
+            <input v-model="search" type="text" :placeholder="t('gallery.searchPlaceholder')" @keyup.enter="handleSearch"
               class="w-full pl-10 pr-4 py-2.5 rounded-xl border transition-all" :class="themeStore.isDark
                 ? 'bg-[var(--bg-secondary)] border-[var(--border)] text-white placeholder-gray-500 focus:border-indigo-500'
                 : 'bg-white border-gray-200 text-gray-800 placeholder-gray-400 focus:border-indigo-500'" />
@@ -220,17 +222,17 @@ function formatSize(bytes) {
         <!-- 当前筛选状态 -->
         <div v-if="search || olderThan !== 0" class="flex items-center gap-2 mt-3 text-sm"
           :class="themeStore.isDark ? 'text-gray-400' : 'text-gray-500'">
-          <span>当前筛选：</span>
+          <span>{{ t('gallery.currentFilter') }}:</span>
           <span v-if="search" class="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-500">
-            搜索: {{ search }}
+            {{ t('gallery.search') }}: {{ search }}
           </span>
           <span v-if="olderThan === -1" class="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-500">
-            今天
+            {{ t('gallery.today') }}
           </span>
           <span v-else-if="olderThan > 0" class="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-500">
-            {{ olderThan }}天内
+            {{ olderThan }}{{ t('gallery.daysWithin') }}
           </span>
-          <button @click="clearFilters" class="ml-2 text-indigo-500 hover:underline">清除筛选</button>
+          <button @click="clearFilters" class="ml-2 text-indigo-500 hover:underline">{{ t('gallery.clearFilter') }}</button>
         </div>
       </div>
 
@@ -248,11 +250,11 @@ function formatSize(bytes) {
             <Folder class="w-10 h-10 sm:w-12 sm:h-12" :class="themeStore.isDark ? 'text-gray-600' : 'text-gray-400'" />
           </div>
           <p class="text-base sm:text-lg mb-3 sm:mb-4" :class="themeStore.isDark ? 'text-gray-400' : 'text-gray-500'">
-            暂无图片
+            {{ t('gallery.noImages') }}
           </p>
           <button @click="router.push('/')"
             class="px-5 sm:px-6 py-2 sm:py-2.5 rounded-xl text-white bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 transition-all shadow-lg shadow-indigo-500/25">
-            去上传
+            {{ t('gallery.goUpload') }}
           </button>
         </div>
 
@@ -275,7 +277,7 @@ function formatSize(bytes) {
                 <p class="text-white text-sm font-medium truncate">{{ file.name }}</p>
               </div>
               <div class="absolute top-2 sm:top-3 right-2 sm:right-3 flex gap-1.5 sm:gap-2">
-                <el-tooltip content="复制链接" placement="top">
+                <el-tooltip :content="t('common.copyLink')" placement="top">
                   <button @click.stop="copyUrl(file.url)"
                     class="p-1.5 sm:p-2 rounded-lg bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all">
                     <Copy class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
@@ -360,7 +362,7 @@ function formatSize(bytes) {
     <!-- 预览弹窗 -->
     <el-dialog v-model="showPreview" width="90% sm:80%" top="5vh" :show-close="false" :close-on-click-modal="true">
       <div class="relative">
-        <el-tooltip content="关闭预览" placement="top">
+        <el-tooltip :content="t('gallery.closePreview')" placement="top">
           <button @click="showPreview = false"
             class="absolute -top-10 sm:-top-12 right-0 p-2 rounded-lg text-white/80 hover:text-white transition-all">
             <X class="w-5 h-5 sm:w-6 sm:h-6" />
