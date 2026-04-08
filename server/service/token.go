@@ -23,7 +23,7 @@ func NewTokenService() *TokenService {
 
 type APIToken = model.APIToken
 
-var secretKey = []byte("imgbed-token-secret-key-32byte")
+var secretKey = []byte("imgbed-token-secret-key-32bytes!") // 32 bytes for AES-256
 
 func encryptSecret(plaintext string) (string, error) {
 	block, err := aes.NewCipher(secretKey)

@@ -28,6 +28,7 @@ const form = ref({
   name: '',
   type: 'local',
   config: {},
+  weight: 100,
   quota: { enabled: false, limitGB: 0, threshold: 90 },
   rateLimit: { dailyUploadLimit: 0, hourlyUploadLimit: 0, minIntervalMs: 0 }
 })
@@ -58,6 +59,7 @@ function openCreateDialog() {
     name: '',
     type: 'local',
     config: {},
+    weight: 100,
     quota: { enabled: false, limitGB: 0, threshold: 90 },
     rateLimit: { dailyUploadLimit: 0, hourlyUploadLimit: 0, minIntervalMs: 0 }
   }
@@ -71,6 +73,7 @@ function openEditDialog(channel) {
     name: channel.name,
     type: channel.type,
     config: channel.config || {},
+    weight: channel.weight || 100,
     quota: {
       enabled: channel.quotaEnabled || false,
       limitGB: Math.floor((channel.quotaLimit || 0) / (1024 * 1024 * 1024)),
@@ -274,6 +277,9 @@ function getStatusColor(status) {
             : 'bg-gray-500/10 text-gray-500'">
             {{ channel.enabled ? '已启用' : '已禁用' }}
           </span>
+          <span class="px-2 py-0.5 sm:py-1 rounded-lg text-xs font-medium bg-indigo-500/10 text-indigo-500">
+            权重 {{ channel.weight || 100 }}
+          </span>
         </div>
 
         <!-- 存储 -->
@@ -359,189 +365,386 @@ function getStatusColor(status) {
     </div>
 
     <!-- 添加/编辑弹窗 -->
-    <el-dialog v-model="showDialog" :title="dialogType === 'create' ? '添加渠道' : '编辑渠道'" width="600px"
-      class="!max-w-[90vw] sm:!max-w-[600px]" :close-on-click-modal="false">
-      <div class="space-y-4">
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-          <div>
-            <label class="block text-sm font-medium mb-2">渠道名称</label>
-            <input v-model="form.name" type="text" placeholder="请输入渠道名称"
-              class="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm"
-              :class="isDark ? 'bg-[var(--bg-hover)] border-[var(--border)] text-white' : 'bg-gray-50 border-gray-200 text-gray-800'" />
+    <el-dialog v-model="showDialog" :title="dialogType === 'create' ? '添加渠道' : '编辑渠道'" width="520px"
+      class="!max-w-[95vw] channel-dialog" :close-on-click-modal="false">
+      <div class="max-h-[70vh] overflow-y-auto pr-1 -mr-1">
+
+        <!-- 基础信息卡片 -->
+        <div class="dialog-card mb-3">
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+              <Network class="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <h3 class="text-sm font-semibold">基本信息</h3>
+              <p class="text-xs" :class="isDark ? 'text-gray-500' : 'text-gray-400'">渠道名称和存储类型</p>
+            </div>
           </div>
-          <div>
-            <label class="block text-sm font-medium mb-2">存储类型</label>
-            <select v-model="form.type" :disabled="dialogType === 'edit'"
-              class="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm"
-              :class="isDark ? 'bg-[var(--bg-hover)] border-[var(--border)] text-white' : 'bg-gray-50 border-gray-200 text-gray-800'">
-              <option v-for="t in channelTypes" :key="t.value" :value="t.value">{{ t.label }}</option>
-            </select>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium mb-1.5" :class="isDark ? 'text-gray-400' : 'text-gray-500'">渠道名称</label>
+              <input v-model="form.name" type="text" placeholder="我的存储"
+                class="dialog-input w-full" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium mb-1.5" :class="isDark ? 'text-gray-400' : 'text-gray-500'">存储类型</label>
+              <select v-model="form.type" :disabled="dialogType === 'edit'" class="dialog-input w-full">
+                <option v-for="t in channelTypes" :key="t.value" :value="t.value">{{ t.label }}</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        <!-- 配置 -->
-        <div>
-          <label class="block text-sm font-medium mb-2">配置信息</label>
-          <div class="p-4 rounded-xl space-y-3"
-            :class="isDark ? 'bg-[var(--bg-hover)] border border-[var(--border)]' : 'bg-gray-50 border border-gray-200'">
+        <!-- 权重卡片 -->
+        <div class="dialog-card mb-3">
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/30">
+              <Folder class="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <h3 class="text-sm font-semibold">分配权重</h3>
+              <p class="text-xs" :class="isDark ? 'text-gray-500' : 'text-gray-400'">决定上传分发比例</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-4">
+            <input v-model.number="form.weight" type="range" min="1" max="100"
+              class="weight-slider flex-1"
+              :style="{ background: `linear-gradient(to right, #f59e0b 0%, #f59e0b ${form.weight}%, ${isDark ? '#374151' : '#e5e7eb'} ${form.weight}%, ${isDark ? '#374151' : '#e5e7eb'} 100%)` }" />
+            <div class="w-14 h-9 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/20">
+              <span class="text-white font-bold text-sm">{{ form.weight }}</span>
+            </div>
+          </div>
+        </div>
 
+        <!-- 配置卡片 -->
+        <div class="dialog-card mb-3">
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/30">
+              <component :is="getTypeIcon(form.type)" class="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <h3 class="text-sm font-semibold">连接配置</h3>
+              <p class="text-xs" :class="isDark ? 'text-gray-500' : 'text-gray-400'">{{ getTypeLabel(form.type) }} 相关设置</p>
+            </div>
+          </div>
+
+          <div class="space-y-2.5">
             <template v-if="form.type === 'local'">
-              <input v-model="form.config.path" placeholder="存储路径，如 ./data" class="w-full px-3 py-2 rounded-lg border"
-                :class="isDark ? 'bg-[var(--bg-card)] border-[var(--border)]' : 'bg-white border-gray-200'" />
+              <div>
+                <label class="dialog-label">存储路径</label>
+                <input v-model="form.config.path" placeholder="./data" class="dialog-input w-full" />
+              </div>
             </template>
 
             <template v-else-if="form.type === 'telegram'">
-              <input v-model="form.config.botToken" placeholder="Bot Token" class="w-full px-3 py-2 rounded-lg border"
-                :class="isDark ? 'bg-[var(--bg-card)] border-[var(--border)]' : 'bg-white border-gray-200'" />
-              <input v-model="form.config.channelId" placeholder="Channel ID" class="w-full px-3 py-2 rounded-lg border"
-                :class="isDark ? 'bg-[var(--bg-card)] border-[var(--border)]' : 'bg-white border-gray-200'" />
-              <input v-model="form.config.channelId2" placeholder="备用 Channel ID（可选，用于负载均衡）"
-                class="w-full px-3 py-2 rounded-lg border"
-                :class="isDark ? 'bg-[var(--bg-card)] border-[var(--border)]' : 'bg-white border-gray-200'" />
+              <div>
+                <label class="dialog-label">Bot Token</label>
+                <input v-model="form.config.botToken" placeholder="123456:ABC-DEF..." class="dialog-input w-full" />
+              </div>
+              <div>
+                <label class="dialog-label">Channel ID</label>
+                <input v-model="form.config.channelId" placeholder="-1001234567890" class="dialog-input w-full" />
+              </div>
+              <div>
+                <label class="dialog-label">备用 Channel（可选）</label>
+                <input v-model="form.config.channelId2" placeholder="-1009876543210" class="dialog-input w-full" />
+              </div>
             </template>
 
             <template v-else-if="form.type === 'cfr2'">
-              <p class="text-xs mb-2" :class="isDark ? 'text-gray-500' : 'text-gray-400'">
-                请在 Cloudflare R2 控制台创建 API Token，获取 Access Key ID 和 Secret Access Key
-              </p>
-              <input v-model="form.config.accessKey" placeholder="Access Key ID"
-                class="w-full px-3 py-2 rounded-lg border text-sm"
-                :class="isDark ? 'bg-[var(--bg-card)] border-[var(--border)]' : 'bg-white border-gray-200'" />
-              <input v-model="form.config.secretKey" placeholder="Secret Access Key" type="password"
-                class="w-full px-3 py-2 rounded-lg border text-sm"
-                :class="isDark ? 'bg-[var(--bg-card)] border-[var(--border)]' : 'bg-white border-gray-200'" />
-              <input v-model="form.config.bucket" placeholder="Bucket 名称"
-                class="w-full px-3 py-2 rounded-lg border text-sm"
-                :class="isDark ? 'bg-[var(--bg-card)] border-[var(--border)]' : 'bg-white border-gray-200'" />
-              <p class="text-xs -mt-1 mb-2 text-amber-500">⚠️ Bucket 名称不能包含空格</p>
-              <input v-model="form.config.accountId" placeholder="Account ID"
-                class="w-full px-3 py-2 rounded-lg border text-sm"
-                :class="isDark ? 'bg-[var(--bg-card)] border-[var(--border)]' : 'bg-white border-gray-200'" />
-              <p class="text-xs -mt-1 mb-2 text-amber-500">⚠️ 必须是 R2 账户页面显示的完整 Account ID</p>
-              <div class="border-t pt-3 mt-3" :class="isDark ? 'border-[var(--border)]' : 'border-gray-200'">
-                <p class="text-xs font-medium mb-2" :class="isDark ? 'text-gray-400' : 'text-gray-500'">
-                  公共访问 URL（必填）
-                </p>
-                <p class="text-xs mb-2" :class="isDark ? 'text-gray-500' : 'text-gray-400'">
-                  在 R2 存储桶设置中启用"公共访问"，填写自定义域名或公共开发 URL
-                </p>
-                <input v-model="form.config.publicUrl" placeholder="https://pub-xxx.r2.dev"
-                  class="w-full px-3 py-2 rounded-lg border text-sm"
-                  :class="isDark ? 'bg-[var(--bg-card)] border-[var(--border)]' : 'bg-white border-gray-200'" />
-                <p class="text-xs mt-1 text-amber-500">
-                  ⚠️ 不填写公共 URL 将无法直接访问文件
-                </p>
+              <div>
+                <label class="dialog-label">Access Key ID</label>
+                <input v-model="form.config.accessKey" placeholder="xxxxxxxxxxxxxxxxxxxx" class="dialog-input w-full" />
+              </div>
+              <div>
+                <label class="dialog-label">Secret Access Key</label>
+                <input v-model="form.config.secretKey" placeholder="xxxxxxxxxxxxxxxxxxxx" type="password" class="dialog-input w-full" />
+              </div>
+              <div class="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label class="dialog-label">Bucket</label>
+                  <input v-model="form.config.bucket" placeholder="my-bucket" class="dialog-input w-full" />
+                </div>
+                <div>
+                  <label class="dialog-label">Account ID</label>
+                  <input v-model="form.config.accountId" placeholder="xxxxxxxxxxxx" class="dialog-input w-full" />
+                </div>
+              </div>
+              <div>
+                <label class="dialog-label">公共 URL</label>
+                <input v-model="form.config.publicUrl" placeholder="https://pub-xxx.r2.dev" class="dialog-input w-full" />
               </div>
             </template>
 
             <template v-else-if="form.type === 's3'">
-              <p class="text-xs mb-2" :class="isDark ? 'text-gray-500' : 'text-gray-400'">
-                Endpoint 只需填写地域端点（如 cos.ap-guangzhou.myqcloud.com），SDK 会自动拼接 Bucket
-              </p>
-              <input v-model="form.config.accessKey" placeholder="Access Key ID"
-                class="w-full px-3 py-2 rounded-lg border text-sm"
-                :class="isDark ? 'bg-[var(--bg-card)] border-[var(--border)]' : 'bg-white border-gray-200'" />
-              <input v-model="form.config.secretKey" placeholder="Secret Access Key" type="password"
-                class="w-full px-3 py-2 rounded-lg border text-sm"
-                :class="isDark ? 'bg-[var(--bg-card)] border-[var(--border)]' : 'bg-white border-gray-200'" />
-              <input v-model="form.config.bucket" placeholder="Bucket 名称"
-                class="w-full px-3 py-2 rounded-lg border text-sm"
-                :class="isDark ? 'bg-[var(--bg-card)] border-[var(--border)]' : 'bg-white border-gray-200'" />
-              <p class="text-xs -mt-1 mb-2 text-amber-500">⚠️ Bucket 名称不能包含空格</p>
-              <input v-model="form.config.endpoint" placeholder="cos.ap-guangzhou.myqcloud.com"
-                class="w-full px-3 py-2 rounded-lg border text-sm"
-                :class="isDark ? 'bg-[var(--bg-card)] border-[var(--border)]' : 'bg-white border-gray-200'" />
-              <p class="text-xs -mt-1 mb-2 text-amber-500">⚠️ 只需填地域端点，不要包含 Bucket 名称</p>
-              <input v-model="form.config.region" placeholder="Region (如: ap-guangzhou)"
-                class="w-full px-3 py-2 rounded-lg border text-sm"
-                :class="isDark ? 'bg-[var(--bg-card)] border-[var(--border)]' : 'bg-white border-gray-200'" />
+              <div class="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label class="dialog-label">Access Key</label>
+                  <input v-model="form.config.accessKey" placeholder="xxxxxxxx" class="dialog-input w-full" />
+                </div>
+                <div>
+                  <label class="dialog-label">Secret Key</label>
+                  <input v-model="form.config.secretKey" placeholder="xxxxxxxx" type="password" class="dialog-input w-full" />
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label class="dialog-label">Bucket</label>
+                  <input v-model="form.config.bucket" placeholder="my-bucket" class="dialog-input w-full" />
+                </div>
+                <div>
+                  <label class="dialog-label">Endpoint</label>
+                  <input v-model="form.config.endpoint" placeholder="cos.ap-guangzhou..." class="dialog-input w-full" />
+                </div>
+              </div>
+              <div>
+                <label class="dialog-label">Region</label>
+                <input v-model="form.config.region" placeholder="ap-guangzhou" class="dialog-input w-full" />
+              </div>
             </template>
 
             <template v-else-if="form.type === 'discord'">
-              <p class="text-xs mb-2" :class="isDark ? 'text-gray-500' : 'text-gray-400'">
-                请在 Discord 开发者平台创建 Bot，获取 Token 和邀请到频道
-              </p>
-              <input v-model="form.config.botToken" placeholder="Bot Token"
-                class="w-full px-3 py-2 rounded-lg border text-sm"
-                :class="isDark ? 'bg-[var(--bg-card)] border-[var(--border)]' : 'bg-white border-gray-200'" />
-              <input v-model="form.config.channelId" placeholder="Channel ID"
-                class="w-full px-3 py-2 rounded-lg border text-sm"
-                :class="isDark ? 'bg-[var(--bg-card)] border-[var(--border)]' : 'bg-white border-gray-200'" />
-              <label class="flex items-center gap-2 cursor-pointer mt-2">
-                <input type="checkbox" v-model="form.config.isNitro" class="w-4 h-4 rounded accent-indigo-500" />
-                <span class="text-sm" :class="isDark ? 'text-gray-400' : 'text-gray-500'">
-                  Nitro 会员（支持 25MB，否则 8MB）
-                </span>
+              <div>
+                <label class="dialog-label">Bot Token</label>
+                <input v-model="form.config.botToken" placeholder="xxxxxxxx.xxxxxx.xxxxxx" class="dialog-input w-full" />
+              </div>
+              <div>
+                <label class="dialog-label">Channel ID</label>
+                <input v-model="form.config.channelId" placeholder="123456789012345678" class="dialog-input w-full" />
+              </div>
+              <label class="flex items-center gap-2 cursor-pointer py-1">
+                <input type="checkbox" v-model="form.config.isNitro" class="w-4 h-4 rounded accent-amber-500" />
+                <span class="text-sm" :class="isDark ? 'text-gray-400' : 'text-gray-500'">Nitro 会员（支持 25MB 上传）</span>
               </label>
             </template>
 
             <template v-else-if="form.type === 'huggingface'">
-              <p class="text-xs mb-3" :class="isDark ? 'text-gray-500' : 'text-gray-400'">
-                请在 HuggingFace 设置中创建 Access Token，选择 write 权限
-              </p>
-              <input v-model="form.config.token" placeholder="HF Token (hf_xxxxxxxx)"
-                class="w-full px-3 py-2 rounded-lg border text-sm"
-                :class="isDark ? 'bg-[var(--bg-card)] border-[var(--border)]' : 'bg-white border-gray-200'" />
-              <input v-model="form.config.repoId" placeholder="仓库 ID (如: username/imgbed-storage)"
-                class="w-full px-3 py-2 rounded-lg border text-sm"
-                :class="isDark ? 'bg-[var(--bg-card)] border-[var(--border)]' : 'bg-white border-gray-200'" />
-              <select v-model="form.config.repoType" class="w-full px-3 py-2 rounded-lg border text-sm"
-                :class="isDark ? 'bg-[var(--bg-card)] border-[var(--border)]' : 'bg-white border-gray-200'">
-                <option value="dataset">Dataset (数据集)</option>
-                <option value="model">Model (模型)</option>
-                <option value="space">Space (空间)</option>
-              </select>
-              <p class="text-xs mt-2" :class="isDark ? 'text-gray-600' : 'text-gray-400'">
-                文件将上传到 HuggingFace 数据集/模型仓库，可通过公开 URL 访问
-              </p>
-            </template>
-
-            <template v-else>
-              <p class="text-sm" :class="isDark ? 'text-gray-500' : 'text-gray-400'">请根据选择的类型填写相应配置</p>
+              <div>
+                <label class="dialog-label">HF Token</label>
+                <input v-model="form.config.token" placeholder="hf_xxxxxxxxxxxxxxxxxxxx" class="dialog-input w-full" />
+              </div>
+              <div class="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label class="dialog-label">仓库 ID</label>
+                  <input v-model="form.config.repoId" placeholder="username/imgbed" class="dialog-input w-full" />
+                </div>
+                <div>
+                  <label class="dialog-label">类型</label>
+                  <select v-model="form.config.repoType" class="dialog-input w-full">
+                    <option value="dataset">Dataset</option>
+                    <option value="model">Model</option>
+                    <option value="space">Space</option>
+                  </select>
+                </div>
+              </div>
             </template>
           </div>
         </div>
 
-        <!-- 配额 -->
-        <div class="border-t pt-4" :style="{ borderColor: 'var(--border)' }">
-          <div class="flex items-center justify-between mb-3">
-            <h3 class="font-medium">配额设置</h3>
-            <label class="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" v-model="form.quota.enabled" class="w-4 h-4 rounded accent-indigo-500" />
-              <span class="text-sm" :class="isDark ? 'text-gray-400' : 'text-gray-500'">启用配额</span>
+        <!-- 配额卡片 -->
+        <div class="dialog-card">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center shadow-lg shadow-rose-500/30">
+                <HardDrive class="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <h3 class="text-sm font-semibold">配额限制</h3>
+                <p class="text-xs" :class="isDark ? 'text-gray-500' : 'text-gray-400'">可选的限制策略</p>
+              </div>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" v-model="form.quota.enabled" class="sr-only peer" />
+              <div class="w-11 h-6 rounded-full peer transition-colors
+                peer-checked:after:translate-x-full
+                after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all
+                bg-gray-300 peer-checked:bg-gradient-to-r peer-checked:from-rose-500 peer-checked:to-pink-500">
+              </div>
             </label>
           </div>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-            <div>
-              <label class="block text-xs mb-1" :class="isDark ? 'text-gray-500' : 'text-gray-400'">存储上限 (GB)</label>
-              <input v-model.number="form.quota.limitGB" type="number" min="0"
-                class="w-full px-3 py-2 rounded-lg border text-sm"
-                :class="isDark ? 'bg-[var(--bg-hover)] border-[var(--border)]' : 'bg-gray-50 border-gray-200'" />
-            </div>
-            <div>
-              <label class="block text-xs mb-1" :class="isDark ? 'text-gray-500' : 'text-gray-400'">告警阈值 (%)</label>
-              <input v-model.number="form.quota.threshold" type="number" min="1" max="100"
-                class="w-full px-3 py-2 rounded-lg border text-sm"
-                :class="isDark ? 'bg-[var(--bg-hover)] border-[var(--border)]' : 'bg-gray-50 border-gray-200'" />
-            </div>
-            <div>
-              <label class="block text-xs mb-1" :class="isDark ? 'text-gray-500' : 'text-gray-400'">每日上传次数</label>
-              <input v-model.number="form.rateLimit.dailyUploadLimit" type="number" min="0"
-                class="w-full px-3 py-2 rounded-lg border text-sm"
-                :class="isDark ? 'bg-[var(--bg-hover)] border-[var(--border)]' : 'bg-gray-50 border-gray-200'" />
-              <p class="text-xs mt-1" :class="isDark ? 'text-gray-600' : 'text-gray-400'">0 表示不限制</p>
+          <div v-if="form.quota.enabled" class="mt-3 pt-3 border-t" :class="isDark ? 'border-gray-700/50' : 'border-gray-200'">
+            <div class="grid grid-cols-3 gap-2.5">
+              <div>
+                <label class="dialog-label">存储上限 (GB)</label>
+                <input v-model.number="form.quota.limitGB" type="number" min="0" placeholder="0" class="dialog-input w-full" />
+              </div>
+              <div>
+                <label class="dialog-label">告警阈值%</label>
+                <input v-model.number="form.quota.threshold" type="number" min="1" max="100" placeholder="90" class="dialog-input w-full" />
+              </div>
+              <div>
+                <label class="dialog-label">每日上传</label>
+                <input v-model.number="form.rateLimit.dailyUploadLimit" type="number" min="0" placeholder="0" class="dialog-input w-full" />
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       <template #footer>
-        <div class="flex flex-col sm:flex-row justify-end gap-2">
-          <button @click="showDialog = false" class="px-4 py-2 rounded-lg transition-all order-2 sm:order-1"
-            :class="isDark ? 'hover:bg-[var(--bg-hover)]' : 'hover:bg-gray-100'">取消</button>
-          <button @click="saveChannel" class="btn-gradient px-4 py-2 rounded-lg order-1 sm:order-2">保存</button>
+        <div class="flex justify-end gap-3 pt-3 border-t" :class="isDark ? 'border-gray-700/50' : 'border-gray-200'">
+          <button @click="showDialog = false" class="px-5 py-2.5 rounded-xl transition-all text-sm font-medium"
+            :class="isDark ? 'bg-gray-700/50 hover:bg-gray-600/50 text-gray-300' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'">
+            取消
+          </button>
+          <button @click="saveChannel" class="btn-gradient px-6 py-2.5 rounded-xl text-sm font-medium shadow-lg">
+            {{ dialogType === 'create' ? '创建渠道' : '保存修改' }}
+          </button>
         </div>
       </template>
     </el-dialog>
   </div>
 </template>
+
+<style scoped>
+/* 滑块样式 */
+.weight-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 3px;
+}
+
+.weight-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #f59e0b;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.4);
+  transition: transform 0.15s;
+}
+
+.weight-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+.weight-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #f59e0b;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.4);
+}
+
+/* 对话框样式 */
+:deep(.channel-dialog) {
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+:deep(.channel-dialog .el-dialog__header) {
+  padding: 16px 20px 12px;
+  margin: 0;
+  border-bottom: 1px solid transparent;
+}
+
+:deep(.channel-dialog .el-dialog__title) {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+:deep(.channel-dialog .el-dialog__body) {
+  padding: 16px 20px;
+}
+
+/* 卡片样式 */
+.dialog-card {
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid;
+  transition: all 0.2s;
+}
+
+:deep(.dark) .dialog-card {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.05) 100%);
+  border-color: rgba(99, 102, 241, 0.2);
+}
+
+:deep(.light) .dialog-card {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.04) 0%, rgba(139, 92, 246, 0.02) 100%);
+  border-color: rgba(99, 102, 241, 0.15);
+}
+
+:deep(.dark) .dialog-card:hover {
+  border-color: rgba(99, 102, 241, 0.35);
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.1);
+}
+
+:deep(.light) .dialog-card:hover {
+  border-color: rgba(99, 102, 241, 0.3);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.08);
+}
+
+/* 输入框样式 */
+.dialog-input {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+
+:deep(.dark) .dialog-input {
+  background: rgba(0, 0, 0, 0.2);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #f1f5f9;
+}
+
+:deep(.dark) .dialog-input:focus {
+  border-color: rgba(99, 102, 241, 0.5);
+  background: rgba(0, 0, 0, 0.3);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+:deep(.dark) .dialog-input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+:deep(.light) .dialog-input {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: #1e293b;
+}
+
+:deep(.light) .dialog-input:focus {
+  border-color: rgba(99, 102, 241, 0.5);
+  background: #fff;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+:deep(.light) .dialog-input::placeholder {
+  color: #94a3b8;
+}
+
+.dialog-label {
+  display: block;
+  font-size: 11px;
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+:deep(.dark) .dialog-label {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+:deep(.light) .dialog-label {
+  color: #64748b;
+}
+
+/* select 样式 */
+:deep(.dark) .dialog-input option {
+  background: #1e1e2e;
+  color: #f1f5f9;
+}
+
+:deep(.light) .dialog-input option {
+  background: #fff;
+  color: #1e293b;
+}
+</style>

@@ -31,19 +31,22 @@ func (h *ChannelHandler) Create(c *gin.Context) {
 		Name      string                 `json:"name" binding:"required"`
 		Type      string                 `json:"type" binding:"required"`
 		Config    map[string]interface{} `json:"config" binding:"required"`
+		Weight    int                    `json:"weight"`
 		Quota     model.QuotaConfig      `json:"quota"`
 		RateLimit model.RateLimitConfig  `json:"rateLimit"`
 	}
 
-	// 解析请求
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.Warnf("create channel: invalid request, error=%v", err)
 		response.ValidationError(c, "invalid request")
 		return
 	}
 
-	// 创建通道
-	channel, err := h.channelService.CreateChannel(c.Request.Context(), req.Name, req.Type, req.Config, req.Quota, req.RateLimit)
+	if req.Weight <= 0 {
+		req.Weight = 100
+	}
+
+	channel, err := h.channelService.CreateChannel(c.Request.Context(), req.Name, req.Type, req.Config, req.Weight, req.Quota, req.RateLimit)
 	if err != nil {
 		utils.Errorf("create channel: create failed, name=%s, type=%s, error=%v", req.Name, req.Type, err)
 		response.Error(c, response.ErrInternal, err.Error())
@@ -54,8 +57,6 @@ func (h *ChannelHandler) Create(c *gin.Context) {
 	response.Success(c, channel)
 }
 
-// Update 更新存储通道配置
-// PUT /api/v1/channel/:id (需要admin权限)
 func (h *ChannelHandler) Update(c *gin.Context) {
 	channelID := c.Param("id")
 	if channelID == "" {
@@ -67,19 +68,18 @@ func (h *ChannelHandler) Update(c *gin.Context) {
 	var req struct {
 		Name      string                 `json:"name" binding:"required"`
 		Config    map[string]interface{} `json:"config" binding:"required"`
+		Weight    int                    `json:"weight"`
 		Quota     model.QuotaConfig      `json:"quota"`
 		RateLimit model.RateLimitConfig  `json:"rateLimit"`
 	}
 
-	// 解析请求
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.Warnf("update channel: invalid request, channelID=%s, error=%v", channelID, err)
 		response.ValidationError(c, "invalid request")
 		return
 	}
 
-	// 更新通道
-	if err := h.channelService.UpdateChannel(c.Request.Context(), channelID, req.Name, req.Config, req.Quota, req.RateLimit); err != nil {
+	if err := h.channelService.UpdateChannel(c.Request.Context(), channelID, req.Name, req.Config, req.Weight, req.Quota, req.RateLimit); err != nil {
 		utils.Errorf("update channel: update failed, channelID=%s, error=%v", channelID, err)
 		response.Error(c, response.ErrInternal, err.Error())
 		return

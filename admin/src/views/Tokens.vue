@@ -15,12 +15,13 @@ const newTokenInfo = ref(null)
 
 const form = ref({
   name: '',
-  permissions: ['upload', 'read'],
+  permissions: ['upload', 'download'],
   expiresIn: 0
 })
 
 const permissionOptions = [
   { label: '上传', value: 'upload' },
+  { label: '下载', value: 'download' },
   { label: '读取', value: 'read' },
   { label: '删除', value: 'delete' },
   { label: '全部权限', value: '*' }
@@ -54,7 +55,7 @@ async function loadTokens() {
 function openCreateDialog() {
   form.value = {
     name: '',
-    permissions: ['upload', 'read'],
+    permissions: ['upload', 'download'],
     expiresIn: 0
   }
   showDialog.value = true
@@ -118,7 +119,7 @@ function isExpired(token) {
 }
 
 function getPermissionLabel(perm) {
-  const map = { upload: '上传', read: '读取', delete: '删除', '*': '全部' }
+  const map = { upload: '上传', download: '下载', read: '读取', delete: '删除', '*': '全部' }
   return map[perm] || perm
 }
 </script>
@@ -150,7 +151,7 @@ function getPermissionLabel(perm) {
         <span :class="isDark ? 'text-gray-400' : 'text-gray-600'"> API Token 用于程序化访问 ImgBed API。请在请求头中添加 </span>
         <code class="px-1 py-0.5 sm:px-1.5 sm:py-0.5 rounded text-xs sm:text-sm"
           :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-100'">
-          Authorization: Bearer {token}
+          X-API-Token 和 X-API-Secret
         </code>
         <span :class="isDark ? 'text-gray-400' : 'text-gray-600'"> 进行认证。</span>
       </p>
@@ -172,87 +173,95 @@ function getPermissionLabel(perm) {
       </button>
     </div>
 
-    <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-      <div v-for="token in tokens" :key="token.token" class="card p-4 sm:p-6 hover-lift animate-fade-in">
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
+      <div v-for="token in tokens" :key="token.token"
+        class="group relative rounded-2xl border p-4 sm:p-5 transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+        :class="isDark
+          ? 'bg-[var(--bg-secondary)] border-[var(--border)] hover:border-indigo-500/50 hover:shadow-indigo-500/10'
+          : 'bg-white border-gray-200 hover:border-indigo-400 hover:shadow-indigo-200'">
+
+        <!-- 顶部状态条 -->
+        <div class="absolute top-0 left-4 right-4 h-1 rounded-b-full opacity-0 group-hover:opacity-100 transition-opacity"
+          :class="token.enabled ? 'bg-gradient-to-r from-green-400 to-emerald-500' : 'bg-gradient-to-r from-gray-400 to-gray-500'">
+        </div>
 
         <!-- 头部 -->
-        <div class="flex items-start justify-between mb-3 sm:mb-4">
-          <div class="flex items-center gap-2 sm:gap-3">
-            <div
-              class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-primary flex items-center justify-center shadow-lg shadow-indigo-500/25">
-              <Key class="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+        <div class="flex items-start justify-between mb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
+              :class="token.enabled
+                ? 'bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/30'
+                : 'bg-gradient-to-br from-gray-400 to-gray-500 shadow-lg shadow-gray-500/20'">
+              <Key class="w-5 h-5 text-white" />
             </div>
             <div>
-              <p class="font-semibold text-sm sm:text-base">{{ token.name }}</p>
-              <div class="flex items-center gap-1.5 sm:gap-2 mt-0.5 sm:mt-1">
-                <span v-if="isExpired(token)"
-                  class="px-1.5 py-0.5 sm:px-2 sm:py-0.5 rounded text-xs font-medium bg-red-500/10 text-red-500">
-                  已过期
+              <p class="font-semibold text-sm sm:text-base" :class="isDark ? 'text-white' : 'text-gray-800'">{{ token.name }}</p>
+              <span class="inline-flex items-center gap-1 text-xs font-medium mt-0.5"
+                :class="isExpired(token) ? 'text-red-500' : token.enabled ? 'text-green-500' : 'text-gray-400'">
+                <span class="w-1.5 h-1.5 rounded-full"
+                  :class="isExpired(token) ? 'bg-red-500' : token.enabled ? 'bg-green-500 animate-pulse' : 'bg-gray-400'">
                 </span>
-                <span v-else class="px-1.5 py-0.5 sm:px-2 sm:py-0.5 rounded text-xs font-medium" :class="token.enabled
-                  ? 'bg-green-500/10 text-green-500'
-                  : 'bg-gray-500/10 text-gray-500'">
-                  {{ token.enabled ? '可用' : '禁用' }}
-                </span>
-              </div>
+                {{ isExpired(token) ? '已过期' : token.enabled ? '正常' : '已禁用' }}
+              </span>
             </div>
           </div>
         </div>
 
-        <!-- Token -->
-        <div class="mb-3 sm:mb-4">
-          <div class="flex items-center gap-2 p-2.5 sm:p-3 rounded-lg"
-            :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-50'">
-            <code class="flex-1 text-xs sm:text-sm truncate" :title="token.token">
-              {{ token.token.substring(0, 20) }}...
-            </code>
-            <el-tooltip content="复制 Token" placement="top">
-              <button @click="copyToClipboard(token.token)"
-                class="p-1 sm:p-1.5 rounded-lg transition-all hover:bg-indigo-500/10">
-                <Copy class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-500" />
-              </button>
-            </el-tooltip>
+        <!-- Token 信息卡 -->
+        <div class="mb-4 p-3 rounded-xl" :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-50'">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex-1 min-w-0">
+              <p class="text-xs" :class="isDark ? 'text-gray-500' : 'text-gray-400'">Token ID</p>
+              <code class="text-xs sm:text-sm truncate block font-mono mt-0.5" :class="isDark ? 'text-gray-300' : 'text-gray-600'">
+                {{ token.token.substring(0, 24) }}...
+              </code>
+            </div>
+            <button @click="copyToClipboard(token.token)"
+              class="p-2 rounded-lg transition-all hover:bg-indigo-500/10 flex-shrink-0"
+              :class="isDark ? 'hover:text-indigo-400' : 'hover:text-indigo-500'">
+              <Copy class="w-4 h-4" />
+            </button>
           </div>
         </div>
 
-        <!-- 权限 -->
-        <div class="flex flex-wrap gap-1 sm:gap-1.5 mb-3 sm:mb-4">
+        <!-- 权限标签 -->
+        <div class="flex flex-wrap gap-1.5 mb-4">
           <span v-for="perm in token.permissions" :key="perm"
-            class="px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg text-xs font-medium"
-            :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-100'">
+            class="px-2 py-0.5 rounded-md text-xs font-medium"
+            :class="isDark
+              ? 'bg-indigo-500/15 text-indigo-400'
+              : 'bg-indigo-50 text-indigo-600'">
             {{ getPermissionLabel(perm) }}
           </span>
         </div>
 
-        <!-- 信息 -->
-        <div class="grid grid-cols-2 gap-2 mb-3 sm:mb-4 text-xs sm:text-sm">
+        <!-- 信息行 -->
+        <div class="flex items-center justify-between text-xs mb-4 pb-4 border-b" :class="isDark ? 'border-[var(--border)] text-gray-400' : 'border-gray-100 text-gray-500'">
           <div>
-            <span :class="isDark ? 'text-gray-500' : 'text-gray-400'">过期时间</span>
-            <p class="font-medium mt-0.5">{{ formatDate(token.expiresAt) }}</p>
+            <span class="opacity-60">过期</span>
+            <span class="ml-1 font-medium" :class="isExpired(token) ? 'text-red-500' : ''">{{ formatDate(token.expiresAt) }}</span>
           </div>
           <div>
-            <span :class="isDark ? 'text-gray-500' : 'text-gray-400'">最后使用</span>
-            <p class="font-medium mt-0.5">{{ token.lastUsedAt ? formatDate(token.lastUsedAt) : '从未使用' }}</p>
+            <span class="opacity-60">使用</span>
+            <span class="ml-1 font-medium">{{ token.lastUsedAt ? formatDate(token.lastUsedAt) : '从未' }}</span>
           </div>
         </div>
 
-        <!-- 操作 -->
-        <div class="flex items-center gap-1 sm:gap-2 pt-3 sm:pt-4 border-t" :style="{ borderColor: 'var(--border)' }">
-          <el-tooltip :content="token.enabled ? '禁用此 Token' : '启用此 Token'" placement="top">
-            <button @click="toggleToken(token)"
-              class="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all"
-              :class="token.enabled
-                ? 'text-red-500 hover:bg-red-500/10'
-                : 'text-green-500 hover:bg-green-500/10'">
-              {{ token.enabled ? '禁用' : '启用' }}
-            </button>
-          </el-tooltip>
-          <el-tooltip content="删除 Token" placement="top">
-            <button @click="deleteToken(token)"
-              class="px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium text-red-500 hover:bg-red-500/10 transition-all">
-              <Trash2 class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            </button>
-          </el-tooltip>
+        <!-- 操作按钮 -->
+        <div class="flex items-center gap-2">
+          <button @click="toggleToken(token)"
+            class="flex-1 py-2 px-3 rounded-xl text-xs font-medium transition-all flex items-center justify-center gap-1.5"
+            :class="token.enabled
+              ? 'bg-red-500/10 text-red-500 hover:bg-red-500/20'
+              : 'bg-green-500/10 text-green-500 hover:bg-green-500/20'">
+            <X v-if="token.enabled" class="w-3.5 h-3.5" />
+            <Check v-else class="w-3.5 h-3.5" />
+            {{ token.enabled ? '禁用' : '启用' }}
+          </button>
+          <button @click="deleteToken(token)"
+            class="py-2 px-3 rounded-xl text-xs font-medium bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all">
+            <Trash2 class="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
     </div>

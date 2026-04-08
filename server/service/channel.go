@@ -173,7 +173,7 @@ func DecryptChannelConfig(configJSON string) (map[string]interface{}, error) {
 	return decryptConfig(configMap)
 }
 
-func (s *ChannelService) CreateChannel(ctx context.Context, name string, channelType string, config map[string]interface{}, quota model.QuotaConfig, rateLimit model.RateLimitConfig) (*model.Channel, error) {
+func (s *ChannelService) CreateChannel(ctx context.Context, name string, channelType string, config map[string]interface{}, weight int, quota model.QuotaConfig, rateLimit model.RateLimitConfig) (*model.Channel, error) {
 	channelID := utils.GenerateID()
 
 	encryptedConfig, err := encryptConfig(config)
@@ -188,6 +188,10 @@ func (s *ChannelService) CreateChannel(ctx context.Context, name string, channel
 		return nil, fmt.Errorf("marshal config failed: %w", err)
 	}
 
+	if weight <= 0 {
+		weight = 100
+	}
+
 	channel := &model.Channel{
 		ID:                channelID,
 		Name:              name,
@@ -195,13 +199,13 @@ func (s *ChannelService) CreateChannel(ctx context.Context, name string, channel
 		Config:            string(configJSON),
 		Enabled:           true,
 		Status:            "healthy",
+		Weight:            weight,
 		QuotaEnabled:      quota.Enabled,
 		QuotaLimit:        int64(quota.LimitGB) * 1024 * 1024 * 1024,
 		QuotaThreshold:    quota.Threshold,
 		DailyUploadLimit:  rateLimit.DailyUploadLimit,
 		HourlyUploadLimit: rateLimit.HourlyUploadLimit,
 		MinIntervalMs:     rateLimit.MinIntervalMs,
-		Weight:            100,
 		LastUsedAt:        time.Now(),
 	}
 
@@ -214,7 +218,7 @@ func (s *ChannelService) CreateChannel(ctx context.Context, name string, channel
 	return channel, nil
 }
 
-func (s *ChannelService) UpdateChannel(ctx context.Context, channelID string, name string, config map[string]interface{}, quota model.QuotaConfig, rateLimit model.RateLimitConfig) error {
+func (s *ChannelService) UpdateChannel(ctx context.Context, channelID string, name string, config map[string]interface{}, weight int, quota model.QuotaConfig, rateLimit model.RateLimitConfig) error {
 	var channel model.Channel
 	if err := database.DB.Where("id = ?", channelID).First(&channel).Error; err != nil {
 		utils.Errorf("update channel: channel not found, channelID=%s, error=%v", channelID, err)
@@ -242,6 +246,10 @@ func (s *ChannelService) UpdateChannel(ctx context.Context, channelID string, na
 		"daily_upload_limit":  rateLimit.DailyUploadLimit,
 		"hourly_upload_limit": rateLimit.HourlyUploadLimit,
 		"min_interval_ms":     rateLimit.MinIntervalMs,
+	}
+
+	if weight > 0 {
+		updates["weight"] = weight
 	}
 
 	s.mu.Lock()

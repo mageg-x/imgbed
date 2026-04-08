@@ -387,6 +387,7 @@ func initDefaultChannel() {
 		map[string]interface{}{
 			"path": "./data/uploads",
 		},
+		100,
 		model.QuotaConfig{
 			Enabled: false,
 		},
