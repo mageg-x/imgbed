@@ -63,6 +63,18 @@ export default {
       fileTooLarge: 'File too large, exceeds limit',
       invalidFileType: 'Unsupported file type',
       serverError: 'Server error, please try again later'
+    },
+    delete: {
+      failed: 'Delete failed',
+      notFound: 'File not found or already deleted',
+      accessDenied: 'Access denied, cannot delete',
+      serverError: 'Server error, please try again later'
+    },
+    download: {
+      failed: 'Download failed',
+      notFound: 'File not found',
+      accessDenied: 'Access denied',
+      serverError: 'Server error, please try again later'
     }
   },
   routeTitle: {

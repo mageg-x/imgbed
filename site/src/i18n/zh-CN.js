@@ -63,6 +63,18 @@ export default {
       fileTooLarge: '文件过大，超过限制',
       invalidFileType: '不支持的文件类型',
       serverError: '服务器错误，请稍后重试'
+    },
+    delete: {
+      failed: '删除失败',
+      notFound: '文件不存在或已被删除',
+      accessDenied: '访问被拒绝，无法删除',
+      serverError: '服务器错误，请稍后重试'
+    },
+    download: {
+      failed: '下载失败',
+      notFound: '文件不存在',
+      accessDenied: '访问被拒绝',
+      serverError: '服务器错误，请稍后重试'
     }
   },
   routeTitle: {

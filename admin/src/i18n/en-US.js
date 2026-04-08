@@ -49,7 +49,33 @@ export default {
     unknown: 'Unknown error',
     network: 'Network error, please check your connection',
     requestResourceNotFound: 'Resource not found',
-    requestFailed: 'Request failed'
+    requestFailed: 'Request failed',
+    upload: {
+      failed: 'Upload failed',
+      retryExhausted: 'Upload failed after multiple retries',
+      channelError: 'Storage channel error, please contact administrator',
+      quotaFull: 'Storage quota is full, please contact administrator',
+      rateLimit: 'Upload rate limit exceeded, please try again later',
+      methodNotAllowed: 'Request method not allowed',
+      accessDenied: 'Access denied, please check permissions',
+      networkError: 'Network error, please check your connection',
+      timeout: 'Upload timeout, please try again',
+      fileTooLarge: 'File too large, exceeds limit',
+      invalidFileType: 'Unsupported file type',
+      serverError: 'Server error, please try again later'
+    },
+    delete: {
+      failed: 'Delete failed',
+      notFound: 'File not found or already deleted',
+      accessDenied: 'Access denied, cannot delete',
+      serverError: 'Server error, please try again later'
+    },
+    download: {
+      failed: 'Download failed',
+      notFound: 'File not found',
+      accessDenied: 'Access denied',
+      serverError: 'Server error, please try again later'
+    }
   },
   routeTitle: {
     uploadFile: 'Upload File',
