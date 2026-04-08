@@ -278,7 +278,7 @@ const jwtConfig = reactive({
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col">
+  <div class="flex flex-col h-full">
     <!-- 设置卡片 -->
     <div class="card overflow-hidden flex-1 flex flex-col">
       <!-- 标签页导航 -->

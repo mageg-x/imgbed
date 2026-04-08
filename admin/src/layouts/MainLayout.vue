@@ -150,7 +150,7 @@ function closeLangDropdown() {
     </aside>
 
     <!-- 主内容 -->
-    <main class="flex-1 transition-all duration-300 w-full" :class="isCollapsed ? 'lg:ml-[72px]' : 'lg:ml-52'">
+    <main class="flex-1 transition-all duration-300 w-[80vw] flex flex-col" :class="isCollapsed ? 'lg:ml-[72px]' : 'lg:ml-52'">
 
       <!-- 顶部栏 -->
       <header class="sticky top-0 z-40 border-b backdrop-blur-xl px-4 sm:px-6 py-4"
@@ -206,7 +206,7 @@ function closeLangDropdown() {
       </header>
 
       <!-- 内容区 -->
-      <div class="p-4 sm:p-6">
+      <div class="p-4 sm:p-6 flex-1">
         <RouterView />
       </div>
     </main>

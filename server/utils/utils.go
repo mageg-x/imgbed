@@ -49,9 +49,7 @@ func GetFileExtension(filename string) string {
 //   - string: MIME类型字符串
 func GetMimeType(file *multipart.FileHeader) string {
 	ext := GetFileExtension(file.Filename)
-	// 常见文件类型的MIME类型映射
 	mimeTypes := map[string]string{
-		// 图片类型
 		".jpg":  "image/jpeg",
 		".jpeg": "image/jpeg",
 		".png":  "image/png",
@@ -60,18 +58,15 @@ func GetMimeType(file *multipart.FileHeader) string {
 		".svg":  "image/svg+xml",
 		".bmp":  "image/bmp",
 		".ico":  "image/x-icon",
-		// 视频类型
 		".mp4":  "video/mp4",
 		".webm": "video/webm",
 		".mov":  "video/quicktime",
 		".avi":  "video/x-msvideo",
 		".mkv":  "video/x-matroska",
-		// 音频类型
 		".mp3":  "audio/mpeg",
 		".wav":  "audio/wav",
 		".ogg":  "audio/ogg",
 		".flac": "audio/flac",
-		// 文档类型
 		".pdf":  "application/pdf",
 		".doc":  "application/msword",
 		".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -79,11 +74,9 @@ func GetMimeType(file *multipart.FileHeader) string {
 		".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 		".ppt":  "application/vnd.ms-powerpoint",
 		".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-		// 压缩文件
 		".zip": "application/zip",
 		".rar": "application/x-rar-compressed",
 		".7z":  "application/x-7z-compressed",
-		// 文本类型
 		".txt":  "text/plain",
 		".json": "application/json",
 		".xml":  "application/xml",
@@ -91,10 +84,23 @@ func GetMimeType(file *multipart.FileHeader) string {
 		".css":  "text/css",
 		".js":   "application/javascript",
 	}
+
+	f, err := file.Open()
+	if err == nil {
+		defer f.Close()
+		buffer := make([]byte, 512)
+		n, err := f.Read(buffer)
+		if err == nil && n > 0 {
+			detected := http.DetectContentType(buffer[:n])
+			if detected != "application/octet-stream" {
+				return detected
+			}
+		}
+	}
+
 	if mime, ok := mimeTypes[ext]; ok {
 		return mime
 	}
-	// 如果不在映射中，返回HTTP头中的Content-Type
 	return file.Header.Get("Content-Type")
 }
 

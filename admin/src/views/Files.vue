@@ -47,6 +47,7 @@ const detailVisible = ref(false)
 const detailFile = ref(null)
 const detailLoading = ref(false)
 const selectAllRef = ref(null)
+const imageErrors = ref(new Set())
 
 function openCopyMenu(file) {
   copyFile.value = file
@@ -278,6 +279,14 @@ function getIcon(type_) {
 
 function isImageType(type_) {
   return type_?.startsWith('image/')
+}
+
+function hasImageError(fileId) {
+  return imageErrors.value.has(fileId)
+}
+
+function handleImageError(fileId) {
+  imageErrors.value.add(fileId)
 }
 
 function isPreviewable(type_) {
@@ -591,8 +600,13 @@ async function executeCleanup() {
         <div class="aspect-square flex items-center justify-center cursor-pointer flex-shrink-0"
           :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-50'"
           @click="isPreviewable(file.type) && openPreview(file)">
-          <img v-if="isImageType(file.type)" :src="file.url || `/api/v1/file/${file.id}`" :alt="file.name"
-            class="w-full h-full object-cover" />
+          <img v-if="isImageType(file.type) && !hasImageError(file.id)" :src="file.url || `/api/v1/file/${file.id}`" :alt="file.name"
+            class="w-full h-full object-cover" @error="handleImageError(file.id)" />
+          <div v-else-if="isImageType(file.type) && hasImageError(file.id)" class="w-full h-full flex flex-col items-center justify-center gap-1"
+            :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-100'">
+            <FileText class="w-8 h-8" :class="isDark ? 'text-gray-500' : 'text-gray-400'" />
+            <span class="text-xs" :class="isDark ? 'text-gray-500' : 'text-gray-400'">{{ t('common.loadFailed') }}</span>
+          </div>
           <component v-else :is="getIcon(file.type)" class="w-10 h-10 sm:w-12 sm:h-12"
             :class="isDark ? 'text-gray-600' : 'text-gray-400'" />
         </div>
@@ -663,8 +677,10 @@ async function executeCleanup() {
                   <div
                     class="w-6 h-6 sm:w-8 sm:h-8 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center"
                     :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-100'">
-                    <img v-if="isImageType(file.type)" :src="file.url || `/api/v1/file/${file.id}`" :alt="file.name"
-                      class="w-full h-full object-cover" />
+                    <img v-if="isImageType(file.type) && !hasImageError(file.id)" :src="file.url || `/api/v1/file/${file.id}`" :alt="file.name"
+                      class="w-full h-full object-cover" @error="handleImageError(file.id)" />
+                    <FileText v-else-if="isImageType(file.type) && hasImageError(file.id)" class="w-3 h-3 sm:w-4 sm:h-4"
+                      :class="isDark ? 'text-gray-500' : 'text-gray-400'" />
                     <component v-else :is="getIcon(file.type)" class="w-3 h-3 sm:w-4 sm:h-4"
                       :class="isDark ? 'text-gray-500' : 'text-gray-400'" />
                   </div>

@@ -23,6 +23,7 @@ const viewMode = ref('grid')
 
 const search = ref('')
 const olderThan = ref(0)
+const imageErrors = ref(new Set())
 
 function getOrigin() {
   return window.location.origin
@@ -133,6 +134,14 @@ function formatSize(bytes) {
   const sizes = ['B', 'KB', 'MB', 'GB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
+}
+
+function hasImageError(fileId) {
+  return imageErrors.value.has(fileId)
+}
+
+function handleImageError(fileId) {
+  imageErrors.value.add(fileId)
 }
 </script>
 
@@ -266,9 +275,14 @@ function formatSize(bytes) {
             :style="{ animationDelay: (idx % 12) * 50 + 'ms' }" @click="openPreview(file.url)">
 
             <!-- 图片 -->
-            <img :src="file.url" :alt="file.name"
+            <img v-if="!hasImageError(file.id)" :src="file.url" :alt="file.name"
               class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-              loading="lazy" />
+              loading="lazy" @error="handleImageError(file.id)" />
+            <div v-else class="w-full h-full flex flex-col items-center justify-center gap-1"
+              :class="themeStore.isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-100'">
+              <Image class="w-8 h-8" :class="themeStore.isDark ? 'text-gray-500' : 'text-gray-400'" />
+              <span class="text-xs" :class="themeStore.isDark ? 'text-gray-500' : 'text-gray-400'">{{ t('common.loadFailed') }}</span>
+            </div>
 
             <!-- 悬浮层 -->
             <div
@@ -315,7 +329,8 @@ function formatSize(bytes) {
                   <td class="p-3 sm:p-4">
                     <div class="w-12 h-12 rounded-lg overflow-hidden"
                       :class="themeStore.isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-100'">
-                      <img :src="file.url" :alt="file.name" class="w-full h-full object-cover" />
+                      <img v-if="!hasImageError(file.id)" :src="file.url" :alt="file.name" class="w-full h-full object-cover" @error="handleImageError(file.id)" />
+                      <Image v-else class="w-6 h-6 m-3" :class="themeStore.isDark ? 'text-gray-500' : 'text-gray-400'" />
                     </div>
                   </td>
                   <td class="p-3 sm:p-4">

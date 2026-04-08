@@ -23,6 +23,7 @@ const pasteEnabled = ref(true)
 const isDragover = ref(false)
 const fileInput = ref(null)
 const maxFileSize = ref(20 * 1024 * 1024)
+const imageErrors = ref(new Set())
 
 // 站点配置
 const siteConfig = ref({
@@ -321,6 +322,14 @@ function getFileTypeIcon(type) {
 function isImageType(type) {
   return type?.startsWith('image/')
 }
+
+function hasImageError(itemId) {
+  return imageErrors.value.has(itemId)
+}
+
+function handleImageError(itemId) {
+  imageErrors.value.add(itemId)
+}
 </script>
 
 <template>
@@ -442,7 +451,9 @@ function isImageType(type) {
 
             <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg overflow-hidden flex-shrink-0"
               :class="themeStore.isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-100'">
-              <img v-if="isImageType(item.type) && item.url" :src="item.url" class="w-full h-full object-cover" />
+              <img v-if="isImageType(item.type) && item.url && !hasImageError(item.id)" :src="item.url" class="w-full h-full object-cover" @error="handleImageError(item.id)" />
+              <Image v-else-if="isImageType(item.type) && item.url && hasImageError(item.id)" class="w-5 h-5 sm:w-6 sm:h-6 m-2 sm:m-3"
+                :class="themeStore.isDark ? 'text-gray-500' : 'text-gray-400'" />
               <component v-else :is="getFileTypeIcon(item.type)" class="w-5 h-5 sm:w-6 sm:h-6 m-2 sm:m-3"
                 :class="themeStore.isDark ? 'text-gray-500' : 'text-gray-400'" />
             </div>
