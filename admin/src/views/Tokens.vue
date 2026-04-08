@@ -330,7 +330,7 @@ function toggleSecretVisibility(token) {
                 : form.permissions.push(opt.value)
             " class="flex items-center gap-2 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all border"
               :class="form.permissions.includes(opt.value)
-                ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white border-transparent shadow-lg'
+                ? 'bg-gradient-to-r ' + getPermissionColor(opt.value) + ' text-white border-transparent shadow-lg'
                 : isDark ? 'bg-[var(--bg-hover)] border-[var(--border)]' : 'bg-gray-50 border-gray-200'">
               <Check v-if="form.permissions.includes(opt.value)" class="w-3.5 h-3.5" />
               {{ opt.label }}
