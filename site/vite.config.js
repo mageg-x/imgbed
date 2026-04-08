@@ -27,7 +27,7 @@ export default defineConfig({
     }
   },
   build: {
-    outDir: '../server/embed/site',
+    outDir: '../server/static/embed/site',
     emptyOutDir: true
   }
 })

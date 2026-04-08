@@ -1,9 +1,9 @@
-.PHONY: all build dev clean
+.PHONY: all build dev clean build-gui build-gui-windows build-gui-darwin generate-icon
 
 all: build
 
 dev-server:
-	cd server && go run ./cmd/server
+	cd server && go run .
 
 dev-admin:
 	cd admin && npm run dev
@@ -15,17 +15,35 @@ dev: dev-server
 
 build-admin:
 	cd admin && npm install && npm run build
+	rm -rf ../server/static/embed/admin
+	mv dist ../server/static/embed/admin
 
 build-site:
 	cd site && npm install && npm run build
+	rm -rf ../server/static/embed/site
+	mv dist ../server/static/embed/site
 
 build-frontend: build-admin build-site
 
 build-server:
-	cd server && go build -o imgbed ./cmd/server
+	cd server && go build -o imgbed .
 
 build: build-frontend build-server
 
+generate-icon:
+	cd server/tools/png2ico && go run . ../../systray/icon.png ../../systray/icon.ico
+	cd server && rsrc -ico systray/icon.ico -o rsrc.syso
+
+build-gui-windows: build-frontend generate-icon
+	cd server && go build -tags gui -ldflags "-H=windowsgui" -o imgbed-gui.exe .
+
+build-gui-darwin: build-frontend
+	cd server && go build -tags gui -o imgbed-gui .
+
+build-gui: build-frontend
+	cd server && go build -tags gui -o imgbed-gui .
+
 clean:
-	rm -rf server/embed/admin server/embed/site
-	rm -f server/imgbed server/imgbed.exe
+	rm -rf server/static/embed/admin server/static/embed/site
+	rm -f server/imgbed server/imgbed.exe server/imgbed-gui server/imgbed-gui.exe
+	rm -f server/rsrc.syso server/systray/icon.ico

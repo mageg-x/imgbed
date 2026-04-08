@@ -24,7 +24,7 @@ export default defineConfig({
     }
   },
   build: {
-    outDir: '../server/embed/admin',
+    outDir: '../server/static/embed/admin',
     emptyOutDir: true
   }
 })
