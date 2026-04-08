@@ -141,7 +141,7 @@ async function testChannel(channel) {
   testingId.value = channel.id
   try {
     const res = await channelApi.test(channel.id)
-    if (res.data?.success) {
+    if (res.data?.healthy) {
       ElMessage.success(t('channels.connectionSuccess'))
     } else {
       const errorMsg = res.data?.error || res.data?.message || t('channels.connectionFailed')
@@ -162,6 +162,7 @@ async function testChannel(channel) {
     })
   } finally {
     testingId.value = null
+    loadChannels()
   }
 }
 

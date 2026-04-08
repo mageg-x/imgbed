@@ -367,14 +367,23 @@ func (h *AdminHandler) GetTokens(c *gin.Context) {
 	// 转换为统一格式，使用Unix时间戳
 	result := make([]gin.H, 0, len(tokens))
 	for _, t := range tokens {
+		expiresAt := t.ExpiresAt.Unix()
+		// 数据库零日期 "0000-00-00" 解析后是 1970-01-01 之前的时间，视为永不过期
+		if expiresAt < 0 || expiresAt < 946684800 { // 946684800 = 2000-01-01
+			expiresAt = 0
+		}
+		lastUsedAt := t.LastUsedAt.Unix()
+		if lastUsedAt < 0 || lastUsedAt < 946684800 {
+			lastUsedAt = 0
+		}
 		result = append(result, gin.H{
 			"name":        t.Name,
 			"token":       t.Token,
 			"permissions": t.Permissions,
 			"enabled":     t.Enabled,
-			"expiresAt":   t.ExpiresAt.Unix(),
+			"expiresAt":   expiresAt,
 			"createdAt":   t.CreatedAt.Unix(),
-			"lastUsedAt":  t.LastUsedAt.Unix(),
+			"lastUsedAt":  lastUsedAt,
 		})
 	}
 
@@ -408,13 +417,17 @@ func (h *AdminHandler) CreateToken(c *gin.Context) {
 	}
 
 	utils.Infof("create token: success, name=%s", req.Name)
+	expiresAt := token.ExpiresAt.Unix()
+	if expiresAt < 0 || expiresAt < 946684800 {
+		expiresAt = 0
+	}
 	response.Success(c, gin.H{
 		"id":          token.Token,
 		"token":       token.Token,
 		"secret":      token.Secret,
 		"name":        token.Name,
 		"permissions": token.Permissions,
-		"expiresAt":   token.ExpiresAt.Unix(),
+		"expiresAt":   expiresAt,
 		"createdAt":   token.CreatedAt.Unix(),
 	})
 }

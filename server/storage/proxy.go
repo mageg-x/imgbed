@@ -1,8 +1,12 @@
 package storage
 
 import (
+	"bytes"
+	"compress/gzip"
+	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/imgbed/server/config"
@@ -219,4 +223,24 @@ func NoProxyURLFunc() ProxyURLFunc {
 	return func() string {
 		return ""
 	}
+}
+
+// ReadResponseBody 读取响应体，自动处理 gzip 解压
+// 用于处理代理服务器可能返回的 gzip 压缩响应
+func ReadResponseBody(resp *http.Response) ([]byte, error) {
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	// 尝试直接解析 JSON，失败则尝试 gzip 解压后再解析
+	if strings.Contains(strings.ToLower(resp.Header.Get("Content-Encoding")), "gzip") {
+		gzReader, err := gzip.NewReader(bytes.NewReader(bodyBytes))
+		if err == nil {
+			defer gzReader.Close()
+			return io.ReadAll(gzReader)
+		}
+	}
+
+	return bodyBytes, nil
 }

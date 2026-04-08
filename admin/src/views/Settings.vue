@@ -769,8 +769,7 @@ const jwtConfig = reactive({
 
             <div v-if="cdnConfig.enabled" class="space-y-4">
               <div>
-                <label class="block text-sm font-medium mb-2">{{ t('settings.cdn.proxyAddress') }}</label>
-                <input v-model="cdnConfig.proxyUrl" type="text" :placeholder="t('settings.cdn.proxyAddressPlaceholder')"
+               <input v-model="cdnConfig.proxyUrl" type="text" :placeholder="t('settings.cdn.proxyAddressPlaceholder')"
                   class="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm"
                   :class="isDark ? 'bg-[var(--bg-secondary)] border-[var(--border)]' : 'bg-white border-gray-200'" />
                 <p class="text-xs mt-1.5" :class="isDark ? 'text-gray-500' : 'text-gray-400'">

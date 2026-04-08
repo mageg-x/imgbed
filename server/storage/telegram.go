@@ -164,6 +164,13 @@ func (d *TelegramDriver) Upload(ctx context.Context, req *UploadRequest) (*Uploa
 	}
 	defer resp.Body.Close()
 
+	// 读取响应体（自动处理 gzip 解压）
+	bodyBytes, err := ReadResponseBody(resp)
+	if err != nil {
+		utils.Errorf("telegram upload: read body failed, error=%v", err)
+		return nil, fmt.Errorf("read body failed: %w", err)
+	}
+
 	// 解析响应
 	var result struct {
 		OK     bool `json:"ok"`
@@ -178,8 +185,8 @@ func (d *TelegramDriver) Upload(ctx context.Context, req *UploadRequest) (*Uploa
 		Description string `json:"description"`
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		utils.Errorf("telegram upload: decode response failed, error=%v", err)
+	if err := json.Unmarshal(bodyBytes, &result); err != nil {
+		utils.Errorf("telegram upload: decode response failed, body=%s, error=%v", string(bodyBytes)[:min(200, len(bodyBytes))], err)
 		return nil, fmt.Errorf("decode response failed: %w", err)
 	}
 

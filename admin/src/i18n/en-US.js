@@ -522,7 +522,7 @@ export default {
     },
     // CDN settings
     cdn: {
-      cdnProxyTitle: 'CDN Proxy Acceleration',
+      cdnProxyTitle: 'Proxy Tunnel',
       cdnProxyDesc: 'Enable to start download acceleration and upload proxy, solving firewall issues',
       enable: 'Enable',
       proxyAddress: 'Proxy Address',

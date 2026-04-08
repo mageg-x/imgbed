@@ -352,7 +352,14 @@ func (s *FileService) UploadWithRetry(ctx context.Context, file *multipart.FileH
 	consecutiveFailures := make(map[string]int)
 
 	for i := 0; i <= retryCount; i++ {
-		channelID, err := s.channelService.SelectChannelExcluding(ctx, file.Size, failedChannels)
+		var channelID string
+		var err error
+		// 第一次选择使用策略（round_robin/random/priority），重试时排除已失败的渠道
+		if i == 0 {
+			channelID, err = s.channelService.SelectChannel(ctx, file.Size)
+		} else {
+			channelID, err = s.channelService.SelectChannelExcluding(ctx, file.Size, failedChannels)
+		}
 		if err != nil {
 			utils.Warnf("upload with retry: no available channels, retry=%d/%d, filename=%s, error=%v", i, retryCount, file.Filename, err)
 			break

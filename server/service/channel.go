@@ -24,6 +24,7 @@ const (
 	ScheduleStrategyRoundRobin = "round_robin"
 	ScheduleStrategyRandom     = "random"
 	ScheduleStrategyPriority   = "priority"
+	ScheduleStrategyWeight     = "weight"
 )
 
 var sensitiveFields = []string{
@@ -428,6 +429,8 @@ func (s *ChannelService) SelectChannel(ctx context.Context, fileSize int64) (str
 		selectedID = s.selectByRoundRobin(candidates)
 	case ScheduleStrategyRandom:
 		selectedID = s.selectByRandom(candidates)
+	case ScheduleStrategyWeight:
+		selectedID = s.selectByWeight(candidates)
 	default:
 		selectedID = s.selectByPriority(candidates)
 	}
@@ -506,13 +509,14 @@ func (s *ChannelService) selectByPriority(channels []*model.Channel) string {
 		return ""
 	}
 
+	// 按权重分数选择最高分
 	type scoredChannel struct {
 		channel *model.Channel
 		score   float64
 	}
 
-	scored := make([]scoredChannel, len(channels))
-	for i, ch := range channels {
+	scored := make([]scoredChannel, 0, len(channels))
+	for _, ch := range channels {
 		score := float64(ch.Weight)
 
 		if ch.QuotaEnabled && ch.QuotaLimit > 0 {
@@ -525,9 +529,16 @@ func (s *ChannelService) selectByPriority(channels []*model.Channel) string {
 			score *= remainingPercent
 		}
 
-		scored[i] = scoredChannel{channel: ch, score: score}
+		if score > 0 {
+			scored = append(scored, scoredChannel{channel: ch, score: score})
+		}
 	}
 
+	if len(scored) == 0 {
+		return channels[0].ID
+	}
+
+	// 选择分数最高的
 	var best *scoredChannel
 	for i := range scored {
 		if best == nil || scored[i].score > best.score {
@@ -539,6 +550,63 @@ func (s *ChannelService) selectByPriority(channels []*model.Channel) string {
 		return channels[0].ID
 	}
 	return best.channel.ID
+}
+
+// selectByWeight 按权重比例加权随机选择（轮盘赌算法）
+func (s *ChannelService) selectByWeight(channels []*model.Channel) string {
+	if len(channels) == 0 {
+		return ""
+	}
+
+	type scoredChannel struct {
+		channel *model.Channel
+		score   float64
+	}
+
+	scored := make([]scoredChannel, 0, len(channels))
+	for _, ch := range channels {
+		score := float64(ch.Weight)
+
+		if ch.QuotaEnabled && ch.QuotaLimit > 0 {
+			usagePercent := float64(ch.UsedSpace) / float64(ch.QuotaLimit)
+			score *= (1 - usagePercent)
+		}
+
+		if ch.HourlyUploadLimit > 0 {
+			remainingPercent := 1 - float64(ch.HourlyUploads)/float64(ch.HourlyUploadLimit)
+			score *= remainingPercent
+		}
+
+		if score > 0 {
+			scored = append(scored, scoredChannel{channel: ch, score: score})
+		}
+	}
+
+	if len(scored) == 0 {
+		return channels[0].ID
+	}
+
+	// 轮盘赌：按权重比例随机选择
+	var totalScore float64
+	for _, s := range scored {
+		totalScore += s.score
+	}
+
+	utils.Debugf("selectByWeight: candidates=%d, totalScore=%f", len(scored), totalScore)
+
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	randVal := r.Float64() * totalScore
+	utils.Debugf("selectByWeight: randVal=%f, totalScore=%f, target=%f", randVal, totalScore, totalScore/2)
+
+	var cumulative float64
+	for _, s := range scored {
+		cumulative += s.score
+		if randVal <= cumulative {
+			return s.channel.ID
+		}
+	}
+
+	return scored[len(scored)-1].channel.ID
 }
 
 // UpdateUsage 更新通道的使用量统计

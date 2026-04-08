@@ -522,7 +522,7 @@ export default {
     },
     // CDN设置
     cdn: {
-      cdnProxyTitle: 'CDN 代理加速',
+      cdnProxyTitle: '代理通道',
       cdnProxyDesc: '启用后同时开启下载加速和上传代理，解决被墙问题',
       enable: '启用',
       proxyAddress: '代理地址',

@@ -124,6 +124,8 @@ function formatDate(timestamp) {
 
 function isExpired(token) {
   if (!token.expiresAt || token.expiresAt === 0) return false
+  // 如果是负数（后端返回零时间 Unix 时间戳），视为永不过期
+  if (token.expiresAt < 0) return false
   return Date.now() > token.expiresAt * 1000
 }
 
