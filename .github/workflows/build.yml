@@ -23,12 +23,10 @@ jobs:
       - name: Build admin
         run: |
           cd admin && npm ci && npm run build
-          cd .. && rm -rf server/static/embed/admin && mv dist server/static/embed/admin
 
       - name: Build site
         run: |
           cd site && npm ci && npm run build
-          cd .. && rm -rf server/static/embed/site && mv dist server/static/embed/site
 
       - name: Build Go binary
         run: |
@@ -55,12 +53,10 @@ jobs:
       - name: Build admin
         run: |
           cd admin && npm ci && npm run build
-          cd .. && rm -rf server/static/embed/admin && mv dist server/static/embed/admin
 
       - name: Build site
         run: |
           cd site && npm ci && npm run build
-          cd .. && rm -rf server/static/embed/site && mv dist server/static/embed/site
 
       - name: Build Go binary
         run: |
@@ -87,12 +83,10 @@ jobs:
       - name: Build admin
         run: |
           cd admin && npm ci && npm run build
-          cd .. && rm -rf server/static/embed/admin && mv dist server/static/embed/admin
 
       - name: Build site
         run: |
           cd site && npm ci && npm run build
-          cd .. && rm -rf server/static/embed/site && mv dist server/static/embed/site
 
       - name: Build Go binary
         run: |
@@ -119,12 +113,10 @@ jobs:
       - name: Build admin
         run: |
           cd admin && npm ci && npm run build
-          cd .. && rm -rf server/static/embed/admin && mv dist server/static/embed/admin
 
       - name: Build site
         run: |
           cd site && npm ci && npm run build
-          cd .. && rm -rf server/static/embed/site && mv dist server/static/embed/site
 
       - name: Build Go binary
         run: |
@@ -151,12 +143,10 @@ jobs:
       - name: Build admin
         run: |
           cd admin && npm ci && npm run build
-          cd .. && rm -rf server/static/embed/admin && mv dist server/static/embed/admin
 
       - name: Build site
         run: |
           cd site && npm ci && npm run build
-          cd .. && rm -rf server/static/embed/site && mv dist server/static/embed/site
 
       - name: Build Go binary
         run: |
