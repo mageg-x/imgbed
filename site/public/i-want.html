@@ -1072,7 +1072,7 @@
         const data = await res.json()
         const version = data.tag_name // e.g. "v1.0.2"
 
-        const files = ['imgbed-windows-amd64.exe', 'ImgBed-macos-arm64.zip', 'imgbed-linux-amd64', 'imgbed-linux-arm64']
+        const files = ['imgbed-windows-amd64.zip', 'ImgBed-macos-arm64.zip', 'imgbed-linux-amd64', 'imgbed-linux-arm64']
 
         files.forEach(filename => {
           const link = document.querySelector(`a[href*="${filename}"]`)

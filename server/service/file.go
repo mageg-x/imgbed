@@ -102,7 +102,7 @@ func parseSearchSource(search string) (channelName, sourceExact, namePattern str
 			namePattern = rest[idx2+1:]
 		}
 		return channelName, "", namePattern
-	case "s":
+	case "s", "source":
 		// source:xxx → 来源精确匹配
 		return "", rest, ""
 	}
@@ -615,7 +615,7 @@ func (s *FileService) List(ctx context.Context, page, pageSize int, search strin
 	if sortOrder != "asc" && sortOrder != "desc" {
 		sortOrder = "desc"
 	}
-	orderClause := sortField + " " + sortOrder
+	orderClause := "files." + sortField + " " + sortOrder
 
 	query := database.DB.Model(&model.File{})
 
@@ -625,7 +625,7 @@ func (s *FileService) List(ctx context.Context, page, pageSize int, search strin
 	// 渠道名过滤（需 JOIN channels 表）
 	if channelName != "" {
 		query = query.Joins("LEFT JOIN channels ON files.channel_id = channels.id").
-			Where("channels.name LIKE ?", "%"+channelName+"%")
+			Where("channels.name LIKE ? OR channels.type LIKE ?", "%"+channelName+"%", "%"+channelName+"%")
 	}
 
 	// 来源精确过滤（覆盖 search 解析的 sourceExact）
@@ -650,14 +650,14 @@ func (s *FileService) List(ctx context.Context, page, pageSize int, search strin
 	if olderThan > 0 {
 		// olderThan 表示 N 天前的文件
 		cutoff := time.Now().AddDate(0, 0, -int(olderThan))
-		query = query.Where("created_at < ?", cutoff)
+		query = query.Where("files.created_at < ?", cutoff)
 	} else {
 		// startTime 和 endTime 范围筛选
 		if startTime > 0 {
-			query = query.Where("created_at >= ?", time.Unix(startTime, 0))
+			query = query.Where("files.created_at >= ?", time.Unix(startTime, 0))
 		}
 		if endTime > 0 {
-			query = query.Where("created_at <= ?", time.Unix(endTime, 0))
+			query = query.Where("files.created_at <= ?", time.Unix(endTime, 0))
 		}
 	}
 
@@ -739,13 +739,13 @@ func (s *FileService) ListIds(ctx context.Context, search string, source string,
 
 	if olderThan > 0 {
 		cutoff := time.Now().AddDate(0, 0, -int(olderThan))
-		query = query.Where("created_at < ?", cutoff)
+		query = query.Where("files.created_at < ?", cutoff)
 	} else {
 		if startTime > 0 {
-			query = query.Where("created_at >= ?", time.Unix(startTime, 0))
+			query = query.Where("files.created_at >= ?", time.Unix(startTime, 0))
 		}
 		if endTime > 0 {
-			query = query.Where("created_at <= ?", time.Unix(endTime, 0))
+			query = query.Where("files.created_at <= ?", time.Unix(endTime, 0))
 		}
 	}
 
@@ -775,18 +775,18 @@ func (s *FileService) CleanupPreview(ctx context.Context, olderThan, startTime, 
 	// 构建筛选条件
 	if olderThan > 0 {
 		cutoff := time.Now().AddDate(0, 0, -int(olderThan))
-		query = query.Where("created_at < ?", cutoff)
+		query = query.Where("files.created_at < ?", cutoff)
 	} else {
 		if startTime > 0 {
-			query = query.Where("created_at >= ?", time.Unix(startTime, 0))
+			query = query.Where("files.created_at >= ?", time.Unix(startTime, 0))
 		}
 		if endTime > 0 {
-			query = query.Where("created_at <= ?", time.Unix(endTime, 0))
+			query = query.Where("files.created_at <= ?", time.Unix(endTime, 0))
 		}
 	}
 
 	if channelID != "" {
-		query = query.Where("channel_id = ?", channelID)
+		query = query.Where("files.channel_id = ?", channelID)
 	}
 
 	// 统计将要删除的文件数量和大小
@@ -806,7 +806,7 @@ func (s *FileService) CleanupPreview(ctx context.Context, olderThan, startTime, 
 
 	// 获取前10个预览
 	var previewFiles []model.File
-	query.Order("created_at ASC").Limit(10).Find(&previewFiles)
+	query.Order("files.created_at ASC").Limit(10).Find(&previewFiles)
 
 	previews := make([]FilePreview, len(previewFiles))
 	for i, f := range previewFiles {
