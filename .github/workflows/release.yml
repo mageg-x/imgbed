@@ -75,7 +75,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
-          pattern: imgbed-*
           merge-multiple: false
 
       - name: List artifacts
@@ -93,8 +92,8 @@ jobs:
             artifacts/imgbed-linux-amd64/SHA256SUMS.txt
             artifacts/imgbed-linux-arm64/imgbed-linux-arm64
             artifacts/imgbed-linux-arm64/SHA256SUMS.txt
-            artifacts/imgbed-windows-amd64.exe/imgbed-windows-amd64.exe
-            artifacts/imgbed-windows-amd64.exe/SHA256SUMS.txt
+            artifacts/imgbed-windows-amd64/imgbed-windows-amd64.exe
+            artifacts/imgbed-windows-amd64/SHA256SUMS.txt
             artifacts/imgbed-darwin-amd64/imgbed-darwin-amd64
             artifacts/imgbed-darwin-amd64/SHA256SUMS.txt
             artifacts/imgbed-darwin-arm64/imgbed-darwin-arm64
