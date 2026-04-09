@@ -42,14 +42,17 @@ func NewLocalDriver(cfg *ChannelConfig) (StorageDriver, error) {
 		basePath = path
 	} else {
 		// 平台特定默认路径（与数据库目录一致）
-		configDir, _ := os.UserConfigDir()
 		switch runtime.GOOS {
 		case "windows":
+			configDir, _ := os.UserConfigDir()
 			basePath = filepath.Join(configDir, "ImgBed", "uploads")
 		case "darwin":
+			configDir, _ := os.UserConfigDir()
 			basePath = filepath.Join(configDir, "ImgBed", "uploads")
 		default:
-			basePath = filepath.Join(configDir, "imgbed", "uploads")
+			// Linux: ~/.imgbed/uploads
+			home, _ := os.UserHomeDir()
+			basePath = filepath.Join(home, ".imgbed", "uploads")
 		}
 	}
 

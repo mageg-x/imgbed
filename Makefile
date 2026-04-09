@@ -1,4 +1,4 @@
-.PHONY: all build dev clean build-gui build-gui-windows build-gui-darwin generate-icon
+.PHONY: all build dev clean build-gui build-gui-windows generate-icon
 
 all: build
 
@@ -37,8 +37,7 @@ generate-icon:
 build-gui-windows: build-frontend generate-icon
 	cd server && go build -tags "gui sqlite_fts5" -ldflags "-H=windowsgui -s -w" -o imgbed.exe .
 
-build-gui-darwin: build-frontend
-	cd server && go build -tags "gui sqlite_fts5"  -ldflags="-s -w" -o imgbed-gui .
+# macOS 构建：使用 scripts/build-macos.sh（需要 M1/M2 Mac 本地编译）
 
 clean:
 	rm -rf server/static/embed/admin server/static/embed/site

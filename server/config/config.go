@@ -41,8 +41,9 @@ func Init() error {
 		case "darwin":
 			v.Set("database.path", filepath.Join(configDir, "ImgBed", "imgbed.db"))
 		default:
-			// Linux: ~/.config/imgbed/imgbed.db (遵循XDG规范)
-			v.Set("database.path", filepath.Join(configDir, "imgbed", "imgbed.db"))
+			// Linux: ~/.imgbed/imgbed.db
+			home, _ := os.UserHomeDir()
+			v.Set("database.path", filepath.Join(home, ".imgbed", "imgbed.db"))
 		}
 
 		// 默认值（后续从数据库覆盖）

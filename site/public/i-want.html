@@ -803,7 +803,7 @@
 
         <div class="hero-core reveal reveal-delay-4">
           <strong>你只需要准备三样东西（都不花钱）：</strong><br>
-          ① 一个存储渠道：Telegram / Discord / HuggingFace / Cloudflare R2 / AWS S3 / 本地磁盘（任选）<br>
+          ① 一个存储渠道：Telegram / Discord / HuggingFace / Cloudflare R2 /  S3 兼容存储/ 本地磁盘（网盘映射）<br>
           ② 一个代理服务：Cloudflare Workers（可选）<br>
           ③ 国内 CDN 加速（可选，代理够快则不需要）
         </div>
@@ -823,19 +823,19 @@
       <div class="download-grid">
         <div class="download-card reveal">
           <h3>🖥️ 桌面版</h3>
-          <p>适合日常使用，系统托盘常驻，右键菜单快速上传。</p>
+          <p>适合日常使用，运行后在系统托盘常驻，右键菜单打开交互页面。</p>
           <div class="download-items">
-            <a href="https://cdn.jsdelivr.net/gh/mageg-x/imgbed@latest/imgbed-windows-amd64.exe" target="_blank" class="download-item">
+            <a href="https://gh-proxy.ma3ok.com/github.com/mageg-x/imgbed/releases/download/v1.0.1/imgbed-windows-amd64.exe" class="download-item">
               <div class="left">
                 <span class="os">Windows</span>
                 <span class="arch">amd64</span>
               </div>
               <span class="arrow">↓</span>
             </a>
-            <a href="https://cdn.jsdelivr.net/gh/mageg-x/imgbed@latest/imgbed-darwin-arm64" target="_blank" class="download-item">
+            <a href="https://gh-proxy.ma3ok.com/github.com/mageg-x/imgbed/releases/download/v1.0.1/ImgBed-macos-arm64.zip" class="download-item">
               <div class="left">
                 <span class="os">macOS</span>
-                <span class="arch">arm64</span>
+                <span class="arch">M1/M2/M3 · zip</span>
               </div>
               <span class="arrow">↓</span>
             </a>
@@ -846,14 +846,14 @@
           <h3>☁️ 服务端</h3>
           <p>适合部署在 VPS 上，提供 REST API 供其他应用调用。</p>
           <div class="download-items">
-            <a href="https://cdn.jsdelivr.net/gh/mageg-x/imgbed@latest/imgbed-linux-amd64" target="_blank" class="download-item">
+            <a href="https://gh-proxy.ma3ok.com/github.com/mageg-x/imgbed/releases/download/v1.0.1/imgbed-linux-amd64" class="download-item">
               <div class="left">
                 <span class="os">Linux</span>
                 <span class="arch">amd64</span>
               </div>
               <span class="arrow">↓</span>
             </a>
-            <a href="https://cdn.jsdelivr.net/gh/mageg-x/imgbed@latest/imgbed-linux-arm64" target="_blank" class="download-item">
+            <a href="https://gh-proxy.ma3ok.com/github.com/mageg-x/imgbed/releases/download/v1.0.1/imgbed-linux-arm64" class="download-item">
               <div class="left">
                 <span class="os">Linux</span>
                 <span class="arch">arm64</span>
@@ -889,7 +889,7 @@
           </button>
           <div class="faq-answer">
             <div class="faq-answer-inner">
-              不需要。桌面版直接在你的电脑上运行，服务端可部署在免费云（如 Oracle Cloud 永久免费 VPS）上。
+              不是必选项。桌面版直接在你的电脑上运行，如果部署服务端，就需要。可以白嫖一些免费云（如 Oracle Cloud 永久免费 VPS）上， 几乎不需要什么资源，最差的服务器都可以运行；就够用。
             </div>
           </div>
         </div>
@@ -900,7 +900,7 @@
           </button>
           <div class="faq-answer">
             <div class="faq-answer-inner">
-              存储在你自己的 Telegram/Discord/GitHub 账号下，只要你的账号不被封，图片永存。ImgBed 只是管理工具，不存储任何图片。
+              存储在你自己的 Telegram/Discord/HuggingFace/Cloudflare R2/S3 兼容存储/硬盘(网盘) 账号下，只要你的账号不被封，图片永存。ImgBed 只是管理工具，不存储任何图片。
             </div>
           </div>
         </div>
@@ -922,7 +922,7 @@
           </button>
           <div class="faq-answer">
             <div class="faq-answer-inner">
-              可以。绑定自定义域名到你的 Cloudflare Worker 即可，ImgBed 后台支持配置自定义域名。
+              可以。配置的代理域名就是图片url的域名。这个域名完全由你自己控制。
             </div>
           </div>
         </div>
@@ -933,7 +933,7 @@
           </button>
           <div class="faq-answer">
             <div class="faq-answer-inner">
-              支持。ImgBed 提供完整的 REST API，支持 Token 认证，可以集成到任何应用中使用。
+              支持。ImgBed 提供完整的 REST API，支持 API Token 认证，可以集成到任何应用中使用。
             </div>
           </div>
         </div>
@@ -960,8 +960,6 @@
     <div class="container">
       <div class="footer-links">
         <a href="https://github.com/mageg-x/imgbed" target="_blank">GitHub</a>
-        <a href="/">文档</a>
-        <a href="https://discord.gg" target="_blank">Discord</a>
       </div>
       <p>完全开源，永不收费 · ImgBed</p>
     </div>
@@ -994,21 +992,24 @@
     // ─── Fetch latest release & update download links ───
     async function updateDownloadLinks() {
       try {
-        const res = await fetch('https://api.github.com/repos/mageg-x/imgbed/releases/latest')
+        // 用 gh-proxy 代理 GitHub API，避免 CORS 问题
+        const res = await fetch('https://gh-proxy.ma3ok.com/https://api.github.com/repos/mageg-x/imgbed/releases/latest', {
+          headers: { 'Accept': 'application/vnd.github.v3+json' }
+        })
+        if (!res.ok) throw new Error(`GitHub API: ${res.status}`)
         const data = await res.json()
         const version = data.tag_name // e.g. "v1.0.1"
 
-        const files = ['imgbed-windows-amd64.exe', 'imgbed-darwin-arm64', 'imgbed-linux-amd64', 'imgbed-linux-arm64']
-        const baseUrl = `https://cdn.jsdelivr.net/gh/mageg-x/imgbed@${version}`
+        const files = ['imgbed-windows-amd64.exe', 'ImgBed-macos-arm64.zip', 'imgbed-linux-amd64', 'imgbed-linux-arm64']
 
-        files.forEach(file => {
-          const link = document.querySelector(`a[href*="${file}"]`)
+        files.forEach(filename => {
+          const link = document.querySelector(`a[href*="${filename}"]`)
           if (link) {
-            link.href = `${baseUrl}/${file}`
+            link.href = `https://gh-proxy.ma3ok.com/github.com/mageg-x/imgbed/releases/download/${version}/${filename}`
           }
         })
       } catch (e) {
-        console.warn('Failed to fetch latest release, using fallback:', e)
+        console.error('Failed to fetch latest release:', e)
       }
     }
     updateDownloadLinks()

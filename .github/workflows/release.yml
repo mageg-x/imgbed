@@ -9,12 +9,12 @@ permissions:
   contents: write
 
 jobs:
-  # Build all platforms in parallel
+  # Build all platforms (except macOS which requires native build)
   build:
     strategy:
       fail-fast: false
       matrix:
-        platform: [linux-amd64, linux-arm64, windows-amd64, darwin-amd64, darwin-arm64]
+        platform: [linux-amd64, linux-arm64, windows-amd64]
 
     runs-on: ubuntu-latest
     steps:
@@ -45,10 +45,6 @@ jobs:
               GOOS=linux GOARCH=arm64 go build -tags sqlite_fts5 -ldflags="-s -w" -o imgbed-linux-arm64 ;;
             windows-amd64)
               GOOS=windows GOARCH=amd64 go build -tags sqlite_fts5 -ldflags="-s -w" -o imgbed-windows-amd64.exe ;;
-            darwin-amd64)
-              GOOS=darwin GOARCH=amd64 go build -tags sqlite_fts5 -ldflags="-s -w" -o imgbed-darwin-amd64 ;;
-            darwin-arm64)
-              GOOS=darwin GOARCH=arm64 go build -tags sqlite_fts5 -ldflags="-s -w" -o imgbed-darwin-arm64 ;;
           esac
 
       - name: Generate checksum
@@ -94,9 +90,5 @@ jobs:
             artifacts/imgbed-linux-arm64/SHA256SUMS.txt
             artifacts/imgbed-windows-amd64/imgbed-windows-amd64.exe
             artifacts/imgbed-windows-amd64/SHA256SUMS.txt
-            artifacts/imgbed-darwin-amd64/imgbed-darwin-amd64
-            artifacts/imgbed-darwin-amd64/SHA256SUMS.txt
-            artifacts/imgbed-darwin-arm64/imgbed-darwin-arm64
-            artifacts/imgbed-darwin-arm64/SHA256SUMS.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

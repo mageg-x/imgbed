@@ -90,7 +90,7 @@
 - SQLite (数据库)
 - Viper (配置管理)
 - Zap (日志)
-- github.com/chai2010/webp (WebP 编码)
+- github.com/deepteams/webp (WebP 编码，纯 Go 无需 CGO)
 - github.com/disintegration/imaging (图片缩放)
 
 ### 前端
@@ -107,13 +107,9 @@
 ### 开发环境
 
 ```bash
-# 安装前端依赖
-cd admin && npm install
-cd ../site && npm install
-
-# 构建前端资源到嵌入目录
-cd admin && npm run build
-cd ../site && npm run build
+# 安装前端依赖并构建
+cd admin && npm install && npm run build
+cd ../site && npm install && npm run build
 
 # 启动后端
 cd server && go run .
@@ -130,34 +126,15 @@ make build
 
 ## 配置
 
-配置文件：`server/config.yaml`
+ImgBed 运行后会创建数据库文件，位置因平台而异：
 
-```yaml
-app:
-  name: ImgBed
-  mode: debug      # debug / release
-  host: 0.0.0.0
-  port: 8080
+| 平台 | 数据库路径 |
+|------|---------|
+| Windows | `%APPDATA%\ImgBed\imgbed.db` |
+| macOS | `~/Library/Application Support/ImgBed/imgbed.db` |
+| Linux | `~/.imgbed/imgbed.db` |
 
-database:
-  type: sqlite
-  path: ./data/imgbed.db
-
-jwt:
-  secret: your-secret-key
-  expire: 86400    # 24小时
-
-upload:
-  maxSize: 20971520      # 20MB
-  defaultChannel: local
-
-compression:
-  enabled: true
-  quality: 80
-  format: webp
-  maxWidth: 1920
-  maxHeight: 1080
-```
+所有配置通过管理后台界面在线修改，无需编辑配置文件。
 
 ## API 接口
 
