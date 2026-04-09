@@ -28,7 +28,7 @@ type ProxyURLFunc func() string
 //
 // URL 格式: {proxy_url}/proxy/{base58_encoded_host}{original_path}
 type ProxyTransport struct {
-	ProxyURLFunc ProxyURLFunc // 获取代理 URL 的函数
+	ProxyURLFunc ProxyURLFunc      // 获取代理 URL 的函数
 	Base         http.RoundTripper // 基础传输器，为 nil 时使用 http.DefaultTransport
 }
 
@@ -110,7 +110,17 @@ func (t *ProxyTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if base == nil {
 		base = http.DefaultTransport
 	}
-	return base.RoundTrip(proxyReq)
+	resp, err := base.RoundTrip(proxyReq)
+	if err != nil {
+		utils.Errorf("RoundTrip faild %v", err)
+		return nil, err
+	}
+
+	// 记录响应头信息，用于调试代理返回的数据问题
+	utils.Debugf("proxy transport response: Status=%s, Content-Encoding=%s, Content-Length=%s",
+		resp.Status, resp.Header.Get("Content-Encoding"), resp.Header.Get("Content-Length"))
+
+	return resp, nil
 }
 
 // ==================== S3ProxyTransport ====================
@@ -230,16 +240,33 @@ func NoProxyURLFunc() ProxyURLFunc {
 func ReadResponseBody(resp *http.Response) ([]byte, error) {
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
+		// io.ReadAll 失败，记录详细信息并返回已读取的数据
+		// 某些情况下（代理问题）Body 会被破坏，但仍可能包含部分有效数据
+		utils.Errorf("readResponseBody: io.ReadAll failed, Content-Encoding=%s, Status=%s, bodySize=%d, error=%v",
+			resp.Header.Get("Content-Encoding"), resp.Status, len(bodyBytes), err)
+		// 即使失败也返回已读取的数据，让调用方尝试解析
 		return nil, err
 	}
 
-	// 尝试直接解析 JSON，失败则尝试 gzip 解压后再解析
-	if strings.Contains(strings.ToLower(resp.Header.Get("Content-Encoding")), "gzip") {
+	contentEncoding := resp.Header.Get("Content-Encoding")
+	utils.Debugf("readResponseBody: Content-Encoding=%s, bodySize=%d, firstBytes=%v", contentEncoding, len(bodyBytes), bodyBytes[:min(10, len(bodyBytes))])
+
+	// 如果是 gzip 编码，尝试解压
+	if strings.Contains(strings.ToLower(contentEncoding), "gzip") {
 		gzReader, err := gzip.NewReader(bytes.NewReader(bodyBytes))
-		if err == nil {
-			defer gzReader.Close()
-			return io.ReadAll(gzReader)
+		if err != nil {
+			// gzip 头无效，返回原始数据让调用方处理
+			utils.Errorf("readResponseBody: gzip header invalid, returning raw data, error=%v", err)
+			return bodyBytes, nil
 		}
+		defer gzReader.Close()
+		decompressed, err := io.ReadAll(gzReader)
+		if err != nil {
+			// 解压失败，返回原始数据
+			utils.Errorf("readResponseBody: gzip decompress failed, returning raw data, error=%v", err)
+			return bodyBytes, nil
+		}
+		return decompressed, nil
 	}
 
 	return bodyBytes, nil

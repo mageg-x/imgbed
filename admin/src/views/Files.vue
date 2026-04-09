@@ -605,7 +605,7 @@ async function executeCleanup() {
             class="w-5 h-5 rounded cursor-pointer accent-indigo-500" />
         </div>
 
-        <div class="aspect-square flex items-center justify-center cursor-pointer flex-shrink-0"
+        <div class="aspect-[4/3] flex items-center justify-center cursor-pointer flex-shrink-0 max-h-24"
           :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-50'"
           @click="isPreviewable(file.type) && openPreview(file)">
           <img v-if="isImageUrl(file.url, file.type) && !hasImageError(file.id)" :src="file.url || `/api/v1/file/${file.id}`" :alt="file.name"

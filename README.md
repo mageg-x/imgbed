@@ -124,20 +124,9 @@ cd server && go run .
 ```bash
 # 构建所有（前端 + 后端）
 make build
-
-# 仅构建后端
-make build-server
-
-# 仅构建前端
-make build-frontend
 ```
 
-### Docker 部署
 
-```bash
-docker build -t imgbed .
-docker run -p 8080:8080 -v ./data:/app/data imgbed
-```
 
 ## 配置
 

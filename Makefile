@@ -26,7 +26,7 @@ build-site:
 build-frontend: build-admin build-site
 
 build-server:
-	cd server && go build -o imgbed .
+	cd server && go build -tags sqlite_fts5 -ldflags="-s -w" -o imgbed .
 
 build: build-frontend build-server
 
@@ -35,13 +35,10 @@ generate-icon:
 	cd server && rsrc -ico systray/icon.ico -o windows/rsrc.syso
 
 build-gui-windows: build-frontend generate-icon
-	cd server && go build -tags gui -ldflags "-H=windowsgui" -o imgbed-gui.exe .
+	cd server && go build -tags "gui sqlite_fts5" -ldflags "-H=windowsgui -s -w" -o imgbed.exe .
 
 build-gui-darwin: build-frontend
-	cd server && go build -tags gui -o imgbed-gui .
-
-build-gui: build-frontend
-	cd server && go build -tags gui -o imgbed-gui .
+	cd server && go build -tags "gui sqlite_fts5"  -ldflags="-s -w" -o imgbed-gui .
 
 clean:
 	rm -rf server/static/embed/admin server/static/embed/site
