@@ -36,6 +36,10 @@
 
 <img src="./snapshot/cn/token.webp" width="400" alt="ImgBed API Token 管理" />
 
+### 图库
+
+<img src="./snapshot/cn/gallery.webp" width="400" alt="ImgBed 图库" />
+
 ## 功能特性
 
 ### 核心功能

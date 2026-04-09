@@ -349,7 +349,7 @@ function closeLangDropdown() {
               <p class="text-white text-xs sm:text-sm font-medium truncate mb-2">{{ file.name }}</p>
               <div class="flex items-center justify-center gap-2">
                 <button @click.stop="copyUrl(file.url)"
-                  class="flex-1 flex items-center justify-center gap-1.5 py-1.5 sm:py-2 rounded-lg bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all text-white text-xs sm:text-sm font-medium">
+                  class="flex-1 flex items-center justify-center gap-1.5 py-1.5 sm:py-2 rounded-lg bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all text-white text-xs sm:text-xs font-medium">
                   <Copy class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   <span>{{ t('common.copyLink') }}</span>
                 </button>

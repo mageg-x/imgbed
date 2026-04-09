@@ -3,6 +3,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 
@@ -11,7 +12,11 @@ import (
 )
 
 func main() {
-	application, err := app.Init()
+	dataDir := flag.String("d", "", "数据目录路径")
+	port := flag.Int("p", 0, "HTTP 端口")
+	flag.Parse()
+
+	application, err := app.Init(*dataDir, *port)
 	if err != nil {
 		fmt.Printf("init failed: %v\n", err)
 		os.Exit(1)
