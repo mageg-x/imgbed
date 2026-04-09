@@ -57,6 +57,10 @@ func Init(dataDir string, port int) (*App, error) {
 	channelService := service.NewChannelService()
 	channelService.StartCooldownRecovery()
 
+	// 启动自动备份任务
+	backupService := service.NewBackupService()
+	go startAutoBackup(backupService)
+
 	host := config.GetString("app.host")
 	appPort := config.GetInt("app.port")
 	addr := fmt.Sprintf("%s:%d", host, appPort)
@@ -156,5 +160,26 @@ func initDefaultChannel() {
 
 	if err != nil {
 		utils.Warnf("Failed to create default channel: %v", err)
+	}
+}
+
+// 启动自动备份任务
+func startAutoBackup(backupService *service.BackupService) {
+	for {
+		// 读取备份配置
+		enabled := config.GetBool("backup.enabled")
+		interval := config.GetInt("backup.interval")
+
+		if interval <= 0 {
+			interval = 24
+		}
+
+		// 先等待指定间隔，避免启动时立即备份影响启动速度
+		time.Sleep(time.Duration(interval) * time.Hour)
+
+		if enabled {
+			backupService.AutoBackup()
+			utils.Infof("Auto backup completed, next backup in %d hours", interval)
+		}
 	}
 }

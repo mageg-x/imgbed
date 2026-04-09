@@ -689,6 +689,47 @@ type CDNConfig struct {
 	CdnUrl   string `json:"cdnUrl"`   // CDN 加速地址
 }
 
+// BackupConfig 备份配置结构
+type BackupConfig struct {
+	Enabled  bool `json:"enabled"`  // 是否启用自动备份
+	Interval int  `json:"interval"` // 备份间隔（小时）
+}
+
+// GetBackupConfig 获取备份配置
+func (s *ConfigService) GetBackupConfig() (*BackupConfig, error) {
+	configs, err := s.GetByPrefix("backup.")
+	if err != nil {
+		utils.Errorf("get backup config: get by prefix failed, error=%v", err)
+		return nil, err
+	}
+
+	interval, _ := strconv.Atoi(configs["backup.interval"])
+	if interval == 0 {
+		interval = 24
+	}
+
+	return &BackupConfig{
+		Enabled:  configs["backup.enabled"] != "false",
+		Interval: interval,
+	}, nil
+}
+
+// UpdateBackupConfig 更新备份配置
+func (s *ConfigService) UpdateBackupConfig(cfg *BackupConfig) error {
+	updates := map[string]string{
+		"backup.enabled":  strconv.FormatBool(cfg.Enabled),
+		"backup.interval": strconv.Itoa(cfg.Interval),
+	}
+
+	for key, value := range updates {
+		if err := s.Set(key, value); err != nil {
+			utils.Errorf("update backup config: set failed, key=%s, error=%v", key, err)
+			return err
+		}
+	}
+	return nil
+}
+
 // GetCDNConfig 获取 CDN 代理配置
 func (s *ConfigService) GetCDNConfig() (*CDNConfig, error) {
 	configs, err := s.GetByPrefix("cdn.")

@@ -309,3 +309,23 @@ func IsCDNEnabled() bool {
 func GetCDNProxyUrl() string {
 	return GetString("cdn.proxyUrl")
 }
+
+// GetDataDir 获取数据目录
+func GetDataDir() string {
+	dataDir := GetString("app.dataDir")
+	if dataDir != "" {
+		return dataDir
+	}
+
+	// 平台特定默认位置
+	configDir, _ := os.UserConfigDir()
+	switch runtime.GOOS {
+	case "windows":
+		return filepath.Join(configDir, "ImgBed")
+	case "darwin":
+		return filepath.Join(configDir, "ImgBed")
+	default:
+		home, _ := os.UserHomeDir()
+		return filepath.Join(home, ".imgbed")
+	}
+}

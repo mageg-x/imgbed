@@ -414,3 +414,36 @@ func (h *ConfigHandler) UpdateCDNConfig(c *gin.Context) {
 	utils.Infof("update cdn config: success")
 	response.Success(c, nil)
 }
+
+// GetBackupConfig 获取备份配置
+// GET /api/v1/config/backup (需要admin权限)
+func (h *ConfigHandler) GetBackupConfig(c *gin.Context) {
+	config, err := h.configService.GetBackupConfig()
+	if err != nil {
+		utils.Errorf("get backup config: query failed, error=%v", err)
+		response.Error(c, response.ErrInternal, err.Error())
+		return
+	}
+
+	response.Success(c, config)
+}
+
+// UpdateBackupConfig 更新备份配置
+// PUT /api/v1/config/backup (需要admin权限)
+func (h *ConfigHandler) UpdateBackupConfig(c *gin.Context) {
+	var config service.BackupConfig
+	if err := c.ShouldBindJSON(&config); err != nil {
+		utils.Warnf("update backup config: invalid request, error=%v", err)
+		response.ValidationError(c, "invalid request")
+		return
+	}
+
+	if err := h.configService.UpdateBackupConfig(&config); err != nil {
+		utils.Errorf("update backup config: update failed, error=%v", err)
+		response.Error(c, response.ErrInternal, err.Error())
+		return
+	}
+
+	utils.Infof("update backup config: success")
+	response.Success(c, nil)
+}

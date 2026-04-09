@@ -2,8 +2,9 @@
 import { ref, onMounted, reactive, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import request from '@/api/request'
-import { ElMessage } from 'element-plus'
-import { Upload, Image, Lock, RefreshCw, Settings, Shield, Globe } from 'lucide-vue-next'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Upload, Image, Lock, RefreshCw, Settings, Shield, Globe, Database } from 'lucide-vue-next'
+import { createBackup, listBackups, deleteBackup, restoreBackup } from '@/api/backup'
 
 const { t } = useI18n()
 const isDark = ref(true)
@@ -53,15 +54,29 @@ const cdnConfig = reactive({
   cdnUrl: ''
 })
 
+// 备份相关
+const backupLoading = ref(false)
+const backups = ref([])
+const creating = ref(false)
+const deleting = ref(null)
+const restoring = ref(null)
+
+// 备份配置
+const backupConfig = reactive({
+  enabled: true,
+  interval: 24
+})
+
 onMounted(() => {
   isDark.value = !document.documentElement.classList.contains('light')
   loadConfigs()
+  loadBackups()
 })
 
 async function loadConfigs() {
   loading.value = true
   try {
-    const [uploadRes, appRes, jwtRes, siteRes, authRes, scheduleRes, rateLimitRes, cdnRes] = await Promise.all([
+    const [uploadRes, appRes, jwtRes, siteRes, authRes, scheduleRes, rateLimitRes, cdnRes, backupRes] = await Promise.all([
       request.get('/config/upload').catch(() => ({ data: null })),
       request.get('/config/app').catch(() => ({ data: null })),
       request.get('/config/jwt').catch(() => ({ data: null })),
@@ -69,7 +84,8 @@ async function loadConfigs() {
       request.get('/config/auth').catch(() => ({ data: null })),
       request.get('/config/schedule').catch(() => ({ data: null })),
       request.get('/config/rate-limit').catch(() => ({ data: null })),
-      request.get('/config/cdn').catch(() => ({ data: null }))
+      request.get('/config/cdn').catch(() => ({ data: null })),
+      request.get('/config/backup').catch(() => ({ data: null }))
     ])
 
     if (uploadRes.data) {
@@ -125,6 +141,11 @@ async function loadConfigs() {
       cdnConfig.enabled = cdnRes.data.enabled || false
       cdnConfig.proxyUrl = cdnRes.data.proxyUrl || ''
       cdnConfig.cdnUrl = cdnRes.data.cdnUrl || ''
+    }
+
+    if (backupRes && backupRes.data) {
+      backupConfig.enabled = backupRes.data.enabled !== false
+      backupConfig.interval = backupRes.data.interval || 24
     }
   } catch {
     ElMessage.error(t('common.loadFailed'))
@@ -258,6 +279,118 @@ async function saveCdnConfig() {
   }
 }
 
+async function saveBackupConfig() {
+  try {
+    await request.put('/config/backup', {
+      enabled: backupConfig.enabled,
+      interval: backupConfig.interval
+    })
+    ElMessage.success(t('settings.saveSuccess'))
+  } catch {
+    ElMessage.error(t('settings.saveFailed'))
+  }
+}
+
+// 备份相关方法
+async function loadBackups() {
+  backupLoading.value = true
+  try {
+    const res = await listBackups()
+    if (res.code === 0) {
+      backups.value = res.data || []
+    }
+  } catch {
+    ElMessage.error(t('backup.loadError'))
+  } finally {
+    backupLoading.value = false
+  }
+}
+
+async function handleCreateBackup() {
+  creating.value = true
+  try {
+    const res = await createBackup()
+    if (res.code === 0) {
+      ElMessage.success(t('backup.createSuccess'))
+      await loadBackups()
+    }
+  } catch {
+    ElMessage.error(t('backup.createError'))
+  } finally {
+    creating.value = false
+  }
+}
+
+async function handleDeleteBackup(backupPath) {
+  try {
+    await ElMessageBox.confirm(
+      t('backup.deleteConfirm'),
+      t('backup.deleteConfirmTitle'),
+      {
+        confirmButtonText: t('backup.confirm'),
+        cancelButtonText: t('backup.cancel'),
+        type: 'warning'
+      }
+    )
+    
+    deleting.value = backupPath
+    const res = await deleteBackup(backupPath)
+    if (res.code === 0) {
+      ElMessage.success(t('backup.deleteSuccess'))
+      await loadBackups()
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error(t('backup.deleteError'))
+    }
+  } finally {
+    deleting.value = null
+  }
+}
+
+async function handleRestoreBackup(backupPath) {
+  try {
+    await ElMessageBox.confirm(
+      t('backup.restoreConfirm'),
+      t('backup.restoreConfirmTitle'),
+      {
+        confirmButtonText: t('backup.confirm'),
+        cancelButtonText: t('backup.cancel'),
+        type: 'warning'
+      }
+    )
+    
+    restoring.value = backupPath
+    const res = await restoreBackup(backupPath)
+    if (res.code === 0) {
+      ElMessage.success(t('backup.restoreSuccess'))
+      await ElMessageBox.alert(
+        t('backup.restoreNotice'),
+        t('backup.restoreNoticeTitle'),
+        {
+          confirmButtonText: t('backup.confirm')
+        }
+      )
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error(t('backup.restoreError'))
+    }
+  } finally {
+    restoring.value = null
+  }
+}
+
+const formatSize = (size) => {
+  if (size < 1024) {
+    return size + ' B'
+  } else if (size < 1024 * 1024) {
+    return (size / 1024).toFixed(2) + ' KB'
+  } else {
+    return (size / (1024 * 1024)).toFixed(2) + ' MB'
+  }
+}
+
 const tabs = computed(() => [
   { name: 'upload', label: t('settings.uploadSettings'), icon: Upload },
   { name: 'app', label: t('settings.appSettings'), icon: Settings },
@@ -266,7 +399,8 @@ const tabs = computed(() => [
   { name: 'auth', label: t('settings.authSettings'), icon: Lock },
   { name: 'schedule', label: t('settings.scheduleSettings'), icon: Settings },
   { name: 'rateLimit', label: t('settings.rateLimitSettings'), icon: Shield },
-  { name: 'cdn', label: t('settings.cdnSettings'), icon: Globe }
+  { name: 'cdn', label: t('settings.cdnSettings'), icon: Globe },
+  { name: 'backup', label: t('settings.backupSettings'), icon: Database }
 ])
 
 const appConfig = reactive({
@@ -823,6 +957,83 @@ const jwtConfig = reactive({
             class="btn-gradient px-5 sm:px-6 py-2 sm:py-2.5 rounded-xl text-sm w-full sm:w-auto">
             {{ t('settings.cdn.saveCdnSettings') }}
           </button>
+        </div>
+
+        <!-- 备份设置 -->
+        <div v-else-if="activeTab === 'backup'" class="max-w-4xl space-y-4 sm:space-y-6">
+          <div class="p-4 rounded-xl shadow-lg border border-solid" :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-50'">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+              <div>
+                <h3 class="font-medium">{{ t('settings.backup.autoBackupTitle') }}</h3>
+                <p class="text-sm mt-0.5" :class="isDark ? 'text-gray-400' : 'text-gray-500'">
+                  {{ t('settings.backup.autoBackupDesc') }}
+                </p>
+              </div>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" v-model="backupConfig.enabled" class="w-4 h-4 accent-indigo-500" />
+                <span class="text-sm">{{ t('settings.backup.enable') }}</span>
+              </label>
+            </div>
+
+            <div v-if="backupConfig.enabled" class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium mb-2">
+                  {{ t('settings.backup.interval') }}
+                </label>
+                <input v-model.number="backupConfig.interval" type="number" min="1" max="168"
+                  class="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm max-w-[200px]"
+                  :class="isDark ? 'bg-[var(--bg-secondary)] border-[var(--border)]' : 'bg-white border-gray-200'" />
+                <p class="text-xs mt-1.5" :class="isDark ? 'text-gray-500' : 'text-gray-400'">
+                  {{ t('settings.backup.intervalDesc') }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <button @click="saveBackupConfig"
+            class="btn-gradient px-5 sm:px-6 py-2 sm:py-2.5 rounded-xl text-sm w-full sm:w-auto">
+            {{ t('settings.backup.saveBackupSettings') }}
+          </button>
+
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="font-medium text-lg">{{ t('backup.title') }}</h3>
+            <el-button type="primary" @click="handleCreateBackup" :loading="creating">
+              {{ t('backup.create') }}
+            </el-button>
+          </div>
+
+          <div class="p-4 rounded-xl shadow-lg  border border-solid" :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-50'">
+            <el-table v-loading="backupLoading" :data="backups" style="width: 100%">
+              <el-table-column prop="name" :label="t('backup.fileName')" width="300">
+                <template #default="{ row }">
+                  {{ row.name }}
+                </template>
+              </el-table-column>
+              <el-table-column prop="size" :label="t('backup.size')" width="120">
+                <template #default="{ row }">
+                  {{ formatSize(row.size) }}
+                </template>
+              </el-table-column>
+              <el-table-column prop="created_at" :label="t('backup.createdAt')" width="200">
+                <template #default="{ row }">
+                  {{ row.created_at }}
+                </template>
+              </el-table-column>
+              <el-table-column :label="t('backup.action')" width="200" fixed="right">
+                <template #default="{ row }">
+                  <el-button size="small" type="primary" @click="handleRestoreBackup(row.path)" :loading="restoring === row.path">
+                    {{ t('backup.restore') }}
+                  </el-button>
+                  <el-button size="small" type="danger" @click="handleDeleteBackup(row.path)" :loading="deleting === row.path" style="margin-left: 8px">
+                    {{ t('backup.delete') }}
+                  </el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+            <div v-if="backups.length === 0" class="text-center py-8 text-gray-500">
+              {{ t('backup.noBackups') }}
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -86,12 +86,6 @@
       animation-delay: -3s;
     }
 
-    @keyframes float {
-      0%, 100% { transform: translate(0, 0) scale(1); }
-      33% { transform: translate(40px, -30px) scale(1.1); }
-      66% { transform: translate(-20px, 20px) scale(0.95); }
-    }
-
     /* ─── Layout ─── */
     .container {
       max-width: 800px;
@@ -101,7 +95,7 @@
       z-index: 1;
     }
 
-    section { padding: 80px 0; position: relative; }
+    section { padding: 40px 0 20px; position: relative; }
 
     /* ─── Nav ─── */
     nav {
@@ -238,10 +232,6 @@
       background: var(--neon-cyan);
       box-shadow: 0 0 8px var(--neon-cyan);
       animation: pulse 2s ease-in-out infinite;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.5; transform: scale(0.8); }
     }
 
     .hero h1 {
@@ -812,7 +802,7 @@
   </section>
 
   <!-- ─── Screenshots Carousel ─── -->
-  <section id="screenshots" style="padding: 80px 0;">
+  <section id="screenshots" style="padding: 40px 0 20px;">
     <div class="container">
       <div class="section-label reveal">产品预览</div>
       <h2 class="section-title reveal reveal-delay-1">直观了解 ImgBed</h2>

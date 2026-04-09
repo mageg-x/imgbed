@@ -277,6 +277,8 @@ func (h *FileHandler) List(c *gin.Context) {
 	if ot := c.Query("olderThan"); ot != "" {
 		olderThan, _ = strconv.ParseInt(ot, 10, 64)
 	}
+	sortField := c.DefaultQuery("sortField", "created_at")
+	sortOrder := c.DefaultQuery("sortOrder", "desc")
 
 	// 修正分页参数，确保合法性
 	if page < 1 {
@@ -287,7 +289,7 @@ func (h *FileHandler) List(c *gin.Context) {
 	}
 
 	// 调用服务层获取文件列表
-	files, total, err := h.fileService.List(c.Request.Context(), page, pageSize, search, source, startTime, endTime, olderThan)
+	files, total, err := h.fileService.List(c.Request.Context(), page, pageSize, search, source, startTime, endTime, olderThan, sortField, sortOrder)
 	if err != nil {
 		utils.Errorf("list: query failed, page=%d, pageSize=%d, error=%v", page, pageSize, err)
 		response.Error(c, response.ErrInternal, err.Error())

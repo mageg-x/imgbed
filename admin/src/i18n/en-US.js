@@ -87,7 +87,8 @@ export default {
     channels: 'Channel Management',
     settings: 'Settings',
     tokens: 'Token Management',
-    integration: 'Integration Guide'
+    integration: 'Integration Guide',
+    backup: 'Backup Management'
   },
   common: {
     success: 'Success',
@@ -148,8 +149,35 @@ export default {
     channels: 'Channels',
     tokens: 'Tokens',
     integration: 'Integration',
+    backup: 'Backup',
     settings: 'Settings',
     logout: 'Logout'
+  },
+  backup: {
+    title: 'Backup Management',
+    create: 'Create Backup',
+    createSuccess: 'Backup created successfully',
+    createError: 'Failed to create backup',
+    delete: 'Delete',
+    deleteConfirm: 'Are you sure you want to delete this backup? It cannot be recovered.',
+    deleteConfirmTitle: 'Delete Confirmation',
+    deleteSuccess: 'Backup deleted successfully',
+    deleteError: 'Failed to delete backup',
+    restore: 'Restore',
+    restoreConfirm: 'Are you sure you want to restore data from this backup? This will overwrite the current database.',
+    restoreConfirmTitle: 'Restore Confirmation',
+    restoreSuccess: 'Backup restored successfully',
+    restoreError: 'Failed to restore backup',
+    restoreNotice: 'Restore successful! It is recommended to restart the service to apply changes.',
+    restoreNoticeTitle: 'Restore Notice',
+    loadError: 'Failed to load backup list',
+    noBackups: 'No backups',
+    fileName: 'File Name',
+    size: 'Size',
+    createdAt: 'Created At',
+    action: 'Action',
+    confirm: 'Confirm',
+    cancel: 'Cancel'
   },
   login: {
     title: 'Admin Panel',
@@ -399,6 +427,7 @@ export default {
     scheduleSettings: 'Schedule Strategy',
     rateLimitSettings: 'Rate Limit',
     cdnSettings: 'CDN Acceleration',
+    backupSettings: 'Backup Management',
     // Upload settings
     upload: {
       maxSize: 'Max File Size (MB)',
@@ -547,6 +576,15 @@ export default {
       deployStep2: 'Worker supports both download proxy (root path) and upload proxy (/proxy/ path)',
       deployStep3: 'Fill in Worker address here and enable',
       saveCdnSettings: 'Save CDN Config'
+    },
+    // Backup settings
+    backup: {
+      autoBackupTitle: 'Auto Backup',
+      autoBackupDesc: 'Automatically backup database periodically to prevent data loss',
+      enable: 'Enable',
+      interval: 'Backup Interval (hours)',
+      intervalDesc: 'Time interval for automatic backup, in hours, default is 24 hours',
+      saveBackupSettings: 'Save Backup Config'
     }
   },
   app: {

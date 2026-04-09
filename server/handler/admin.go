@@ -69,6 +69,8 @@ func (h *AdminHandler) GetFiles(c *gin.Context) {
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "20"))
 	search := c.Query("search")
 	channelID := c.Query("channel")
+	sortField := c.DefaultQuery("sortField", "created_at")
+	sortOrder := c.DefaultQuery("sortOrder", "desc")
 
 	if page < 1 {
 		page = 1
@@ -77,29 +79,7 @@ func (h *AdminHandler) GetFiles(c *gin.Context) {
 		pageSize = 20
 	}
 
-	var files []model.File
-	var total int64
-
-	query := database.DB.Model(&model.File{})
-
-	if search != "" {
-		query = query.Where("name LIKE ? OR original_name LIKE ?", "%"+search+"%", "%"+search+"%")
-	}
-	if channelID != "" {
-		query = query.Where("channel_id = ?", channelID)
-	}
-
-	query.Count(&total)
-
-	offset := (page - 1) * pageSize
-	if err := query.Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&files).Error; err != nil {
-		utils.Errorf("get files: query failed, page=%d, pageSize=%d, error=%v", page, pageSize, err)
-		response.Error(c, response.ErrInternal, err.Error())
-		return
-	}
-
-	// 构建返回数据，直接使用 service 层的逻辑
-	list, _, err := h.fileService.List(c.Request.Context(), page, pageSize, search, channelID, 0, 0, 0)
+	list, total, err := h.fileService.List(c.Request.Context(), page, pageSize, search, channelID, 0, 0, 0, sortField, sortOrder)
 	if err != nil {
 		utils.Errorf("get files: list failed, error=%v", err)
 		response.Error(c, response.ErrInternal, err.Error())

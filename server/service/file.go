@@ -72,30 +72,45 @@ func (s *FileService) GetCDNUrl(originalUrl string, channelType string) string {
 	return convertToCDNUrl(originalUrl)
 }
 
-// parseSearchSource 解析搜索字符串，支持 "source:文件名" 格式
-// source 支持前缀模糊匹配（如 api_git 匹配 api_github、api_gitlab）
-// 文件名支持模糊匹配
-// 例如：api_git:logo → source LIKE 'api_git%' AND name LIKE '%logo%'
-func parseSearchSource(search string) (sourcePattern, namePattern string) {
+// parseSearchSource 解析搜索字符串
+// 支持三种格式：
+//   - "c:xxx" 或 "channel:xxx"：按渠道名模糊过滤（需 JOIN channels 表）
+//   - "source:xxx"：按来源精确匹配（如 source:admin）
+//   - 纯文本：按文件名模糊搜索（FTS5 加速 + LIKE fallback）
+// 例如：c:telegram:logo → 渠道名含 telegram 且文件名含 logo
+// 例如：source:admin → 来源为 admin 的文件
+// 例如：logo.png → 文件名模糊含 logo.png
+func parseSearchSource(search string) (channelName, sourceExact, namePattern string) {
 	if search == "" {
-		return "", ""
+		return "", "", ""
 	}
 	idx := strings.Index(search, ":")
 	if idx <= 0 || idx >= len(search)-1 {
 		// 没有冒号或格式不对，整个作为文件名模糊搜索
-		return "", search
+		return "", "", search
 	}
-	sourcePart := search[:idx]
-	namePart := search[idx+1:]
+	prefix := search[:idx]
+	rest := search[idx+1:]
 
-	// source 部分：如果包含下划线或恰好是已知类型，则作为前缀模糊匹配
-	// 例如 api_git → LIKE 'api_git%'（匹配 api_github, api_gitlab 等）
-	// 例如 admin → LIKE 'admin%'
-	if sourcePart == "user" || sourcePart == "admin" || sourcePart == "anonymous" {
-		return sourcePart, namePart
+	switch prefix {
+	case "c", "channel":
+		// channel:xxx → 渠道名过滤，剩余部分可能还有 :文件名
+		channelName = rest
+		// 检查是否还有第二个冒号分隔的文件名
+		if idx2 := strings.Index(rest, ":"); idx2 > 0 {
+			channelName = rest[:idx2]
+			namePattern = rest[idx2+1:]
+		}
+		return channelName, "", namePattern
+	case "s":
+		// source:xxx → 来源精确匹配
+		return "", rest, ""
 	}
-	// 其他情况（如 api_git），按前缀匹配
-	return sourcePart, namePart
+
+	// 没有已知前缀，整个作为文件名（兼容旧格式：api_git:logo → source 前缀匹配 + 文件名）
+	// source 部分前缀模糊匹配
+	namePattern = rest
+	return "", prefix, namePattern
 }
 
 // fts5Search 使用 FTS5 全文搜索查找匹配的文件ID
@@ -582,16 +597,42 @@ func (s *FileService) DeleteMultiple(ctx context.Context, fileIDs []string) ([]s
 //   - []model.FileInfo: 文件信息列表
 //   - int64: 总数
 //   - error: 错误信息
-func (s *FileService) List(ctx context.Context, page, pageSize int, search string, source string, startTime, endTime, olderThan int64) ([]model.FileInfo, int64, error) {
+func (s *FileService) List(ctx context.Context, page, pageSize int, search string, source string, startTime, endTime, olderThan int64, sortField, sortOrder string) ([]model.FileInfo, int64, error) {
 	var files []model.File
 	var total int64
 
+	// 默认排序
+	if sortField == "" {
+		sortField = "created_at"
+	}
+	if sortOrder == "" {
+		sortOrder = "desc"
+	}
+	// 安全校验
+	if sortField != "created_at" && sortField != "size" {
+		sortField = "created_at"
+	}
+	if sortOrder != "asc" && sortOrder != "desc" {
+		sortOrder = "desc"
+	}
+	orderClause := sortField + " " + sortOrder
+
 	query := database.DB.Model(&model.File{})
 
-	// 搜索条件：支持 "source:文件名" 格式，source 支持前缀模糊匹配
-	searchSource, searchName := parseSearchSource(search)
-	if searchSource != "" {
-		query = query.Where("source LIKE ?", searchSource+"%")
+	// 解析搜索字符串
+	channelName, sourceExact, searchName := parseSearchSource(search)
+
+	// 渠道名过滤（需 JOIN channels 表）
+	if channelName != "" {
+		query = query.Joins("LEFT JOIN channels ON files.channel_id = channels.id").
+			Where("channels.name LIKE ?", "%"+channelName+"%")
+	}
+
+	// 来源精确过滤（覆盖 search 解析的 sourceExact）
+	if source != "" {
+		query = query.Where("source = ?", source)
+	} else if sourceExact != "" {
+		query = query.Where("source = ?", sourceExact)
 	}
 
 	// 文件名搜索：优先使用 FTS5 加速，失败则 fallback 到 LIKE
@@ -603,11 +644,6 @@ func (s *FileService) List(ctx context.Context, page, pageSize int, search strin
 			// FTS5 不可用或失败，fallback 到 LIKE
 			query = query.Where("name LIKE ? OR original_name LIKE ?", "%"+searchName+"%", "%"+searchName+"%")
 		}
-	}
-
-	// 来源筛选（优先级高于 search 解析的 source）
-	if source != "" {
-		query = query.Where("source = ?", source)
 	}
 
 	// 时间范围筛选
@@ -628,7 +664,7 @@ func (s *FileService) List(ctx context.Context, page, pageSize int, search strin
 	query.Count(&total)
 
 	offset := (page - 1) * pageSize
-	if err := query.Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&files).Error; err != nil {
+	if err := query.Order(orderClause).Offset(offset).Limit(pageSize).Find(&files).Error; err != nil {
 		utils.Errorf("list: query failed, page=%d, pageSize=%d, error=%v", page, pageSize, err)
 		return nil, 0, err
 	}
@@ -674,26 +710,31 @@ func (s *FileService) ListIds(ctx context.Context, search string, source string,
 
 	query := database.DB.Model(&model.File{})
 
-	// 搜索条件：支持 "source:文件名" 格式，source 支持前缀模糊匹配
-	searchSource, searchName := parseSearchSource(search)
-	if searchSource != "" {
-		query = query.Where("source LIKE ?", searchSource+"%")
+	// 解析搜索字符串
+	channelName, sourceExact, searchName := parseSearchSource(search)
+
+	// 渠道名过滤（需 JOIN channels 表）
+	if channelName != "" {
+		query = query.Joins("LEFT JOIN channels ON files.channel_id = channels.id").
+			Where("channels.name LIKE ?", "%"+channelName+"%")
+	}
+
+	// 来源精确过滤
+	if source != "" {
+		query = query.Where("source = ?", source)
+	} else if sourceExact != "" {
+		query = query.Where("source = ?", sourceExact)
 	}
 
 	// 文件名搜索：优先使用 FTS5 加速，失败则 fallback 到 LIKE
 	if searchName != "" {
-		ids, err := fts5Search(searchName)
-		if err == nil && ids != nil && len(ids) > 0 {
-			query = query.Where("id IN (?)", ids)
-		} else if err != nil || ids == nil {
+		res, err := fts5Search(searchName)
+		if err == nil && res != nil && len(res) > 0 {
+			query = query.Where("id IN (?)", res)
+		} else if err != nil || res == nil {
 			// FTS5 不可用或失败，fallback 到 LIKE
 			query = query.Where("name LIKE ? OR original_name LIKE ?", "%"+searchName+"%", "%"+searchName+"%")
 		}
-	}
-
-	// 来源筛选（优先级高于 search 解析的 source）
-	if source != "" {
-		query = query.Where("source = ?", source)
 	}
 
 	if olderThan > 0 {

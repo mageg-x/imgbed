@@ -87,7 +87,8 @@ export default {
     channels: '渠道管理',
     settings: '系统设置',
     tokens: 'Token 管理',
-    integration: '集成示例'
+    integration: '集成示例',
+    backup: '备份管理'
   },
   common: {
     success: '成功',
@@ -148,8 +149,35 @@ export default {
     channels: '渠道管理',
     tokens: 'Token 管理',
     integration: '集成文档',
+    backup: '备份管理',
     settings: '设置',
     logout: '退出登录'
+  },
+  backup: {
+    title: '备份管理',
+    create: '创建备份',
+    createSuccess: '备份创建成功',
+    createError: '备份创建失败',
+    delete: '删除',
+    deleteConfirm: '确定要删除此备份吗？删除后无法恢复。',
+    deleteConfirmTitle: '删除确认',
+    deleteSuccess: '备份删除成功',
+    deleteError: '备份删除失败',
+    restore: '恢复',
+    restoreConfirm: '确定要从该备份恢复数据吗？这将覆盖当前的数据库。',
+    restoreConfirmTitle: '恢复确认',
+    restoreSuccess: '备份恢复成功',
+    restoreError: '备份恢复失败',
+    restoreNotice: '恢复成功！建议重启服务以应用更改。',
+    restoreNoticeTitle: '恢复提示',
+    loadError: '加载备份列表失败',
+    noBackups: '暂无备份',
+    fileName: '文件名',
+    size: '大小',
+    createdAt: '创建时间',
+    action: '操作',
+    confirm: '确认',
+    cancel: '取消'
   },
   login: {
     title: '管理后台',
@@ -399,6 +427,7 @@ export default {
     scheduleSettings: '调度策略',
     rateLimitSettings: '速率限制',
     cdnSettings: 'CDN加速',
+    backupSettings: '备份管理',
     // 上传设置
     upload: {
       maxSize: '最大文件大小 (MB)',
@@ -547,6 +576,15 @@ export default {
       deployStep2: 'Worker 同时支持下载代理（根路径）和上传代理（/proxy/ 路径）',
       deployStep3: '在此填写 Worker 地址并启用即可',
       saveCdnSettings: '保存 CDN 配置'
+    },
+    // 备份设置
+    backup: {
+      autoBackupTitle: '自动备份',
+      autoBackupDesc: '定期自动备份数据库，防止数据丢失',
+      enable: '启用',
+      interval: '备份间隔 (小时)',
+      intervalDesc: '自动备份的时间间隔，单位为小时，默认 24 小时',
+      saveBackupSettings: '保存备份配置'
     }
   },
   app: {

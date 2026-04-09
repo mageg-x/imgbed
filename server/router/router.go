@@ -7,6 +7,7 @@ import (
 
 	"github.com/imgbed/server/handler"
 	"github.com/imgbed/server/middleware"
+	"github.com/imgbed/server/service"
 )
 
 func SetupRouter() *gin.Engine {
@@ -29,6 +30,8 @@ func SetupRouter() *gin.Engine {
 		tokenHandler := handler.NewTokenHandler()
 		configHandler := handler.NewConfigHandler()
 		adminHandler := handler.NewAdminHandler()
+		backupService := service.NewBackupService()
+		backupHandler := handler.NewBackupHandler(backupService)
 
 		auth := api.Group("/auth")
 		{
@@ -127,6 +130,8 @@ func SetupRouter() *gin.Engine {
 			config.PUT("/jwt", configHandler.UpdateJwtConfig)
 			config.GET("/cdn", configHandler.GetCDNConfig)
 			config.PUT("/cdn", configHandler.UpdateCDNConfig)
+			config.GET("/backup", configHandler.GetBackupConfig)
+			config.PUT("/backup", configHandler.UpdateBackupConfig)
 		}
 
 		stats := api.Group("/stats")
@@ -157,6 +162,11 @@ func SetupRouter() *gin.Engine {
 			admin.POST("/tokens", adminHandler.CreateToken)
 			admin.DELETE("/tokens/:id", adminHandler.DeleteToken)
 			admin.PUT("/tokens/:id/enable", adminHandler.EnableToken)
+			// 备份管理
+			admin.GET("/backup/list", backupHandler.ListBackups)
+			admin.POST("/backup/create", backupHandler.CreateBackup)
+			admin.DELETE("/backup", backupHandler.DeleteBackup)
+			admin.POST("/backup/restore", backupHandler.RestoreBackup)
 		}
 	}
 

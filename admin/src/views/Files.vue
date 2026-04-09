@@ -6,7 +6,7 @@ import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
 import {
   FileText, Film, Video, Folder, Trash2, Link, Copy,
   RefreshCw, Search, Grid3x3, List, Download, Eye, Calendar, Zap, Info, CheckSquare,
-  MoreHorizontal
+  MoreHorizontal, ArrowUp, ArrowDown
 } from 'lucide-vue-next'
 import { VueDatePicker } from '@vuepic/vue-datepicker'
 import '@vuepic/vue-datepicker/dist/main.css'
@@ -22,6 +22,8 @@ const total = ref(0)
 const search = ref('')
 const viewMode = ref('grid')
 const selected = ref([])
+const sortField = ref('created_at')
+const sortOrder = ref('desc')
 
 // 时间筛选
 const olderThan = ref(0)  // 0表示不限，7/30/90/365分别表示天数
@@ -138,6 +140,8 @@ async function loadFiles() {
   try {
     const params = { page: page.value, pageSize: pageSize.value }
     if (search.value) params.search = search.value
+    params.sortField = sortField.value
+    params.sortOrder = sortOrder.value
     if (olderThan.value > 0) params.olderThan = olderThan.value
     if (startDate.value && endDate.value) {
       params.startTime = Math.floor(new Date(startDate.value).getTime() / 1000)
@@ -458,7 +462,7 @@ async function executeCleanup() {
       <div class="relative flex-1 min-w-[150px] sm:min-w-[200px]">
         <Search class="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5"
           :class="isDark ? 'text-gray-500' : 'text-gray-400'" />
-        <input v-model="search" type="text" :placeholder="t('files.searchPlaceholder')"
+        <input v-model="search" type="text" placeholder="搜索文件名 / c:渠道名 / s:来源"
           class="w-full pl-10 sm:pl-12 pr-4 py-2 sm:py-2.5 rounded-xl border transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm"
           :class="isDark ? 'bg-[var(--bg-hover)] border-[var(--border)] text-white placeholder-gray-500' : 'bg-gray-50 border-gray-200 text-gray-800'"
           @keyup.enter="handleSearch" />
@@ -509,6 +513,26 @@ async function executeCleanup() {
             ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg'
             : (isDark ? 'text-gray-400' : 'text-gray-600')">
             <List class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          </button>
+        </el-tooltip>
+      </div>
+
+      <!-- 排序 -->
+      <div class="flex items-center rounded-xl p-1" :class="isDark ? 'bg-[var(--bg-hover)]' : 'bg-gray-100'">
+        <el-tooltip :content="t('files.sortNewest')" placement="top">
+          <button @click="sortOrder = 'desc'; page = 1; loadFiles()"
+            class="p-1.5 sm:p-2 rounded-lg transition-all" :class="sortOrder === 'desc'
+            ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg'
+            : (isDark ? 'text-gray-400' : 'text-gray-600')">
+            <ArrowDown class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          </button>
+        </el-tooltip>
+        <el-tooltip :content="t('files.sortOldest')" placement="top">
+          <button @click="sortOrder = 'asc'; page = 1; loadFiles()"
+            class="p-1.5 sm:p-2 rounded-lg transition-all" :class="sortOrder === 'asc'
+            ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg'
+            : (isDark ? 'text-gray-400' : 'text-gray-600')">
+            <ArrowUp class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
         </el-tooltip>
       </div>
@@ -702,7 +726,7 @@ async function executeCleanup() {
               </td>
               <td class="p-3 sm:p-4 text-sm  text-center hidden sm:table-cell"
                 :class="isDark ? 'text-gray-400' : 'text-gray-500'">
-                {{ formatDate(file.createdAt) }}
+                {{ formatDate(file.uploadedAt) }}
               </td>
               <td class="p-1 sm:p-4 w-28 sm:w-40 whitespace-nowrap">
                 <div class="flex items-center  justify-around gap-0 sm:gap-1 flex-shrink-0">

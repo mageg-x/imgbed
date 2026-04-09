@@ -368,16 +368,31 @@ func SecurityHeaders() gin.HandlerFunc {
 		c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
 		c.Header("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
 
-		csp := "default-src 'self'; " +
-			"img-src 'self' data: blob: https:; " +
-			"style-src 'self' 'unsafe-inline'; " +
-			"script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
-			"font-src 'self' data:; " +
-			"connect-src 'self'; " +
-			"frame-ancestors 'none'; " +
-			"base-uri 'self'; " +
-			"form-action 'self'"
-		c.Header("Content-Security-Policy", csp)
+		// 静态落地页（i-want.html、guide.html）需要宽松的 CSP，允许外部资源
+		path := c.Request.URL.Path
+		if path == "/i-want.html" || path == "/guide.html" || path == "/" {
+			csp := "default-src 'self'; " +
+				"img-src 'self' data: blob: https:; " +
+				"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+				"script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+				"font-src 'self' data: https://fonts.gstatic.com; " +
+				"connect-src 'self' https://gh-proxy.ma3ok.com https://gh-proxy.com https://api.github.com; " +
+				"frame-ancestors 'none'; " +
+				"base-uri 'self'; " +
+				"form-action 'self'"
+			c.Header("Content-Security-Policy", csp)
+		} else {
+			csp := "default-src 'self'; " +
+				"img-src 'self' data: blob: https:; " +
+				"style-src 'self' 'unsafe-inline'; " +
+				"script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+				"font-src 'self' data:; " +
+				"connect-src 'self'; " +
+				"frame-ancestors 'none'; " +
+				"base-uri 'self'; " +
+				"form-action 'self'"
+			c.Header("Content-Security-Policy", csp)
+		}
 
 		c.Header("X-Powered-By", "")
 		c.Header("Server", "")
