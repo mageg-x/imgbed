@@ -6,7 +6,7 @@ import { fileApi } from '@/api/file'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
 import { ElMessage } from 'element-plus'
-import { Image, Folder, Link, RefreshCw, Sun, Moon, ArrowLeft, X, Copy, Grid3x3, List, Search, Globe, Download } from 'lucide-vue-next'
+import { Image, Folder, Link, RefreshCw, Sun, Moon, ArrowLeft, X, Copy, Grid3x3, List, Search, Globe, Download, LinkIcon } from 'lucide-vue-next'
 import { availableLocales, setLocale } from '@/i18n'
 
 const { t, locale } = useI18n()
@@ -346,17 +346,17 @@ function closeLangDropdown() {
             <!-- 底部操作栏 -->
             <div
               class="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300">
-              <p class="text-white text-xs sm:text-sm font-medium truncate mb-2">{{ file.name }}</p>
+              <p class="text-white text-center text-xs sm:text-sm font-medium truncate mb-2">{{ file.name }}</p>
               <div class="flex items-center justify-center gap-2">
                 <button @click.stop="copyUrl(file.url)"
                   class="flex-1 flex items-center justify-center gap-1.5 py-1.5 sm:py-2 rounded-lg bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all text-white text-xs sm:text-xs font-medium">
-                  <Copy class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  <span>{{ t('common.copyLink') }}</span>
+                  <LinkIcon class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <!-- <span>{{ t('common.copyLink') }}</span> -->
                 </button>
                 <button @click.stop="downloadFile(file)"
                   class="flex-1 flex items-center justify-center gap-1.5 py-1.5 sm:py-2 rounded-lg bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all text-white text-xs sm:text-sm font-medium">
                   <Download class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  <span>{{ t('common.download') }}</span>
+                  <!-- <span>{{ t('common.download') }}</span> -->
                 </button>
               </div>
             </div>
