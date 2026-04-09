@@ -1,0 +1,103 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  # Build all platforms in parallel
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [linux-amd64, linux-arm64, windows-amd64, darwin-amd64, darwin-arm64]
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Build admin
+        run: |
+          cd admin && npm ci && npm run build
+
+      - name: Build site
+        run: |
+          cd site && npm ci && npm run build
+
+      - name: Build Go binary
+        env:
+          CGO_ENABLED: '0'
+        run: |
+          cd server
+          case "${{ matrix.platform }}" in
+            linux-amd64)
+              go build -tags sqlite_fts5 -ldflags="-s -w" -o imgbed-linux-amd64 ;;
+            linux-arm64)
+              GOOS=linux GOARCH=arm64 go build -tags sqlite_fts5 -ldflags="-s -w" -o imgbed-linux-arm64 ;;
+            windows-amd64)
+              GOOS=windows GOARCH=amd64 go build -tags sqlite_fts5 -ldflags="-s -w" -o imgbed-windows-amd64.exe ;;
+            darwin-amd64)
+              GOOS=darwin GOARCH=amd64 go build -tags sqlite_fts5 -ldflags="-s -w" -o imgbed-darwin-amd64 ;;
+            darwin-arm64)
+              GOOS=darwin GOARCH=arm64 go build -tags sqlite_fts5 -ldflags="-s -w" -o imgbed-darwin-arm64 ;;
+          esac
+
+      - name: Generate checksum
+        run: |
+          cd server
+          sha256sum imgbed-* > SHA256SUMS.txt
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: imgbed-${{ matrix.platform }}
+          path: |
+            server/imgbed-*
+            server/SHA256SUMS.txt
+
+  # Create GitHub Release after all builds complete
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: imgbed-*
+          merge-multiple: false
+
+      - name: List artifacts
+        run: |
+          find artifacts -type f
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            artifacts/imgbed-linux-amd64/imgbed-linux-amd64
+            artifacts/imgbed-linux-amd64/SHA256SUMS.txt
+            artifacts/imgbed-linux-arm64/imgbed-linux-arm64
+            artifacts/imgbed-linux-arm64/SHA256SUMS.txt
+            artifacts/imgbed-windows-amd64.exe/imgbed-windows-amd64.exe
+            artifacts/imgbed-windows-amd64.exe/SHA256SUMS.txt
+            artifacts/imgbed-darwin-amd64/imgbed-darwin-amd64
+            artifacts/imgbed-darwin-amd64/SHA256SUMS.txt
+            artifacts/imgbed-darwin-arm64/imgbed-darwin-arm64
+            artifacts/imgbed-darwin-arm64/SHA256SUMS.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
