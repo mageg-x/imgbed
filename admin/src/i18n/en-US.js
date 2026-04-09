@@ -314,7 +314,11 @@ export default {
     basicInfoTip: 'Channel name and storage type',
     channelNamePlaceholder: 'My Storage',
     connectionSettings: 'related settings',
-    storagePath: 'Storage Path'
+    storagePath: 'Storage Path',
+    storagePathHint: 'Must be an absolute path, directory must exist',
+    storagePathExample: 'e.g. D:\\Data\\Uploads or /mnt/data/uploads',
+    localPathNotAbsolute: 'Local storage path must be absolute',
+    localPathNotExists: 'Local storage directory does not exist'
   },
   tokens: {
     title: 'Token Management',

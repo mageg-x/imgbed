@@ -314,7 +314,11 @@ export default {
     basicInfoTip: '渠道名称和存储类型',
     channelNamePlaceholder: '我的存储',
     connectionSettings: '相关设置',
-    storagePath: '存储路径'
+    storagePath: '存储路径',
+    storagePathHint: '必须为绝对路径，目录必须已存在',
+    storagePathExample: '例如：D:\\Data\\Uploads 或 /mnt/data/uploads',
+    localPathNotAbsolute: '本地存储路径必须是绝对路径',
+    localPathNotExists: '本地存储目录不存在'
   },
   tokens: {
     title: 'Token 管理',

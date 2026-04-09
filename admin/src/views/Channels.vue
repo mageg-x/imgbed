@@ -436,7 +436,10 @@ function getStatusColor(status) {
             <template v-if="form.type === 'local'">
               <div>
                 <label class="dialog-label">{{ t('channels.storagePath') }}</label>
-                <input v-model="form.config.path" placeholder="./data" class="dialog-input w-full" />
+                <input v-model="form.config.path" :placeholder="t('channels.storagePathExample')" class="dialog-input w-full" />
+                <p class="text-xs mt-1" :class="isDark ? 'text-amber-400/70' : 'text-amber-600'">
+                  {{ t('channels.storagePathHint') }}
+                </p>
               </div>
             </template>
 

@@ -991,6 +991,28 @@
       })
     }
 
+    // ─── Fetch latest release & update download links ───
+    async function updateDownloadLinks() {
+      try {
+        const res = await fetch('https://api.github.com/repos/mageg-x/imgbed/releases/latest')
+        const data = await res.json()
+        const version = data.tag_name // e.g. "v1.0.1"
+
+        const files = ['imgbed-windows-amd64.exe', 'imgbed-darwin-arm64', 'imgbed-linux-amd64', 'imgbed-linux-arm64']
+        const baseUrl = `https://cdn.jsdelivr.net/gh/mageg-x/imgbed@${version}`
+
+        files.forEach(file => {
+          const link = document.querySelector(`a[href*="${file}"]`)
+          if (link) {
+            link.href = `${baseUrl}/${file}`
+          }
+        })
+      } catch (e) {
+        console.warn('Failed to fetch latest release, using fallback:', e)
+      }
+    }
+    updateDownloadLinks()
+
     // ─── Scroll reveal ───
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {

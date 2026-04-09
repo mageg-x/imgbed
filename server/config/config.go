@@ -2,6 +2,8 @@ package config
 
 import (
 	"os"
+	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -31,37 +33,23 @@ func Init() error {
 	once.Do(func() {
 		v = viper.New()
 
-		// 从环境变量或硬编码默认值设置数据库路径（这是唯一必需的启动配置）
-		if dbPath := os.Getenv("IMGBED_DB_PATH"); dbPath != "" {
-			v.Set("database.path", dbPath)
-		} else {
-			v.Set("database.path", "./data/imgbed.db")
+		// 设置数据库路径（平台特定默认位置）
+		configDir, _ := os.UserConfigDir()
+		switch runtime.GOOS {
+		case "windows":
+			v.Set("database.path", filepath.Join(configDir, "ImgBed", "imgbed.db"))
+		case "darwin":
+			v.Set("database.path", filepath.Join(configDir, "ImgBed", "imgbed.db"))
+		default:
+			// Linux: ~/.config/imgbed/imgbed.db (遵循XDG规范)
+			v.Set("database.path", filepath.Join(configDir, "imgbed", "imgbed.db"))
 		}
 
-		// 从环境变量读取其他可选配置
-		if jwtSecret := os.Getenv("IMGBED_JWT_SECRET"); jwtSecret != "" {
-			v.Set("jwt.secret", jwtSecret)
-		} else {
-			v.Set("jwt.secret", "imgbed-secret-key")
-		}
-
-		if appMode := os.Getenv("IMGBED_APP_MODE"); appMode != "" {
-			v.Set("app.mode", appMode)
-		} else {
-			v.Set("app.mode", "debug")
-		}
-
-		if appHost := os.Getenv("IMGBED_HOST"); appHost != "" {
-			v.Set("app.host", appHost)
-		} else {
-			v.Set("app.host", "0.0.0.0")
-		}
-
-		if appPort := os.Getenv("IMGBED_PORT"); appPort != "" {
-			v.Set("app.port", appPort)
-		} else {
-			v.Set("app.port", 8080)
-		}
+		// 默认值（后续从数据库覆盖）
+		v.Set("jwt.secret", "imgbed-secret-key")
+		v.Set("app.mode", "debug")
+		v.Set("app.host", "0.0.0.0")
+		v.Set("app.port", 8080)
 	})
 	return err
 }
@@ -75,22 +63,17 @@ func Validate() []string {
 
 	jwtSecret := GetString("jwt.secret")
 	if jwtSecret == "" || jwtSecret == "imgbed-secret-key" {
-		warnings = append(warnings, "jwt.secret is using default value, please set IMGBED_JWT_SECRET environment variable")
+		warnings = append(warnings, "jwt.secret is using default value, please change it in admin panel")
 	}
 
 	appMode := GetString("app.mode")
 	if appMode == "release" {
 		if jwtSecret == "imgbed-secret-key" || jwtSecret == "imgbed-secret-key-change-in-production" {
-			warnings = append(warnings, "CRITICAL: using default JWT secret in release mode is insecure! Set IMGBED_JWT_SECRET environment variable")
+			warnings = append(warnings, "CRITICAL: using default JWT secret in release mode is insecure! Please change it in admin panel")
 		}
 		if len(jwtSecret) < 32 {
 			warnings = append(warnings, "JWT secret should be at least 32 characters in production")
 		}
-	}
-
-	dbPath := GetString("database.path")
-	if dbPath == "" {
-		warnings = append(warnings, "database.path is empty, using default path")
 	}
 
 	maxSize := GetInt("upload.maxSize")

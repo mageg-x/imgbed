@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/imgbed/server/utils"
 )
@@ -35,9 +36,21 @@ type LocalConfig struct {
 //   - StorageDriver: 存储驱动实例
 //   - error: 创建失败时的错误
 func NewLocalDriver(cfg *ChannelConfig) (StorageDriver, error) {
-	basePath := "./data/uploads"
+	// 默认路径：平台特定位置
+	var basePath string
 	if path, ok := cfg.Config["path"].(string); ok && path != "" {
 		basePath = path
+	} else {
+		// 平台特定默认路径（与数据库目录一致）
+		configDir, _ := os.UserConfigDir()
+		switch runtime.GOOS {
+		case "windows":
+			basePath = filepath.Join(configDir, "ImgBed", "uploads")
+		case "darwin":
+			basePath = filepath.Join(configDir, "ImgBed", "uploads")
+		default:
+			basePath = filepath.Join(configDir, "imgbed", "uploads")
+		}
 	}
 
 	// 确保存储目录存在

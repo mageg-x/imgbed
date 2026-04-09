@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -174,7 +175,46 @@ func DecryptChannelConfig(configJSON string) (map[string]interface{}, error) {
 	return decryptConfig(configMap)
 }
 
+// validateLocalPath 验证本地存储路径
+// 必须为绝对路径，且目录必须存在
+func validateLocalPath(path string) error {
+	if path == "" {
+		return fmt.Errorf("本地存储路径不能为空")
+	}
+	// 统一检查 Windows 和 Unix 绝对路径（不依赖运行平台）
+	if !isAbsPath(path) {
+		return fmt.Errorf("本地存储路径必须是绝对路径，当前：%s", path)
+	}
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return fmt.Errorf("本地存储目录不存在：%s", path)
+	}
+	return nil
+}
+
+// isAbsPath 检查路径是否为绝对路径（兼容 Windows 和 Unix）
+func isAbsPath(path string) bool {
+	// Unix 绝对路径：以 / 开头
+	if strings.HasPrefix(path, "/") {
+		return true
+	}
+	// Windows 绝对路径：D:\xxx 或 C:\xxx 等盘符路径
+	if len(path) >= 3 && path[1] == ':' && (path[2] == '\\' || path[2] == '/') {
+		return true
+	}
+	return false
+}
+
 func (s *ChannelService) CreateChannel(ctx context.Context, name string, channelType string, config map[string]interface{}, weight int, quota model.QuotaConfig, rateLimit model.RateLimitConfig) (*model.Channel, error) {
+	// 本地存储路径验证
+	if channelType == "local" {
+		if path, ok := config["path"].(string); ok {
+			if err := validateLocalPath(path); err != nil {
+				utils.Errorf("create channel: invalid local path, path=%s, error=%v", path, err)
+				return nil, err
+			}
+		}
+	}
+
 	channelID := utils.GenerateID()
 
 	encryptedConfig, err := encryptConfig(config)
@@ -224,6 +264,16 @@ func (s *ChannelService) UpdateChannel(ctx context.Context, channelID string, na
 	if err := database.DB.Where("id = ?", channelID).First(&channel).Error; err != nil {
 		utils.Errorf("update channel: channel not found, channelID=%s, error=%v", channelID, err)
 		return fmt.Errorf("channel not found")
+	}
+
+	// 本地存储路径验证
+	if channel.Type == "local" || name == "local" {
+		if path, ok := config["path"].(string); ok {
+			if err := validateLocalPath(path); err != nil {
+				utils.Errorf("update channel: invalid local path, channelID=%s, path=%s, error=%v", channelID, path, err)
+				return err
+			}
+		}
 	}
 
 	encryptedConfig, err := encryptConfig(config)
