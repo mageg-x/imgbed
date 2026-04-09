@@ -6,19 +6,35 @@
 
 ### 主界面
 
-<img src="https://imgbed.example.com/screenshots/home.png" width="400" alt="ImgBed 主界面" />
+<img src="./snapshot/cn/home.webp" width="400" alt="ImgBed 主界面" />
 
 ### 文件管理
 
-<img src="https://imgbed.example.com/screenshots/files.png" width="400" alt="ImgBed 文件管理" />
+<img src="./snapshot/cn/files.webp" width="400" alt="ImgBed 文件管理" />
 
 ### 渠道管理
 
-<img src="https://imgbed.example.com/screenshots/channels.png" width="400" alt="ImgBed 渠道管理" />
+<img src="./snapshot/cn/channels.webp" width="400" alt="ImgBed 渠道管理" />
+
+### 渠道配置
+
+<img src="./snapshot/cn/channel.webp" width="400" alt="ImgBed 渠道配置" />
 
 ### 统计报表
 
-<img src="https://imgbed.example.com/screenshots/stats.png" width="400" alt="ImgBed 统计报表" />
+<img src="./snapshot/cn/dashboard.webp" width="400" alt="ImgBed 统计报表" />
+
+### 登录界面
+
+<img src="./snapshot/cn/login.webp" width="400" alt="ImgBed 登录界面" />
+
+### 系统设置
+
+<img src="./snapshot/cn/setting.webp" width="400" alt="ImgBed 系统设置" />
+
+### API Token 管理
+
+<img src="./snapshot/cn/token.webp" width="400" alt="ImgBed API Token 管理" />
 
 ## 功能特性
 

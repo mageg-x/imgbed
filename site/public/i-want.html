@@ -94,7 +94,7 @@
 
     /* ─── Layout ─── */
     .container {
-      max-width: 1100px;
+      max-width: 800px;
       margin: 0 auto;
       padding: 0 24px;
       position: relative;
@@ -811,6 +811,79 @@
     </div>
   </section>
 
+  <!-- ─── Screenshots Carousel ─── -->
+  <section id="screenshots" style="padding: 80px 0;">
+    <div class="container">
+      <div class="section-label reveal">产品预览</div>
+      <h2 class="section-title reveal reveal-delay-1">直观了解 ImgBed</h2>
+      <p class="section-subtitle reveal reveal-delay-2">
+        探索 ImgBed 的核心功能和界面，体验一站式图床管理解决方案
+      </p>
+
+      <div class="carousel-container" style="margin-top: 60px; position: relative;">
+        <div class="carousel-wrapper" style="overflow: hidden; border-radius: 16px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);">
+          <div class="carousel-slides" style="display: flex; transition: transform 0.5s ease-in-out; height: 250px;">
+            <!-- Slide 1: 主界面 -->
+            <div class="carousel-slide" style="flex: 0 0 100%; position: relative;">
+              <img src="./snapshot/cn/home.webp" alt="ImgBed 主界面" style="width: 100%; height: 100%; object-fit: contain; background: #0a0a14;">
+              <div class="slide-caption" style="position: absolute; bottom: 0; left: 0; right: 0; padding: 20px; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); color: var(--text-primary); text-align: center;">
+                <h3 style="margin: 0; font-size: 18px; font-weight: 700;">主界面</h3>
+                <p style="margin: 5px 0 0; font-size: 14px; color: var(--text-secondary);">简洁直观的上传界面，支持拖拽、粘贴和批量上传</p>
+              </div>
+            </div>
+            
+            <!-- Slide 2: 文件管理 -->
+            <div class="carousel-slide" style="flex: 0 0 100%; position: relative;">
+              <img src="./snapshot/cn/files.webp" alt="ImgBed 文件管理" style="width: 100%; height: 100%; object-fit: contain; background: #0a0a14;">
+              <div class="slide-caption" style="position: absolute; bottom: 0; left: 0; right: 0; padding: 20px; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); color: var(--text-primary); text-align: center;">
+                <h3 style="margin: 0; font-size: 18px; font-weight: 700;">文件管理</h3>
+                <p style="margin: 5px 0 0; font-size: 14px; color: var(--text-secondary);">完整的文件管理功能，支持搜索、筛选和批量操作</p>
+              </div>
+            </div>
+            
+            <!-- Slide 3: 渠道管理 -->
+            <div class="carousel-slide" style="flex: 0 0 100%; position: relative;">
+              <img src="./snapshot/cn/channels.webp" alt="ImgBed 渠道管理" style="width: 100%; height: 100%; object-fit: contain; background: #0a0a14;">
+              <div class="slide-caption" style="position: absolute; bottom: 0; left: 0; right: 0; padding: 20px; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); color: var(--text-primary); text-align: center;">
+                <h3 style="margin: 0; font-size: 18px; font-weight: 700;">渠道管理</h3>
+                <p style="margin: 5px 0 0; font-size: 14px; color: var(--text-secondary);">多渠道配置与管理，智能调度上传请求</p>
+              </div>
+            </div>
+            
+            <!-- Slide 4: 统计报表 -->
+            <div class="carousel-slide" style="flex: 0 0 100%; position: relative;">
+              <img src="./snapshot/cn/dashboard.webp" alt="ImgBed 统计报表" style="width: 100%; height: 100%; object-fit: contain; background: #0a0a14;">
+              <div class="slide-caption" style="position: absolute; bottom: 0; left: 0; right: 0; padding: 20px; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); color: var(--text-primary); text-align: center;">
+                <h3 style="margin: 0; font-size: 18px; font-weight: 700;">统计报表</h3>
+                <p style="margin: 5px 0 0; font-size: 14px; color: var(--text-secondary);">详细的使用统计和可视化图表</p>
+              </div>
+            </div>
+            
+            <!-- Slide 5: API Token 管理 -->
+            <div class="carousel-slide" style="flex: 0 0 100%; position: relative;">
+              <img src="./snapshot/cn/token.webp" alt="ImgBed API Token 管理" style="width: 100%; height: 100%; object-fit: contain; background: #0a0a14;">
+              <div class="slide-caption" style="position: absolute; bottom: 0; left: 0; right: 0; padding: 20px; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); color: var(--text-primary); text-align: center;">
+                <h3 style="margin: 0; font-size: 18px; font-weight: 700;">API Token 管理</h3>
+                <p style="margin: 5px 0 0; font-size: 14px; color: var(--text-secondary);">创建和管理 API Token，实现第三方集成</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Carousel Controls -->
+        <button class="carousel-control prev" style="position: absolute; top: 50%; left: -20px; transform: translateY(-50%); width: 40px; height: 40px; border-radius: 50%; background: rgba(0, 229, 255, 0.1); border: 1px solid var(--neon-cyan); color: var(--neon-cyan); font-size: 16px; cursor: pointer; z-index: 10; transition: all 0.3s; backdrop-filter: blur(10px);">
+          ‹
+        </button>
+        <button class="carousel-control next" style="position: absolute; top: 50%; right: -20px; transform: translateY(-50%); width: 40px; height: 40px; border-radius: 50%; background: rgba(0, 229, 255, 0.1); border: 1px solid var(--neon-cyan); color: var(--neon-cyan); font-size: 16px; cursor: pointer; z-index: 10; transition: all 0.3s; backdrop-filter: blur(10px);">
+          ›
+        </button>
+        
+        <!-- Carousel Indicators -->
+        <div class="carousel-indicators" style="position: absolute; bottom: -30px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px;"></div>
+      </div>
+    </div>
+  </section>
+
   <!-- ─── Download ─── -->
   <section id="download" class="download-section">
     <div class="container">
@@ -1035,6 +1108,83 @@
         nav.style.borderBottomColor = 'rgba(0, 229, 255, 0.07)'
       }
     })
+
+    // ─── Carousel ───
+    function initCarousel() {
+      const carousel = document.querySelector('.carousel-slides')
+      const slides = document.querySelectorAll('.carousel-slide')
+      const prevBtn = document.querySelector('.carousel-control.prev')
+      const nextBtn = document.querySelector('.carousel-control.next')
+      const indicatorsContainer = document.querySelector('.carousel-indicators')
+      
+      if (!carousel || !slides.length) return
+      
+      let currentIndex = 0
+      const slideCount = slides.length
+      
+      // Generate indicators
+      for (let i = 0; i < slideCount; i++) {
+        const indicator = document.createElement('button')
+        indicator.style.width = '10px'
+        indicator.style.height = '10px'
+        indicator.style.borderRadius = '50%'
+        indicator.style.border = '1px solid var(--neon-cyan)'
+        indicator.style.background = i === 0 ? 'var(--neon-cyan)' : 'transparent'
+        indicator.style.cursor = 'pointer'
+        indicator.style.transition = 'all 0.3s'
+        indicator.addEventListener('click', () => goToSlide(i))
+        indicatorsContainer.appendChild(indicator)
+      }
+      
+      const indicators = document.querySelectorAll('.carousel-indicators button')
+      
+      function updateIndicators() {
+        indicators.forEach((indicator, index) => {
+          indicator.style.background = index === currentIndex ? 'var(--neon-cyan)' : 'transparent'
+        })
+      }
+      
+      function goToSlide(index) {
+        currentIndex = (index + slideCount) % slideCount
+        const translateX = -currentIndex * 100
+        carousel.style.transform = `translateX(${translateX}%)`
+        updateIndicators()
+      }
+      
+      function nextSlide() {
+        goToSlide(currentIndex + 1)
+      }
+      
+      function prevSlide() {
+        goToSlide(currentIndex - 1)
+      }
+      
+      // Event listeners
+      prevBtn.addEventListener('click', prevSlide)
+      nextBtn.addEventListener('click', nextSlide)
+      
+      // Auto play
+      let autoplayInterval = setInterval(nextSlide, 5000)
+      
+      // Pause on hover
+      const carouselContainer = document.querySelector('.carousel-container')
+      carouselContainer.addEventListener('mouseenter', () => {
+        clearInterval(autoplayInterval)
+      })
+      
+      carouselContainer.addEventListener('mouseleave', () => {
+        autoplayInterval = setInterval(nextSlide, 5000)
+      })
+      
+      // Keyboard navigation
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') prevSlide()
+        if (e.key === 'ArrowRight') nextSlide()
+      })
+    }
+    
+    // Initialize carousel when DOM is loaded
+    window.addEventListener('DOMContentLoaded', initCarousel)
   </script>
 </body>
 </html>

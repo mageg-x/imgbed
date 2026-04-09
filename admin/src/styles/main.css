@@ -27,23 +27,10 @@ button:hover {
 }
 
 /* 滚动条样式 */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--bg-secondary);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--bg-hover);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--bg-card);
-}
+::-webkit-scrollbar { width: 6px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--neon-cyan); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--neon-purple); }
 
 :root {
   --primary: #6366f1;
@@ -57,6 +44,16 @@ button:hover {
   --bg-secondary: #1e293b;
   --bg-card: #1e293b;
   --bg-hover: #334155;
+  --bg-deep: #03030a;
+  --bg-surface: #0a0a14;
+  --bg-card: #0d0d1a;
+  --bg-card-hover: #111122;
+  --neon-cyan: #00e5ff;
+  --neon-cyan-dim: #00b8cc;
+  --neon-purple: #bf00ff;
+  --neon-magenta: #ff00aa;
+  --neon-green: #00ff88;
+  --neon-yellow: #ffdd00;  
   --text-primary: #f1f5f9;
   --text-secondary: #94a3b8;
   --text-muted: #64748b;

@@ -77,8 +77,8 @@
       66% { transform: translate(-20px, 20px) scale(0.95); }
     }
 
-    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
-    section { padding: 80px 0; position: relative; }
+    .container { max-width: 800px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+    section { padding: 24px 0; position: relative; }
 
     nav {
       position: fixed;
@@ -129,7 +129,7 @@
       background-clip: text;
     }
 
-    .section-subtitle { font-size: 16px; color: var(--text-secondary); max-width: 600px; line-height: 1.8; }
+    .section-subtitle { font-size: 16px; color: var(--text-secondary); max-width: 600px; line-height: 1.8; margin-bottom: 32px; }
 
     .hero { min-height: 100vh; display: flex; align-items: center; padding-top: 80px; }
     .hero-content { max-width: 800px; }
@@ -179,7 +179,6 @@
       flex-wrap: wrap;
       gap: 12px;
       margin-top: 32px;
-      padding: 24px;
       border-radius: 16px;
       background: var(--bg-card);
       border: 1px solid var(--border-subtle);
@@ -199,7 +198,7 @@
     }
     .quick-nav a:hover { background: rgba(0, 229, 255, 0.08); border-color: var(--neon-cyan); color: var(--neon-cyan); transform: translateY(-2px); }
 
-    .storage-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-top: 48px; }
+    .storage-grid { display: grid; grid-template-columns: 1fr; gap: 24px; margin-top: 48px; }
     .storage-card {
       padding: 32px;
       border-radius: 16px;
@@ -282,7 +281,7 @@
     .storage-link:hover { color: var(--neon-purple); }
 
     .proxy-section { margin-top: 48px; }
-    .proxy-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px; margin-top: 32px; }
+    .proxy-grid { display: grid; grid-template-columns: 1fr; gap: 24px; margin-top: 32px; }
     .proxy-card {
       padding: 32px;
       border-radius: 16px;
@@ -309,11 +308,13 @@
     }
     .deploy-btn:hover { transform: translateY(-2px); box-shadow: var(--glow-cyan); }
 
-    .cdn-table { width: 100%; margin-top: 32px; border-collapse: collapse; }
+    .table-container { overflow-x: auto; margin-top: 32px; border-radius: 12px; border: 1px solid var(--border-subtle); }
+    .cdn-table { width: 100%; border-collapse: collapse; }
     .cdn-table th, .cdn-table td { padding: 16px; text-align: left; border-bottom: 1px solid var(--border-subtle); }
-    .cdn-table th { font-family: 'Orbitron', monospace; font-size: 14px; color: var(--neon-cyan); font-weight: 600; }
+    .cdn-table th { font-family: 'Orbitron', monospace; font-size: 14px; color: var(--neon-cyan); font-weight: 600; background: rgba(0, 229, 255, 0.03); }
     .cdn-table td { font-size: 14px; color: var(--text-secondary); }
     .cdn-table tr:hover td { background: rgba(0, 229, 255, 0.02); }
+    .cdn-table tr:last-child td { border-bottom: none; }
 
     .config-steps { margin-top: 48px; }
     .config-step {
@@ -371,6 +372,53 @@
       padding-top: 16px;
     }
 
+    /* 折叠功能样式 */
+    .collapsible-card {
+      overflow: hidden;
+    }
+    
+    .collapsible-header {
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .collapsible-header:hover {
+      background: rgba(0, 229, 255, 0.05);
+    }
+    
+    .collapse-icon {
+      transition: transform 0.3s ease;
+      font-size: 12px;
+      color: var(--neon-cyan);
+    }
+    
+    .collapsible-header.collapsed .collapse-icon {
+      transform: rotate(-90deg);
+    }
+    
+    .collapsible-content {
+      max-height: 1000px;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+    
+    .collapsible-header.collapsed + .collapsible-content {
+      max-height: 0;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+    }
+    
+    .proxy-header {
+      padding: 0 0 16px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
     footer {
       padding: 40px 0;
       border-top: 1px solid var(--border-subtle);
@@ -417,7 +465,7 @@
         </div>
         <h1>
           <span class="highlight">白嫖攻略</span><br>
-          存储代理CDN全免费
+          存储/代理/CDN全免费
         </h1>
         <p>
           本攻略将一步步教你获取 Telegram / Discord / Hugging Face / Cloudflare R2 / S3 兼容 / 网盘 的免费存储，并一键部署我们写好的代理程序，最后填入 ImgBed 后台即可拥有你自己的图床。<br><br>
@@ -438,260 +486,292 @@
   <section id="storage">
     <div class="container">
       <div class="section-label">📦 白嫖存储</div>
-      <h2 class="section-title">6种免费存储渠道</h2>
+      <h2 class="section-title">多种免费存储渠道</h2>
       <p class="section-subtitle">选择适合你的存储方式，全部免费，无需信用卡</p>
 
       <div class="storage-grid">
         <!-- Telegram -->
-        <div class="storage-card">
-          <div class="storage-header">
+        <div class="storage-card collapsible-card">
+          <div class="storage-header collapsible-header collapsed" onclick="toggleCollapsible(this)">
             <h3>Telegram</h3>
-            <div class="storage-rating">⭐⭐⭐⭐⭐</div>
-          </div>
-          <div class="storage-desc">利用 Telegram Bot 将图片发送到频道，获得永久 file_id，通过代理转换为可访问链接。</div>
-          <div class="storage-pros">✓ 无限空间，单文件最大 50MB，稳定不删图</div>
-          <div class="storage-cons">✗ 原始直链被墙，需配合代理</div>
-          
-          <div class="storage-steps">
-            <h4>获取步骤</h4>
-            <div class="step-item">
-              <div class="step-num">1</div>
-              <div class="step-content"><strong>创建 Bot：</strong>打开 Telegram，搜索 <code>@BotFather</code>，发送 <code>/newbot</code>，按提示输入机器人名称和用户名（必须以 <code>bot</code> 结尾）。成功后你会收到 Bot Token（如 <code>123456:ABCdefg</code>），复制并保存。</div>
-            </div>
-            <div class="step-item">
-              <div class="step-num">2</div>
-              <div class="step-content"><strong>创建频道：</strong>在 Telegram 中创建一个新的私有频道（任意名称），记下频道名。</div>
-            </div>
-            <div class="step-item">
-              <div class="step-num">3</div>
-              <div class="step-content"><strong>邀请机器人：</strong>打开频道信息页 → 成员 → 添加成员，搜索你刚创建的机器人用户名，将其添加为管理员（至少需要"发送消息"和"上传文件"权限）。</div>
-            </div>
-            <div class="step-item">
-              <div class="step-num">4</div>
-              <div class="step-content"><strong>获取频道 ID：</strong>在频道中随便发一条消息。然后在浏览器打开：<code>https://api.telegram.org/bot你的BotToken/getUpdates</code>，找到 <code>"chat":{"id":-1001234567890</code>，其中的 id 值（是一个负数）就是频道 ID。</div>
-            </div>
-            <div class="step-item">
-              <div class="step-num">5</div>
-              <div class="step-content"><strong>填入 ImgBed：</strong>在 ImgBed 后台「存储管理」中选择 Telegram，填入 Bot Token 和 Channel ID，保存。</div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div class="storage-rating">⭐⭐⭐⭐⭐</div>
+              <span class="collapse-icon">▼</span>
             </div>
           </div>
-          
-          <div class="storage-note">
-            💡 注意：频道必须为私有，机器人必须具有发送消息和上传文件的权限。如需删除图片，直接在 Telegram 频道中删除对应消息即可。
+          <div class="collapsible-content">
+            <div class="storage-desc">利用 Telegram Bot 将图片发送到频道，获得永久 file_id，通过代理转换为可访问链接。</div>
+            <div class="storage-pros">✓ 无限空间，单文件最大 50MB，稳定不删图</div>
+            <div class="storage-cons">✗ 原始直链被墙，需配合代理</div>
+            
+            <div class="storage-steps">
+              <h4>获取步骤</h4>
+              <div class="step-item">
+                <div class="step-num">1</div>
+                <div class="step-content"><strong>创建 Bot：</strong>打开 Telegram，搜索 <code>@BotFather</code>，发送 <code>/newbot</code>，按提示输入机器人名称和用户名（必须以 <code>bot</code> 结尾）。成功后你会收到 Bot Token（如 <code>123456:ABCdefg</code>），复制并保存。</div>
+              </div>
+              <div class="step-item">
+                <div class="step-num">2</div>
+                <div class="step-content"><strong>创建频道：</strong>在 Telegram 中创建一个新的私有频道（任意名称），记下频道名。</div>
+              </div>
+              <div class="step-item">
+                <div class="step-num">3</div>
+                <div class="step-content"><strong>邀请机器人：</strong>打开频道信息页 → 成员 → 添加成员，搜索你刚创建的机器人用户名，将其添加为管理员（至少需要"发送消息"和"上传文件"权限）。</div>
+              </div>
+              <div class="step-item">
+                <div class="step-num">4</div>
+                <div class="step-content"><strong>获取频道 ID：</strong>在频道中随便发一条消息。然后在浏览器打开：<code>https://api.telegram.org/bot你的BotToken/getUpdates</code>，找到 <code>"chat":{"id":-1001234567890</code>，其中的 id 值（是一个负数）就是频道 ID。</div>
+              </div>
+              <div class="step-item">
+                <div class="step-num">5</div>
+                <div class="step-content"><strong>填入 ImgBed：</strong>在 ImgBed 后台「存储管理」中选择 Telegram，填入 Bot Token 和 Channel ID，保存。</div>
+              </div>
+            </div>
+            
+            <div class="storage-note">
+              💡 注意：频道必须为私有，机器人必须具有发送消息和上传文件的权限。如需删除图片，直接在 Telegram 频道中删除对应消息即可。
+            </div>
+            
+            <a href="https://core.telegram.org/bots" target="_blank" class="storage-link">
+              📖 Telegram Bot API 文档 →
+            </a>
           </div>
-          
-          <a href="https://core.telegram.org/bots" target="_blank" class="storage-link">
-            📖 Telegram Bot API 文档 →
-          </a>
         </div>
 
         <!-- Discord -->
-        <div class="storage-card">
-          <div class="storage-header">
+        <div class="storage-card collapsible-card">
+          <div class="storage-header collapsible-header collapsed" onclick="toggleCollapsible(this)">
             <h3>Discord</h3>
-            <div class="storage-rating">⭐⭐⭐⭐</div>
-          </div>
-          <div class="storage-desc">Discord 将上传的文件托管在 cdn.discordapp.com 全球 CDN 上，通过 Bot 发送消息到频道即可获得链接。</div>
-          <div class="storage-pros">✓ 无限存储，单文件最大 25MB，自带 CDN</div>
-          <div class="storage-cons">✗ 国内部分地区可能无法直接访问，需配合代理</div>
-          
-          <div class="storage-steps">
-            <h4>获取步骤</h4>
-            <div class="step-item">
-              <div class="step-num">1</div>
-              <div class="step-content"><strong>创建应用：</strong>访问 <a href="https://discord.com/developers/applications" target="_blank" style="color: var(--neon-cyan);">Discord Developer Portal</a>，点击「New Application」，输入名称（任意）。</div>
-            </div>
-            <div class="step-item">
-              <div class="step-num">2</div>
-              <div class="step-content"><strong>创建 Bot：</strong>左侧菜单选择「Bot」，点击「Add Bot」→「Reset Token」并复制 Bot Token（类似 <code>MTAzNzI...</code>）。</div>
-            </div>
-            <div class="step-item">
-              <div class="step-num">3</div>
-              <div class="step-content"><strong>设置权限：</strong>在 Bot 页面下方找到「Privileged Gateway Intents」，开启「Message Content Intent」。</div>
-            </div>
-            <div class="step-item">
-              <div class="step-num">4</div>
-              <div class="step-content"><strong>邀请 Bot：</strong>左侧菜单选择「OAuth2」→「URL Generator」，勾选 <code>bot</code> 和 <code>Send Messages</code>、<code>Attach Files</code>、<code>Read Messages</code>、<code>Manage Messages</code> 权限，复制邀请链接并在浏览器中打开，选择你的服务器完成邀请。</div>
-            </div>
-            <div class="step-item">
-              <div class="step-num">5</div>
-              <div class="step-content"><strong>获取频道 ID：</strong>在 Discord 客户端中打开「用户设置」→「高级」→ 开启「开发者模式」。然后右键点击你准备用于存储图片的文字频道，选择「复制频道 ID」。</div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div class="storage-rating">⭐⭐⭐⭐</div>
+              <span class="collapse-icon">▼</span>
             </div>
           </div>
-          
-          <div class="storage-note">
-            💡 注意：Bot 必须拥有发送消息和上传文件的权限。建议为图片单独创建一个频道。Discord 的 CDN 链接有效期很长（理论永久），但若消息被删除则链接失效。
+          <div class="collapsible-content">
+            <div class="storage-desc">Discord 将上传的文件托管在 cdn.discordapp.com 全球 CDN 上，通过 Bot 发送消息到频道即可获得链接。</div>
+            <div class="storage-pros">✓ 无限存储，单文件最大 25MB，自带 CDN</div>
+            <div class="storage-cons">✗ 国内部分地区可能无法直接访问，需配合代理</div>
+            
+            <div class="storage-steps">
+              <h4>获取步骤</h4>
+              <div class="step-item">
+                <div class="step-num">1</div>
+                <div class="step-content"><strong>创建应用：</strong>访问 <a href="https://discord.com/developers/applications" target="_blank" style="color: var(--neon-cyan);">Discord Developer Portal</a>，点击「New Application」，输入名称（任意）。</div>
+              </div>
+              <div class="step-item">
+                <div class="step-num">2</div>
+                <div class="step-content"><strong>创建 Bot：</strong>左侧菜单选择「Bot」，点击「Add Bot」→「Reset Token」并复制 Bot Token（类似 <code>MTAzNzI...</code>）。</div>
+              </div>
+              <div class="step-item">
+                <div class="step-num">3</div>
+                <div class="step-content"><strong>设置权限：</strong>在 Bot 页面下方找到「Privileged Gateway Intents」，开启「Message Content Intent」。</div>
+              </div>
+              <div class="step-item">
+                <div class="step-num">4</div>
+                <div class="step-content"><strong>邀请 Bot：</strong>左侧菜单选择「OAuth2」→「URL Generator」，勾选 <code>bot</code> 和 <code>Send Messages</code>、<code>Attach Files</code>、<code>Read Messages</code>、<code>Manage Messages</code> 权限，复制邀请链接并在浏览器中打开，选择你的服务器完成邀请。</div>
+              </div>
+              <div class="step-item">
+                <div class="step-num">5</div>
+                <div class="step-content"><strong>获取频道 ID：</strong>在 Discord 客户端中打开「用户设置」→「高级」→ 开启「开发者模式」。然后右键点击你准备用于存储图片的文字频道，选择「复制频道 ID」。</div>
+              </div>
+            </div>
+            
+            <div class="storage-note">
+              💡 注意：Bot 必须拥有发送消息和上传文件的权限。建议为图片单独创建一个频道。Discord 的 CDN 链接有效期很长（理论永久），但若消息被删除则链接失效。
+            </div>
+            
+            <a href="https://discord.com/developers/docs/intro" target="_blank" class="storage-link">
+              📖 Discord Developer Portal →
+            </a>
           </div>
-          
-          <a href="https://discord.com/developers/docs/intro" target="_blank" class="storage-link">
-            📖 Discord Developer Portal →
-          </a>
         </div>
 
         <!-- Hugging Face -->
-        <div class="storage-card">
-          <div class="storage-header">
+        <div class="storage-card collapsible-card">
+          <div class="storage-header collapsible-header collapsed" onclick="toggleCollapsible(this)">
             <h3>Hugging Face</h3>
-            <div class="storage-rating">⭐⭐⭐</div>
-          </div>
-          <div class="storage-desc">Hugging Face 的 Space 支持存储任意文件，并通过 raw 链接公开访问，无需认证。</div>
-          <div class="storage-pros">✓ 免费存储，技术社区常用，公开访问无需认证</div>
-          <div class="storage-cons">✗ 存储空间有限，国内访问速度一般，需配合代理</div>
-          
-          <div class="storage-steps">
-            <h4>获取步骤</h4>
-            <div class="step-item">
-              <div class="step-num">1</div>
-              <div class="step-content"><strong>注册账号：</strong>访问 <a href="https://huggingface.co/" target="_blank" style="color: var(--neon-cyan);">Hugging Face</a> 注册一个免费账号。</div>
-            </div>
-            <div class="step-item">
-              <div class="step-num">2</div>
-              <div class="step-content"><strong>创建 Space：</strong>点击右上角头像 → 「New Space」。输入空间名称（如 <code>my-imgbed</code>），SDK 选择「Static」，Visibility 必须选择「Public」，点击「Create Space」。</div>
-            </div>
-            <div class="step-item">
-              <div class="step-num">3</div>
-              <div class="step-content"><strong>生成 Access Token：</strong>点击右上角头像 → 「Settings」→ 「Access Tokens」→ 「New token」。名称任意，权限勾选「write」，点击「Generate token」，复制并保存（形如 <code>hf_xxxxxx</code>）。</div>
-            </div>
-            <div class="step-item">
-              <div class="step-num">4</div>
-              <div class="step-content"><strong>填入 ImgBed：</strong>在 ImgBed 后台添加 Hugging Face 存储，填入 Access Token 和仓库名称（格式：<code>用户名/空间名</code>）。</div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div class="storage-rating">⭐⭐⭐</div>
+              <span class="collapse-icon">▼</span>
             </div>
           </div>
-          
-          <div class="storage-note">
-            💡 注意：Space 可以存储文件并公开访问，无需认证。原始直链地址为 <code>https://huggingface.co/spaces/用户名/空间名/resolve/main/文件名</code>，需配合代理使用。
+          <div class="collapsible-content">
+            <div class="storage-desc">Hugging Face 的 Space 支持存储任意文件，并通过 raw 链接公开访问，无需认证。</div>
+            <div class="storage-pros">✓ 免费存储，技术社区常用，公开访问无需认证</div>
+            <div class="storage-cons">✗ 存储空间有限，国内访问速度一般，需配合代理</div>
+            
+            <div class="storage-steps">
+              <h4>获取步骤</h4>
+              <div class="step-item">
+                <div class="step-num">1</div>
+                <div class="step-content"><strong>注册账号：</strong>访问 <a href="https://huggingface.co/" target="_blank" style="color: var(--neon-cyan);">Hugging Face</a> 注册一个免费账号。</div>
+              </div>
+              <div class="step-item">
+                <div class="step-num">2</div>
+                <div class="step-content"><strong>创建 Space：</strong>点击右上角头像 → 「New Space」。输入空间名称（如 <code>my-imgbed</code>），SDK 选择「Static」，Visibility 必须选择「Public」，点击「Create Space」。</div>
+              </div>
+              <div class="step-item">
+                <div class="step-num">3</div>
+                <div class="step-content"><strong>生成 Access Token：</strong>点击右上角头像 → 「Settings」→ 「Access Tokens」→ 「New token」。名称任意，权限勾选「write」，点击「Generate token」，复制并保存（形如 <code>hf_xxxxxx</code>）。</div>
+              </div>
+              <div class="step-item">
+                <div class="step-num">4</div>
+                <div class="step-content"><strong>填入 ImgBed：</strong>在 ImgBed 后台添加 Hugging Face 存储，填入 Access Token 和仓库名称（格式：<code>用户名/空间名</code>）。</div>
+              </div>
+            </div>
+            
+            <div class="storage-note">
+              💡 注意：Space 可以存储文件并公开访问，无需认证。原始直链地址为 <code>https://huggingface.co/spaces/用户名/空间名/resolve/main/文件名</code>，需配合代理使用。
+            </div>
+            
+            <a href="https://huggingface.co/docs/hub/en/spaces" target="_blank" class="storage-link">
+              📖 Hugging Face Spaces 文档 →
+            </a>
           </div>
-          
-          <a href="https://huggingface.co/docs/hub/en/spaces" target="_blank" class="storage-link">
-            📖 Hugging Face Spaces 文档 →
-          </a>
         </div>
 
         <!-- Cloudflare R2 -->
-        <div class="storage-card">
-          <div class="storage-header">
+        <div class="storage-card collapsible-card">
+          <div class="storage-header collapsible-header collapsed" onclick="toggleCollapsible(this)">
             <h3>Cloudflare R2</h3>
-            <div class="storage-rating">⭐⭐⭐⭐</div>
-          </div>
-          <div class="storage-desc">Cloudflare R2 提供 S3 兼容的对象存储，免费额度足够个人图床。</div>
-          <div class="storage-pros">✓ 10GB 免费存储 + 每月 10GB 出站流量，全球 CDN 加速</div>
-          <div class="storage-cons">✗ 需要绑定信用卡（但不会扣费，仅验证身份）</div>
-          
-          <div class="storage-steps">
-            <h4>获取步骤</h4>
-            <div class="step-item">
-              <div class="step-num">1</div>
-              <div class="step-content"><strong>注册 Cloudflare：</strong>访问 <a href="https://cloudflare.com" target="_blank" style="color: var(--neon-cyan);">Cloudflare</a> 注册账号。</div>
-            </div>
-            <div class="step-item">
-              <div class="step-num">2</div>
-              <div class="step-content"><strong>开通 R2：</strong>登录后，左侧菜单选择「R2」→ 点击「开始使用」→ 根据提示添加付款方式（支持信用卡，不会扣费，仅用于防滥用）。</div>
-            </div>
-            <div class="step-item">
-              <div class="step-num">3</div>
-              <div class="step-content"><strong>创建存储桶：</strong>点击「创建存储桶」，输入名称（如 <code>imgbed</code>），区域选择「自动」，点击创建。</div>
-            </div>
-            <div class="step-item">
-              <div class="step-num">4</div>
-              <div class="step-content"><strong>生成 API 令牌：</strong>进入存储桶详情页，点击「设置」→「API 令牌」→「创建 API 令牌」。权限选择「对象读写」，创建后会显示 Access Key ID 和 Secret Access Key，务必立即复制保存。</div>
-            </div>
-            <div class="step-item">
-              <div class="step-num">5</div>
-              <div class="step-content"><strong>填入 ImgBed：</strong>在 ImgBed 后台选择「S3 兼容存储」，填入端点（<code>https://你的账户ID.r2.cloudflarestorage.com</code>）、区域（<code>auto</code>）、存储桶名称、访问密钥和秘密密钥。</div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div class="storage-rating">⭐⭐⭐⭐</div>
+              <span class="collapse-icon">▼</span>
             </div>
           </div>
-          
-          <div class="storage-note">
-            💡 注意：免费额度每月重置，超出部分会收费，建议在 Cloudflare 设置中启用「限制 R2 使用量」。通过 ImgBed 代理访问时，流量走代理，不计入 R2 出站流量，可节省额度。
+          <div class="collapsible-content">
+            <div class="storage-desc">Cloudflare R2 提供 S3 兼容的对象存储，免费额度足够个人图床。</div>
+            <div class="storage-pros">✓ 10GB 免费存储 + 每月 10GB 出站流量，全球 CDN 加速</div>
+            <div class="storage-cons">✗ 需要绑定信用卡（但不会扣费，仅验证身份）</div>
+            
+            <div class="storage-steps">
+              <h4>获取步骤</h4>
+              <div class="step-item">
+                <div class="step-num">1</div>
+                <div class="step-content"><strong>注册 Cloudflare：</strong>访问 <a href="https://cloudflare.com" target="_blank" style="color: var(--neon-cyan);">Cloudflare</a> 注册账号。</div>
+              </div>
+              <div class="step-item">
+                <div class="step-num">2</div>
+                <div class="step-content"><strong>开通 R2：</strong>登录后，左侧菜单选择「R2」→ 点击「开始使用」→ 根据提示添加付款方式（支持信用卡，不会扣费，仅用于防滥用）。</div>
+              </div>
+              <div class="step-item">
+                <div class="step-num">3</div>
+                <div class="step-content"><strong>创建存储桶：</strong>点击「创建存储桶」，输入名称（如 <code>imgbed</code>），区域选择「自动」，点击创建。</div>
+              </div>
+              <div class="step-item">
+                <div class="step-num">4</div>
+                <div class="step-content"><strong>生成 API 令牌：</strong>进入存储桶详情页，点击「设置」→「API 令牌」→「创建 API 令牌」。权限选择「对象读写」，创建后会显示 Access Key ID 和 Secret Access Key，务必立即复制保存。</div>
+              </div>
+              <div class="step-item">
+                <div class="step-num">5</div>
+                <div class="step-content"><strong>填入 ImgBed：</strong>在 ImgBed 后台选择「S3 兼容存储」，填入端点（<code>https://你的账户ID.r2.cloudflarestorage.com</code>）、区域（<code>auto</code>）、存储桶名称、访问密钥和秘密密钥。</div>
+              </div>
+            </div>
+            
+            <div class="storage-note">
+              💡 注意：免费额度每月重置，超出部分会收费，建议在 Cloudflare 设置中启用「限制 R2 使用量」。通过 ImgBed 代理访问时，流量走代理，不计入 R2 出站流量，可节省额度。
+            </div>
+            
+            <a href="https://developers.cloudflare.com/r2/" target="_blank" class="storage-link">
+              📖 Cloudflare R2 文档 →
+            </a>
           </div>
-          
-          <a href="https://developers.cloudflare.com/r2/" target="_blank" class="storage-link">
-            📖 Cloudflare R2 文档 →
-          </a>
         </div>
 
         <!-- S3 兼容存储 -->
-        <div class="storage-card">
-          <div class="storage-header">
+        <div class="storage-card collapsible-card">
+          <div class="storage-header collapsible-header collapsed" onclick="toggleCollapsible(this)">
             <h3>S3 兼容存储</h3>
-            <div class="storage-rating">⭐⭐⭐</div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div class="storage-rating">⭐⭐⭐</div>
+              <span class="collapse-icon">▼</span>
+            </div>
           </div>
-          <div class="storage-desc">以下存储均支持标准 S3 协议，ImgBed 可直接对接。部分有永久免费额度，部分为限时试用。</div>
-          
-          <table class="cdn-table" style="margin-top: 16px;">
-            <thead>
-              <tr>
-                <th>服务商</th>
-                <th>免费额度</th>
-                <th>需要信用卡</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><strong>Backblaze B2</strong></td>
-                <td>10GB 存储 + 1GB/天 下行流量</td>
-                <td>是（验证身份）</td>
-              </tr>
-              <tr>
-                <td><strong>腾讯云 COS</strong></td>
-                <td>50GB 存储（6个月）</td>
-                <td>是（实名）</td>
-              </tr>
-              <tr>
-                <td><strong>阿里云 OSS</strong></td>
-                <td>40GB 存储（3个月）</td>
-                <td>是（实名）</td>
-              </tr>
-              <tr>
-                <td><strong>IDrive e2</strong></td>
-                <td>10GB 永久免费</td>
-                <td>否</td>
-              </tr>
-            </tbody>
-          </table>
-          
-          <div class="storage-note">
-            💡 通用配置：创建公开存储桶，生成应用密钥，在 ImgBed 的 S3 兼容配置中填入对应的端点、区域、存储桶名称、密钥对。部分免费额度有期限，到期后可能收费，建议定期检查或设置预算告警。
+          <div class="collapsible-content">
+            <div class="storage-desc">以下存储均支持标准 S3 协议，ImgBed 可直接对接。部分有永久免费额度，部分为限时试用。</div>
+            
+            <div class="table-container" style="margin-top: 16px;">
+              <table class="cdn-table">
+                <thead>
+                  <tr>
+                    <th>服务商</th>
+                    <th>免费额度</th>
+                    <th>需要信用卡</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Backblaze B2</strong></td>
+                    <td>10GB 存储 + 1GB/天 下行流量</td>
+                    <td>是（验证身份）</td>
+                  </tr>
+                  <tr>
+                    <td><strong>腾讯云 COS</strong></td>
+                    <td>50GB 存储（6个月）</td>
+                    <td>是（实名）</td>
+                  </tr>
+                  <tr>
+                    <td><strong>阿里云 OSS</strong></td>
+                    <td>40GB 存储（3个月）</td>
+                    <td>是（实名）</td>
+                  </tr>
+                  <tr>
+                    <td><strong>IDrive e2</strong></td>
+                    <td>10GB 永久免费</td>
+                    <td>否</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            
+            <div class="storage-note">
+              💡 通用配置：创建公开存储桶，生成应用密钥，在 ImgBed 的 S3 兼容配置中填入对应的端点、区域、存储桶名称、密钥对。部分免费额度有期限，到期后可能收费，建议定期检查或设置预算告警。
+            </div>
           </div>
         </div>
 
         <!-- 网盘挂载 -->
-        <div class="storage-card">
-          <div class="storage-header">
+        <div class="storage-card collapsible-card">
+          <div class="storage-header collapsible-header collapsed" onclick="toggleCollapsible(this)">
             <h3>网盘挂载</h3>
-            <div class="storage-rating">⭐⭐⭐</div>
-          </div>
-          <div class="storage-desc">使用 Alist 将网盘挂载为 WebDAV 或 S3 接口，ImgBed 通过 WebDAV 连接，实现超大容量存储。</div>
-          <div class="storage-pros">✓ 网盘容量大（通常 2TB+），单文件可达 100MB+</div>
-          <div class="storage-cons">✗ 需要额外维护 Alist 服务</div>
-          
-          <div class="storage-steps">
-            <h4>获取步骤</h4>
-            <div class="step-item">
-              <div class="step-num">1</div>
-              <div class="step-content"><strong>部署 Alist：</strong>下载 Alist 二进制文件运行，或使用 Docker：<code>docker run -d -p 5244:5244 xhofe/alist:latest</code></div>
-            </div>
-            <div class="step-item">
-              <div class="step-num">2</div>
-              <div class="step-content"><strong>添加网盘存储：</strong>打开 Alist 管理后台（默认 <code>http://localhost:5244</code>），进入「存储」→「添加」，选择驱动类型（如「阿里云盘」），根据提示获取 Refresh Token。</div>
-            </div>
-            <div class="step-item">
-              <div class="step-num">3</div>
-              <div class="step-content"><strong>开启 WebDAV：</strong>Alist 默认开启 WebDAV 服务，地址为 <code>http://localhost:5244/dav</code>。用户名和密码与你登录 Alist 后台的相同。</div>
-            </div>
-            <div class="step-item">
-              <div class="step-num">4</div>
-              <div class="step-content"><strong>填入 ImgBed：</strong>在 ImgBed 后台选择「WebDAV」，填入端点、用户名、密码和路径前缀。</div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div class="storage-rating">⭐⭐⭐</div>
+              <span class="collapse-icon">▼</span>
             </div>
           </div>
-          
-          <div class="storage-note">
-            💡 注意：如果 Alist 部署在本地，ImgBed 需能访问该地址。网盘直链有效期由网盘决定，Alist 会在访问时自动刷新。建议选择支持 Alist 官方文档中标记为「稳定性高」的网盘（如阿里云盘、夸克网盘）。
+          <div class="collapsible-content">
+            <div class="storage-desc">使用 Alist 将网盘挂载为 WebDAV 或 S3 接口，ImgBed 通过 WebDAV 连接，实现超大容量存储。</div>
+            <div class="storage-pros">✓ 网盘容量大（通常 2TB+），单文件可达 100MB+</div>
+            <div class="storage-cons">✗ 需要额外维护 Alist 服务</div>
+            
+            <div class="storage-steps">
+              <h4>获取步骤</h4>
+              <div class="step-item">
+                <div class="step-num">1</div>
+                <div class="step-content"><strong>部署 Alist：</strong>下载 Alist 二进制文件运行，或使用 Docker：<code>docker run -d -p 5244:5244 xhofe/alist:latest</code></div>
+              </div>
+              <div class="step-item">
+                <div class="step-num">2</div>
+                <div class="step-content"><strong>添加网盘存储：</strong>打开 Alist 管理后台（默认 <code>http://localhost:5244</code>），进入「存储」→「添加」，选择驱动类型（如「阿里云盘」），根据提示获取 Refresh Token。</div>
+              </div>
+              <div class="step-item">
+                <div class="step-num">3</div>
+                <div class="step-content"><strong>开启 WebDAV：</strong>Alist 默认开启 WebDAV 服务，地址为 <code>http://localhost:5244/dav</code>。用户名和密码与你登录 Alist 后台的相同。</div>
+              </div>
+              <div class="step-item">
+                <div class="step-num">4</div>
+                <div class="step-content"><strong>填入 ImgBed：</strong>在 ImgBed 后台选择「WebDAV」，填入端点、用户名、密码和路径前缀。</div>
+              </div>
+            </div>
+            
+            <div class="storage-note">
+              💡 注意：如果 Alist 部署在本地，ImgBed 需能访问该地址。网盘直链有效期由网盘决定，Alist 会在访问时自动刷新。建议选择支持 Alist 官方文档中标记为「稳定性高」的网盘（如阿里云盘、夸克网盘）。
+            </div>
+            
+            <a href="https://alist.nn.ci/zh/" target="_blank" class="storage-link">
+              📖 Alist 文档 →
+            </a>
           </div>
-          
-          <a href="https://alist.nn.ci/zh/" target="_blank" class="storage-link">
-            📖 Alist 文档 →
-          </a>
         </div>
       </div>
     </div>
@@ -704,64 +784,78 @@
       <p class="section-subtitle">我们已为你写好了代理程序，存储在 GitHub 仓库 imgbed-proxy。你只需点一下按钮，即可将代理部署到免费平台，获得专属代理域名。</p>
 
       <div class="proxy-grid">
-        <div class="proxy-card">
-          <h3>Cloudflare Workers</h3>
-          <span class="badge">推荐</span>
-          <p>全球边缘网络，每日 10 万次请求免费，绑定自定义域名后国内访问速度尚可。</p>
-          
-          <div class="storage-steps">
-            <h4>部署步骤</h4>
-            <div class="step-item">
-              <div class="step-num">1</div>
-              <div class="step-content">点击下方按钮，登录你的 Cloudflare 账号（如果没有，免费注册一个）。</div>
-            </div>
-            <div class="step-item">
-              <div class="step-num">2</div>
-              <div class="step-content">按页面提示为 Worker 命名（例如 <code>imgbed-proxy</code>），点击「部署」。</div>
-            </div>
-            <div class="step-item">
-              <div class="step-num">3</div>
-              <div class="step-content">部署成功后，你会获得一个形如 <code>https://你的项目名.workers.dev</code> 的域名。复制该域名。</div>
-            </div>
-            <div class="step-item">
-              <div class="step-num">4</div>
-              <div class="step-content">回到 ImgBed 后台的「代理管理」，粘贴该地址，保存。</div>
+        <div class="proxy-card collapsible-card">
+          <div class="proxy-header collapsible-header collapsed" onclick="toggleCollapsible(this)">
+            <h3>Cloudflare Workers</h3>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span class="badge">推荐</span>
+              <span class="collapse-icon">▼</span>
             </div>
           </div>
-          
-          <a href="https://deploy.workers.cloudflare.com/?url=https://github.com/mageg-x/imgbed-proxy" target="_blank" class="deploy-btn">
-            🚀 部署到 Cloudflare Workers
-          </a>
+          <div class="collapsible-content">
+            <p>全球边缘网络，每日 10 万次请求免费，绑定自定义域名后国内访问速度尚可。</p>
+            
+            <div class="storage-steps">
+              <h4>部署步骤</h4>
+              <div class="step-item">
+                <div class="step-num">1</div>
+                <div class="step-content">点击下方按钮，登录你的 Cloudflare 账号（如果没有，免费注册一个）。</div>
+              </div>
+              <div class="step-item">
+                <div class="step-num">2</div>
+                <div class="step-content">按页面提示为 Worker 命名（例如 <code>imgbed-proxy</code>），点击「部署」。</div>
+              </div>
+              <div class="step-item">
+                <div class="step-num">3</div>
+                <div class="step-content">部署成功后，你会获得一个形如 <code>https://你的项目名.workers.dev</code> 的域名。复制该域名。</div>
+              </div>
+              <div class="step-item">
+                <div class="step-num">4</div>
+                <div class="step-content">回到 ImgBed 后台的「代理管理」，粘贴该地址，保存。</div>
+              </div>
+            </div>
+            
+            <a href="https://deploy.workers.cloudflare.com/?url=https://github.com/mageg-x/imgbed-proxy" target="_blank" class="deploy-btn">
+              🚀 部署到 Cloudflare Workers
+            </a>
+          </div>
         </div>
 
-        <div class="proxy-card">
-          <h3>Vercel Edge Functions</h3>
-          <span class="badge">备选</span>
-          <p>每月 100GB 免费流量，但默认域名在国内可能被 DNS 污染，建议搭配 Cloudflare CDN。</p>
-          
-          <div class="storage-steps">
-            <h4>部署步骤</h4>
-            <div class="step-item">
-              <div class="step-num">1</div>
-              <div class="step-content">点击下方按钮，登录 Vercel（可使用 GitHub 账号快速登录）。</div>
-            </div>
-            <div class="step-item">
-              <div class="step-num">2</div>
-              <div class="step-content">点击「Deploy」，等待部署完成（约 1-2 分钟）。</div>
-            </div>
-            <div class="step-item">
-              <div class="step-num">3</div>
-              <div class="step-content">部署后，Vercel 会分配一个 <code>https://你的项目名.vercel.app</code> 域名。复制该域名。</div>
-            </div>
-            <div class="step-item">
-              <div class="step-num">4</div>
-              <div class="step-content">在 ImgBed 后台的「代理管理」中填入该地址。</div>
+        <div class="proxy-card collapsible-card">
+          <div class="proxy-header collapsible-header collapsed" onclick="toggleCollapsible(this)">
+            <h3>Vercel Edge Functions</h3>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span class="badge">备选</span>
+              <span class="collapse-icon">▼</span>
             </div>
           </div>
-          
-          <a href="https://vercel.com/new/clone?repository-url=https://github.com/mageg-x/imgbed-proxy" target="_blank" class="deploy-btn">
-            🚀 部署到 Vercel
-          </a>
+          <div class="collapsible-content">
+            <p>每月 100GB 免费流量，但默认域名在国内可能被 DNS 污染，建议搭配 Cloudflare CDN。</p>
+            
+            <div class="storage-steps">
+              <h4>部署步骤</h4>
+              <div class="step-item">
+                <div class="step-num">1</div>
+                <div class="step-content">点击下方按钮，登录 Vercel（可使用 GitHub 账号快速登录）。</div>
+              </div>
+              <div class="step-item">
+                <div class="step-num">2</div>
+                <div class="step-content">点击「Deploy」，等待部署完成（约 1-2 分钟）。</div>
+              </div>
+              <div class="step-item">
+                <div class="step-num">3</div>
+                <div class="step-content">部署后，Vercel 会分配一个 <code>https://你的项目名.vercel.app</code> 域名。复制该域名。</div>
+              </div>
+              <div class="step-item">
+                <div class="step-num">4</div>
+                <div class="step-content">在 ImgBed 后台的「代理管理」中填入该地址。</div>
+              </div>
+            </div>
+            
+            <a href="https://vercel.com/new/clone?repository-url=https://github.com/mageg-x/imgbed-proxy" target="_blank" class="deploy-btn">
+              🚀 部署到 Vercel
+            </a>
+          </div>
         </div>
       </div>
       
@@ -777,60 +871,66 @@
       <h2 class="section-title">可选加速方案</h2>
       <p class="section-subtitle">大多数情况下，Cloudflare Workers 自带的 CDN 已经够用。如果你对国内访问速度有更高要求，可以叠加以下免费 CDN。</p>
 
-      <div class="storage-card" style="margin-top: 32px;">
-        <h3 style="margin-bottom: 16px;">又拍云 / 七牛云 免费 CDN 额度</h3>
-        
-        <table class="cdn-table">
-          <thead>
-            <tr>
-              <th>服务商</th>
-              <th>免费额度</th>
-              <th>条件</th>
-              <th>配置方式</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><strong>又拍云</strong></td>
-              <td>每月 15GB CDN 流量 + 15GB 存储</td>
-              <td>需在网站底部添加又拍云 Logo</td>
-              <td>将代理域名作为源站，添加 CDN 服务，获得加速域名</td>
-            </tr>
-            <tr>
-              <td><strong>七牛云</strong></td>
-              <td>每月 10GB CDN 流量 + 10GB 存储</td>
-              <td>需完成实名认证</td>
-              <td>创建 CDN 加速域名，源站填代理地址</td>
-            </tr>
-          </tbody>
-        </table>
-        
-        <div class="storage-steps" style="margin-top: 24px;">
-          <h4>操作步骤（以又拍云为例）</h4>
-          <div class="step-item">
-            <div class="step-num">1</div>
-            <div class="step-content">注册又拍云账号，完成实名认证。</div>
-          </div>
-          <div class="step-item">
-            <div class="step-num">2</div>
-            <div class="step-content">进入「CDN」服务，点击「添加域名」。</div>
-          </div>
-          <div class="step-item">
-            <div class="step-num">3</div>
-            <div class="step-content">加速域名填写你希望使用的域名（需备案或境外），源站地址填写你的代理域名（如 <code>xxx.workers.dev</code>），协议选择 HTTPS。</div>
-          </div>
-          <div class="step-item">
-            <div class="step-num">4</div>
-            <div class="step-content">提交后，根据提示将你的加速域名 CNAME 到又拍云提供的地址。</div>
-          </div>
-          <div class="step-item">
-            <div class="step-num">5</div>
-            <div class="step-content">在 ImgBed 代理配置中，将代理地址改为又拍云分配的加速域名。</div>
-          </div>
+      <div class="storage-card collapsible-card">
+        <div class="storage-header collapsible-header" onclick="toggleCollapsible(this)">
+          <h3>又拍云 / 七牛云 免费 CDN 额度</h3>
+          <span class="collapse-icon">▼</span>
         </div>
-        
-        <div class="storage-note">
-          💡 注意：又拍云需要挂载标识，七牛云需要实名。免费额度每月重置，超量会暂停或扣费，建议设置告警。对于绝大多数用户，直接使用 Cloudflare Workers 代理即可，无需额外 CDN。
+        <div class="collapsible-content">
+          <div class="table-container">
+            <table class="cdn-table">
+              <thead>
+                <tr>
+                  <th>服务商</th>
+                  <th>免费额度</th>
+                  <th>条件</th>
+                  <th>配置方式</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>又拍云</strong></td>
+                  <td>每月 15GB CDN 流量 + 15GB 存储</td>
+                  <td>需在网站底部添加又拍云 Logo</td>
+                  <td>将代理域名作为源站，添加 CDN 服务，获得加速域名</td>
+                </tr>
+                <tr>
+                  <td><strong>七牛云</strong></td>
+                  <td>每月 10GB CDN 流量 + 10GB 存储</td>
+                  <td>需完成实名认证</td>
+                  <td>创建 CDN 加速域名，源站填代理地址</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <div class="storage-steps" style="margin-top: 24px;">
+            <h4>操作步骤（以又拍云为例）</h4>
+            <div class="step-item">
+              <div class="step-num">1</div>
+              <div class="step-content">注册又拍云账号，完成实名认证。</div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">2</div>
+              <div class="step-content">进入「CDN」服务，点击「添加域名」。</div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">3</div>
+              <div class="step-content">加速域名填写你希望使用的域名（需备案或境外），源站地址填写你的代理域名（如 <code>xxx.workers.dev</code>），协议选择 HTTPS。</div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">4</div>
+              <div class="step-content">提交后，根据提示将你的加速域名 CNAME 到又拍云提供的地址。</div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">5</div>
+              <div class="step-content">在 ImgBed 代理配置中，将代理地址改为又拍云分配的加速域名。</div>
+            </div>
+          </div>
+          
+          <div class="storage-note">
+            💡 注意：又拍云需要挂载标识，七牛云需要实名。免费额度每月重置，超量会暂停或扣费，建议设置告警。对于绝大多数用户，直接使用 Cloudflare Workers 代理即可，无需额外 CDN。
+          </div>
         </div>
       </div>
     </div>
@@ -939,5 +1039,12 @@
       <p>© 2024 ImgBed. 完全免费开源，永不收费。</p>
     </div>
   </footer>
+
+  <script>
+    // 折叠/展开功能
+    function toggleCollapsible(element) {
+      element.classList.toggle('collapsed');
+    }
+  </script>
 </body>
 </html>
