@@ -6,9 +6,12 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/imgbed/server/config"
+	"github.com/imgbed/server/database"
+	"github.com/imgbed/server/utils"
 )
 
 // BackupService 备份服务
@@ -27,6 +30,32 @@ type BackupInfo struct {
 	CreatedAt string `json:"created_at"`
 }
 
+// getBackupDir 获取备份目录（相对于数据目录）
+func (s *BackupService) getBackupDir() string {
+	dbPath := config.GetString("database.path")
+	if dbPath == "" {
+		dbPath = filepath.Join(config.GetDataDir(), "imgbed.db")
+	}
+	return filepath.Join(filepath.Dir(dbPath), "backup")
+}
+
+// validateBackupPath 校验备份路径安全（防止路径遍历）
+func (s *BackupService) validateBackupPath(backupPath string) error {
+	backupDir := s.getBackupDir()
+	absBackupPath, err := filepath.Abs(backupPath)
+	if err != nil {
+		return fmt.Errorf("invalid path: %w", err)
+	}
+	absBackupDir, err := filepath.Abs(backupDir)
+	if err != nil {
+		return fmt.Errorf("invalid backup dir: %w", err)
+	}
+	if !strings.HasPrefix(absBackupPath, absBackupDir) {
+		return fmt.Errorf("invalid backup path: outside backup directory")
+	}
+	return nil
+}
+
 // CreateBackup 创建数据库备份
 func (s *BackupService) CreateBackup() (string, error) {
 	dbPath := config.GetString("database.path")
@@ -34,34 +63,26 @@ func (s *BackupService) CreateBackup() (string, error) {
 		dbPath = filepath.Join(config.GetDataDir(), "imgbed.db")
 	}
 
-	// 确保备份目录存在
-	backupDir := filepath.Join(filepath.Dir(dbPath), "backup")
+	backupDir := s.getBackupDir()
 	if err := os.MkdirAll(backupDir, 0755); err != nil {
 		return "", fmt.Errorf("create backup directory failed: %w", err)
 	}
 
-	// 生成备份文件名
 	timestamp := time.Now().Format("20060102150405")
 	backupFile := filepath.Join(backupDir, fmt.Sprintf("imgbed-%s.db", timestamp))
 
-	// 复制数据库文件
-	if err := copyFile(dbPath, backupFile); err != nil {
+	if err := copyFileAtomic(dbPath, backupFile); err != nil {
 		return "", fmt.Errorf("copy database file failed: %w", err)
 	}
 
+	utils.Infof("backup: created %s", backupFile)
 	return backupFile, nil
 }
 
 // ListBackups 列出所有备份
 func (s *BackupService) ListBackups() ([]BackupInfo, error) {
-	dbPath := config.GetString("database.path")
-	if dbPath == "" {
-		dbPath = filepath.Join(config.GetDataDir(), "imgbed.db")
-	}
+	backupDir := s.getBackupDir()
 
-	backupDir := filepath.Join(filepath.Dir(dbPath), "backup")
-
-	// 读取备份目录
 	files, err := os.ReadDir(backupDir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -76,7 +97,6 @@ func (s *BackupService) ListBackups() ([]BackupInfo, error) {
 			continue
 		}
 
-		filePath := filepath.Join(backupDir, file.Name())
 		info, err := file.Info()
 		if err != nil {
 			continue
@@ -84,13 +104,12 @@ func (s *BackupService) ListBackups() ([]BackupInfo, error) {
 
 		backups = append(backups, BackupInfo{
 			Name:      file.Name(),
-			Path:      filePath,
+			Path:      file.Name(), // 只返回文件名，不暴露服务器路径
 			Size:      info.Size(),
 			CreatedAt: info.ModTime().Format("2006-01-02 15:04:05"),
 		})
 	}
 
-	// 按创建时间倒序排序
 	sort.Slice(backups, func(i, j int) bool {
 		return backups[i].CreatedAt > backups[j].CreatedAt
 	})
@@ -100,24 +119,40 @@ func (s *BackupService) ListBackups() ([]BackupInfo, error) {
 
 // DeleteBackup 删除备份
 func (s *BackupService) DeleteBackup(backupPath string) error {
+	if err := s.validateBackupPath(backupPath); err != nil {
+		return fmt.Errorf("delete backup: %w", err)
+	}
 	if err := os.Remove(backupPath); err != nil {
 		return fmt.Errorf("delete backup file failed: %w", err)
 	}
+	utils.Infof("backup: deleted %s", backupPath)
 	return nil
 }
 
 // RestoreBackup 从备份恢复
 func (s *BackupService) RestoreBackup(backupPath string) error {
+	if err := s.validateBackupPath(backupPath); err != nil {
+		return fmt.Errorf("restore backup: %w", err)
+	}
+
 	dbPath := config.GetString("database.path")
 	if dbPath == "" {
 		dbPath = filepath.Join(config.GetDataDir(), "imgbed.db")
 	}
 
-	// 复制备份文件到数据库位置
-	if err := copyFile(backupPath, dbPath); err != nil {
+	// 先 checkpoint WAL，确保所有改动写入主数据库
+	database.DB.Exec("PRAGMA wal_checkpoint(FULL)")
+
+	if err := copyFileAtomic(backupPath, dbPath); err != nil {
 		return fmt.Errorf("restore database file failed: %w", err)
 	}
 
+	// 关闭并重新初始化连接，让下次查询读取新数据库
+	if err := database.ReinitDB(); err != nil {
+		return fmt.Errorf("restore db reinit failed: %w", err)
+	}
+
+	utils.Infof("backup: restored from %s", backupPath)
 	return nil
 }
 
@@ -125,24 +160,37 @@ func (s *BackupService) RestoreBackup(backupPath string) error {
 func (s *BackupService) AutoBackup() {
 	_, err := s.CreateBackup()
 	if err != nil {
-		fmt.Printf("auto backup failed: %v\n", err)
+		utils.Errorf("auto backup failed: %v", err)
 	}
 }
 
-// copyFile 复制文件
-func copyFile(src, dst string) error {
+// copyFileAtomic 原子复制文件：先写临时文件再 rename，避免目标文件被截断
+func copyFileAtomic(src, dst string) error {
+	tmp := dst + ".tmp." + fmt.Sprintf("%d", time.Now().UnixNano())
 	source, err := os.Open(src)
 	if err != nil {
 		return err
 	}
 	defer source.Close()
 
-	destination, err := os.Create(dst)
+	destination, err := os.Create(tmp)
 	if err != nil {
 		return err
 	}
 	defer destination.Close()
 
-	_, err = io.Copy(destination, source)
-	return err
+	if _, err = io.Copy(destination, source); err != nil {
+		os.Remove(tmp)
+		return err
+	}
+	if err = destination.Sync(); err != nil {
+		os.Remove(tmp)
+		return err
+	}
+	if err = destination.Close(); err != nil {
+		os.Remove(tmp)
+		return err
+	}
+	return os.Rename(tmp, dst)
 }
+

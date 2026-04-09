@@ -226,3 +226,26 @@ func initDefaultData() error {
 func GetDB() *gorm.DB {
 	return DB
 }
+
+// CloseDB 关闭数据库连接（用于备份恢复后重置连接）
+func CloseDB() error {
+	if DB != nil {
+		sqlDB, err := DB.DB()
+		if err != nil {
+			return err
+		}
+		return sqlDB.Close()
+	}
+	return nil
+}
+
+// ReinitDB 重新初始化数据库连接（备份恢复后调用）
+func ReinitDB() error {
+	if DB != nil {
+		sqlDB, err := DB.DB()
+		if err == nil {
+			sqlDB.Close()
+		}
+	}
+	return Init()
+}

@@ -174,12 +174,12 @@ func startAutoBackup(backupService *service.BackupService) {
 			interval = 24
 		}
 
-		// 先等待指定间隔，避免启动时立即备份影响启动速度
-		time.Sleep(time.Duration(interval) * time.Hour)
-
 		if enabled {
 			backupService.AutoBackup()
-			utils.Infof("Auto backup completed, next backup in %d hours", interval)
+			utils.Infof("auto backup: completed, next in %d hours", interval)
 		}
+
+		// 先睡再执行（启动时立即备份一次）
+		time.Sleep(time.Duration(interval) * time.Hour)
 	}
 }
