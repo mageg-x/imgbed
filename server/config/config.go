@@ -24,33 +24,44 @@ var (
 )
 
 // Init 初始化配置系统
-// 不读取任何配置文件，所有配置从数据库获取
-// 仅设置启动必需的基础配置（数据库路径）
-// 返回：
-//   - error: 初始化失败时的错误
-func Init() error {
+// dataDir: 数据目录路径（可选，为空则用平台默认）
+// port: 端口（可选，0 则用默认 8080）
+func Init(dataDir string, port int) error {
 	var err error
 	once.Do(func() {
 		v = viper.New()
 
-		// 设置数据库路径（平台特定默认位置）
-		configDir, _ := os.UserConfigDir()
-		switch runtime.GOOS {
-		case "windows":
-			v.Set("database.path", filepath.Join(configDir, "ImgBed", "imgbed.db"))
-		case "darwin":
-			v.Set("database.path", filepath.Join(configDir, "ImgBed", "imgbed.db"))
-		default:
-			// Linux: ~/.imgbed/imgbed.db
-			home, _ := os.UserHomeDir()
-			v.Set("database.path", filepath.Join(home, ".imgbed", "imgbed.db"))
+		if dataDir != "" {
+			// 用户指定了数据目录，转为绝对路径
+			absDir, err := filepath.Abs(dataDir)
+			if err != nil {
+				absDir = dataDir
+			}
+			v.Set("app.dataDir", absDir)
+			v.Set("database.path", filepath.Join(absDir, "imgbed.db"))
+		} else {
+			// 平台特定默认位置
+			configDir, _ := os.UserConfigDir()
+			switch runtime.GOOS {
+			case "windows":
+				v.Set("database.path", filepath.Join(configDir, "ImgBed", "imgbed.db"))
+			case "darwin":
+				v.Set("database.path", filepath.Join(configDir, "ImgBed", "imgbed.db"))
+			default:
+				home, _ := os.UserHomeDir()
+				v.Set("database.path", filepath.Join(home, ".imgbed", "imgbed.db"))
+			}
 		}
 
 		// 默认值（后续从数据库覆盖）
 		v.Set("jwt.secret", "imgbed-secret-key")
 		v.Set("app.mode", "debug")
 		v.Set("app.host", "0.0.0.0")
-		v.Set("app.port", 8080)
+		if port > 0 {
+			v.Set("app.port", port)
+		} else {
+			v.Set("app.port", 8080)
+		}
 	})
 	return err
 }

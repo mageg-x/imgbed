@@ -2,6 +2,24 @@
 
 开源图床聚合工具，采用 Go 后端 + Vue3 前端架构，支持多种存储渠道，提供简单易用的图片上传和外链管理能力。
 
+## 产品截图
+
+### 主界面
+
+<img src="https://imgbed.example.com/screenshots/home.png" width="400" alt="ImgBed 主界面" />
+
+### 文件管理
+
+<img src="https://imgbed.example.com/screenshots/files.png" width="400" alt="ImgBed 文件管理" />
+
+### 渠道管理
+
+<img src="https://imgbed.example.com/screenshots/channels.png" width="400" alt="ImgBed 渠道管理" />
+
+### 统计报表
+
+<img src="https://imgbed.example.com/screenshots/stats.png" width="400" alt="ImgBed 统计报表" />
+
 ## 功能特性
 
 ### 核心功能

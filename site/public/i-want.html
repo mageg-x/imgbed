@@ -825,14 +825,14 @@
           <h3>🖥️ 桌面版</h3>
           <p>适合日常使用，运行后在系统托盘常驻，右键菜单打开交互页面。</p>
           <div class="download-items">
-            <a href="https://gh-proxy.ma3ok.com/github.com/mageg-x/imgbed/releases/download/v1.0.1/imgbed-windows-amd64.exe" class="download-item">
+            <a href="https://gh-proxy.ma3ok.com/github.com/mageg-x/imgbed/releases/download/v1.0.2/imgbed-windows-amd64.zip" class="download-item">
               <div class="left">
                 <span class="os">Windows</span>
                 <span class="arch">amd64</span>
               </div>
               <span class="arrow">↓</span>
             </a>
-            <a href="https://gh-proxy.ma3ok.com/github.com/mageg-x/imgbed/releases/download/v1.0.1/ImgBed-macos-arm64.zip" class="download-item">
+            <a href="https://gh-proxy.ma3ok.com/github.com/mageg-x/imgbed/releases/download/v1.0.2/ImgBed-macos-arm64.zip" class="download-item">
               <div class="left">
                 <span class="os">macOS</span>
                 <span class="arch">M1/M2/M3 · zip</span>
@@ -846,14 +846,14 @@
           <h3>☁️ 服务端</h3>
           <p>适合部署在 VPS 上，提供 REST API 供其他应用调用。</p>
           <div class="download-items">
-            <a href="https://gh-proxy.ma3ok.com/github.com/mageg-x/imgbed/releases/download/v1.0.1/imgbed-linux-amd64" class="download-item">
+            <a href="https://gh-proxy.ma3ok.com/github.com/mageg-x/imgbed/releases/download/v1.0.2/imgbed-linux-amd64" class="download-item">
               <div class="left">
                 <span class="os">Linux</span>
                 <span class="arch">amd64</span>
               </div>
               <span class="arrow">↓</span>
             </a>
-            <a href="https://gh-proxy.ma3ok.com/github.com/mageg-x/imgbed/releases/download/v1.0.1/imgbed-linux-arm64" class="download-item">
+            <a href="https://gh-proxy.ma3ok.com/github.com/mageg-x/imgbed/releases/download/v1.0.2/imgbed-linux-arm64" class="download-item">
               <div class="left">
                 <span class="os">Linux</span>
                 <span class="arch">arm64</span>
@@ -998,7 +998,7 @@
         })
         if (!res.ok) throw new Error(`GitHub API: ${res.status}`)
         const data = await res.json()
-        const version = data.tag_name // e.g. "v1.0.1"
+        const version = data.tag_name // e.g. "v1.0.2"
 
         const files = ['imgbed-windows-amd64.exe', 'ImgBed-macos-arm64.zip', 'imgbed-linux-amd64', 'imgbed-linux-arm64']
 

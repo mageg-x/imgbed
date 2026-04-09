@@ -21,8 +21,8 @@ type App struct {
 	Shutdown func(context.Context) error
 }
 
-func Init() (*App, error) {
-	if err := config.Init(); err != nil {
+func Init(dataDir string, port int) (*App, error) {
+	if err := config.Init(dataDir, port); err != nil {
 		return nil, fmt.Errorf("init config failed: %w", err)
 	}
 
@@ -58,8 +58,8 @@ func Init() (*App, error) {
 	channelService.StartCooldownRecovery()
 
 	host := config.GetString("app.host")
-	port := config.GetInt("app.port")
-	addr := fmt.Sprintf("%s:%d", host, port)
+	appPort := config.GetInt("app.port")
+	addr := fmt.Sprintf("%s:%d", host, appPort)
 
 	r := static.Setup()
 
@@ -134,12 +134,18 @@ func initDefaultChannel() {
 
 	utils.Info("Creating default local storage channel...")
 
+	// 默认上传路径：在数据目录下创建 uploads 子目录
+	defaultPath := "./data/uploads"
+	if dataDir := config.GetString("app.dataDir"); dataDir != "" {
+		defaultPath = dataDir + "/uploads"
+	}
+
 	_, err = channelService.CreateChannel(
 		context.Background(),
 		"Local Storage",
 		"local",
 		map[string]interface{}{
-			"path": "./data/uploads",
+			"path": defaultPath,
 		},
 		100,
 		model.QuotaConfig{

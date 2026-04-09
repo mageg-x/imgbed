@@ -9,6 +9,7 @@ import (
 	"github.com/imgbed/server/database"
 	"github.com/imgbed/server/model"
 	"github.com/imgbed/server/utils"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // ConfigService 配置服务，负责系统配置的读取和修改
@@ -410,9 +411,14 @@ func (s *ConfigService) UpdateAuthConfig(cfg *AuthConfig) error {
 		"auth.session_timeout": strconv.Itoa(cfg.SessionTimeout),
 	}
 
-	// 只有当AdminPassword不为空时才更新
+	// 只有当AdminPassword不为空时才更新，且需要bcrypt哈希
 	if cfg.AdminPassword != "" {
-		updates["auth.admin_password"] = cfg.AdminPassword
+		hashed, err := bcrypt.GenerateFromPassword([]byte(cfg.AdminPassword), bcrypt.DefaultCost)
+		if err != nil {
+			utils.Errorf("update auth config: hash password failed, error=%v", err)
+			return err
+		}
+		updates["auth.admin_password"] = string(hashed)
 	}
 
 	for key, value := range updates {

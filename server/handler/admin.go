@@ -2,6 +2,7 @@ package handler
 
 import (
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/imgbed/server/database"
@@ -170,17 +171,53 @@ func (h *AdminHandler) GetChannels(c *gin.Context) {
 		return
 	}
 
-	// 返回解密后的配置
+	// 返回解密后的配置（避免嵌入 model.Channel 导致的 Config 字段同名冲突）
 	type ChannelWithDecryptedConfig struct {
-		model.Channel
-		Config map[string]interface{} `json:"config"`
+		ID                string                 `json:"id"`
+		Name              string                 `json:"name"`
+		Type              string                 `json:"type"`
+		Config            map[string]interface{} `json:"config"`
+		Enabled           bool                   `json:"enabled"`
+		Status            string                 `json:"status"`
+		Weight            int                    `json:"weight"`
+		UsedSpace         int64                  `json:"usedSpace"`
+		QuotaEnabled      bool                   `json:"quotaEnabled"`
+		QuotaLimit        int64                  `json:"quotaLimit"`
+		QuotaThreshold    int                    `json:"quotaThreshold"`
+		DailyUploadLimit  int                    `json:"dailyUploadLimit"`
+		DailyUploads      int                    `json:"dailyUploads"`
+		HourlyUploadLimit int                    `json:"hourlyUploadLimit"`
+		HourlyUploads     int                    `json:"hourlyUploads"`
+		MinIntervalMs     int                    `json:"minIntervalMs"`
+		CooldownMinutes   int                    `json:"cooldownMinutes"`
+		MaxRetryCount     int                    `json:"maxRetryCount"`
+		LastUsedAt        time.Time              `json:"lastUsedAt"`
+		CreatedAt         time.Time              `json:"createdAt"`
 	}
 	result := make([]ChannelWithDecryptedConfig, len(channels))
 	for i, ch := range channels {
 		decryptedConfig, _ := service.DecryptChannelConfig(ch.Config)
 		result[i] = ChannelWithDecryptedConfig{
-			Channel: ch,
-			Config:  decryptedConfig,
+			ID:                ch.ID,
+			Name:              ch.Name,
+			Type:              ch.Type,
+			Config:            decryptedConfig,
+			Enabled:           ch.Enabled,
+			Status:            ch.Status,
+			Weight:            ch.Weight,
+			UsedSpace:         ch.UsedSpace,
+			QuotaEnabled:      ch.QuotaEnabled,
+			QuotaLimit:        ch.QuotaLimit,
+			QuotaThreshold:    ch.QuotaThreshold,
+			DailyUploadLimit:  ch.DailyUploadLimit,
+			DailyUploads:      ch.DailyUploads,
+			HourlyUploadLimit: ch.HourlyUploadLimit,
+			HourlyUploads:     ch.HourlyUploads,
+			MinIntervalMs:     ch.MinIntervalMs,
+			CooldownMinutes:   ch.CooldownMinutes,
+			MaxRetryCount:     ch.MaxRetryCount,
+			LastUsedAt:        ch.LastUsedAt,
+			CreatedAt:         ch.CreatedAt,
 		}
 	}
 

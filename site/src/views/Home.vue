@@ -227,12 +227,15 @@ async function calcFileSHA256(file) {
 }
 
 async function processQueue() {
-  if (isUploading.value) return
+  // 每次都重新获取所有 pending 项，不依赖 isUploading 锁
   const pending = uploadQueue.value.filter(f => f.status === 'pending')
   if (!pending.length) return
 
   isUploading.value = true
   for (const item of pending) {
+    // 再次检查状态，可能在循环过程中已被其他逻辑处理
+    if (item.status !== 'pending') continue
+
     item.status = 'uploading'
     try {
       item.progress = 5

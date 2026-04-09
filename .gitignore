@@ -22,5 +22,7 @@ embed
 .DS_Store
 Thumbs.db
 server/imgbed-gui.exe
-
-
+渠道.md
+server/imgbed-windows-amd64.exe
+docs/渠道_config.md
+docs/掘金投稿.md

@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"os"
 	"os/signal"
@@ -38,7 +39,12 @@ import (
 // @description API Token for authentication
 
 func main() {
-	application, err := app.Init()
+	// 解析命令行参数
+	dataDir := flag.String("d", "", "数据目录路径")
+	port := flag.Int("p", 0, "HTTP 端口")
+	flag.Parse()
+
+	application, err := app.Init(*dataDir, *port)
 	if err != nil {
 		fmt.Printf("init failed: %v\n", err)
 		os.Exit(1)
