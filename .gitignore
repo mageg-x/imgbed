@@ -26,3 +26,6 @@ server/imgbed-gui.exe
 server/imgbed-windows-amd64.exe
 docs/渠道_config.md
 docs/掘金投稿.md
+server/imgbed-linux-amd64
+server/imgbed-linux-arm64
+server/imgbed-windows-amd64..zip

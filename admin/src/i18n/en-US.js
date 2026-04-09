@@ -289,6 +289,8 @@ export default {
     // Toolbar
     gridView: 'Grid View',
     listView: 'List View',
+    sortNewest: 'Newest First',
+    sortOldest: 'Oldest First',
     refreshList: 'Refresh List',
     currentFilter: 'Current Filter',
     clearFilter: 'Clear Filter',

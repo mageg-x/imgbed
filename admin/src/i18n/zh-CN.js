@@ -289,6 +289,8 @@ export default {
     // 工具栏
     gridView: '网格视图',
     listView: '列表视图',
+    sortNewest: '最新优先',
+    sortOldest: '最旧优先',
     refreshList: '刷新列表',
     currentFilter: '当前筛选',
     clearFilter: '清除筛选',
