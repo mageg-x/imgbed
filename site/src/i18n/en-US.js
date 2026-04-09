@@ -145,7 +145,8 @@ export default {
     gallery: 'My Gallery',
     login: 'Login',
     logout: 'Logout',
-    logoutShort: 'Out'
+    logoutShort: 'Out',
+    iWant: 'I Want This'
   },
   home: {
     title: 'ImgBed',

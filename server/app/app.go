@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"time"
 
@@ -80,18 +81,24 @@ func Init() (*App, error) {
 }
 
 func (a *App) Start() error {
-	// 尝试监听配置的端口，失败则自动尝试其他端口
 	ports := []int{8380, 8381, 8382, 8383, 8384}
 	for i, port := range ports {
 		addr := fmt.Sprintf("%s:%d", config.GetString("app.host"), port)
+		// 先检查端口是否可用
+		if ln, err := net.Listen("tcp", addr); err != nil {
+			if i < len(ports)-1 {
+				utils.Warnf("端口 %d 被占用，自动尝试端口 %d", port, ports[i+1])
+				continue
+			}
+			return fmt.Errorf("所有端口都无法绑定: %v", err)
+		} else {
+			ln.Close() // 只是检查，关闭后立即尝试监听
+		}
 		a.Server.Addr = addr
+		a.Addr = addr
 		utils.Infof("ImgBed server starting on %s", addr)
 		if err := a.Server.ListenAndServe(); err == nil {
 			return nil
-		} else if i < len(ports)-1 && err.Error() != "http: server closed" {
-			utils.Warnf("端口 %d 被占用，自动尝试端口 %d", port, ports[i+1])
-		} else {
-			return err
 		}
 	}
 	return fmt.Errorf("所有端口都无法绑定")

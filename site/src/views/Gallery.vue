@@ -6,7 +6,7 @@ import { fileApi } from '@/api/file'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
 import { ElMessage } from 'element-plus'
-import { Image, Folder, Link, RefreshCw, Sun, Moon, ArrowLeft, X, Copy, Grid3x3, List, Search, Globe } from 'lucide-vue-next'
+import { Image, Folder, Link, RefreshCw, Sun, Moon, ArrowLeft, X, Copy, Grid3x3, List, Search, Globe, Download } from 'lucide-vue-next'
 import { availableLocales, setLocale } from '@/i18n'
 
 const { t, locale } = useI18n()
@@ -111,6 +111,27 @@ async function copyUrl(url) {
     ElMessage.success(t('common.linkCopied'))
   } catch {
     ElMessage.error(t('common.copyFailed'))
+  }
+}
+
+async function downloadFile(file) {
+  try {
+    const fullUrl = file.url.startsWith('http://') || file.url.startsWith('https://')
+      ? file.url
+      : getOrigin() + file.url
+    const response = await fetch(fullUrl)
+    const blob = await response.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = file.name
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    ElMessage.success(t('common.downloadSuccess') || '下载成功')
+  } catch {
+    ElMessage.error(t('common.downloadFailed') || '下载失败')
   }
 }
 
@@ -322,19 +343,21 @@ function closeLangDropdown() {
               <span class="text-xs" :class="themeStore.isDark ? 'text-gray-500' : 'text-gray-400'">{{ t('common.loadFailed') }}</span>
             </div>
 
-            <!-- 悬浮层 -->
+            <!-- 底部操作栏 -->
             <div
-              class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300">
-              <div class="absolute bottom-0 left-0 right-0 p-3">
-                <p class="text-white text-sm font-medium truncate">{{ file.name }}</p>
-              </div>
-              <div class="absolute top-2 sm:top-3 right-2 sm:right-3 flex gap-1.5 sm:gap-2">
-                <el-tooltip :content="t('common.copyLink')" placement="top">
-                  <button @click.stop="copyUrl(file.url)"
-                    class="p-1.5 sm:p-2 rounded-lg bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all">
-                    <Copy class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
-                  </button>
-                </el-tooltip>
+              class="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300">
+              <p class="text-white text-xs sm:text-sm font-medium truncate mb-2">{{ file.name }}</p>
+              <div class="flex items-center justify-center gap-2">
+                <button @click.stop="copyUrl(file.url)"
+                  class="flex-1 flex items-center justify-center gap-1.5 py-1.5 sm:py-2 rounded-lg bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all text-white text-xs sm:text-sm font-medium">
+                  <Copy class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span>{{ t('common.copyLink') }}</span>
+                </button>
+                <button @click.stop="downloadFile(file)"
+                  class="flex-1 flex items-center justify-center gap-1.5 py-1.5 sm:py-2 rounded-lg bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all text-white text-xs sm:text-sm font-medium">
+                  <Download class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span>{{ t('common.download') }}</span>
+                </button>
               </div>
             </div>
           </div>

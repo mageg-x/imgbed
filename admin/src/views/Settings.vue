@@ -49,7 +49,8 @@ const rateLimitConfig = reactive({
 
 const cdnConfig = reactive({
   enabled: false,
-  proxyUrl: ''
+  proxyUrl: '',
+  cdnUrl: ''
 })
 
 onMounted(() => {
@@ -123,6 +124,7 @@ async function loadConfigs() {
     if (cdnRes && cdnRes.data) {
       cdnConfig.enabled = cdnRes.data.enabled || false
       cdnConfig.proxyUrl = cdnRes.data.proxyUrl || ''
+      cdnConfig.cdnUrl = cdnRes.data.cdnUrl || ''
     }
   } catch {
     ElMessage.error(t('common.loadFailed'))
@@ -247,7 +249,8 @@ async function saveCdnConfig() {
   try {
     await request.put('/config/cdn', {
       enabled: cdnConfig.enabled,
-      proxyUrl: cdnConfig.proxyUrl
+      proxyUrl: cdnConfig.proxyUrl,
+      cdnUrl: cdnConfig.cdnUrl
     })
     ElMessage.success(t('settings.saveSuccess'))
   } catch {
@@ -769,11 +772,19 @@ const jwtConfig = reactive({
 
             <div v-if="cdnConfig.enabled" class="space-y-4">
               <div>
-               <input v-model="cdnConfig.proxyUrl" type="text" :placeholder="t('settings.cdn.proxyAddressPlaceholder')"
+                <input v-model="cdnConfig.proxyUrl" type="text" :placeholder="t('settings.cdn.proxyAddressPlaceholder')"
                   class="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm"
                   :class="isDark ? 'bg-[var(--bg-secondary)] border-[var(--border)]' : 'bg-white border-gray-200'" />
                 <p class="text-xs mt-1.5" :class="isDark ? 'text-gray-500' : 'text-gray-400'">
                   {{ t('settings.cdn.proxyAddressDesc') }}
+                </p>
+              </div>
+              <div>
+                <input v-model="cdnConfig.cdnUrl" type="text" :placeholder="t('settings.cdn.cdnUrlPlaceholder')"
+                  class="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm"
+                  :class="isDark ? 'bg-[var(--bg-secondary)] border-[var(--border)]' : 'bg-white border-gray-200'" />
+                <p class="text-xs mt-1.5" :class="isDark ? 'text-gray-500' : 'text-gray-400'">
+                  {{ t('settings.cdn.cdnUrlDesc') }}
                 </p>
               </div>
             </div>

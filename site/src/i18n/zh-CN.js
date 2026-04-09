@@ -145,7 +145,8 @@ export default {
     gallery: '我的图库',
     login: '登录',
     logout: '退出',
-    logoutShort: '退出'
+    logoutShort: '退出',
+    iWant: '我想要'
   },
   home: {
     title: 'ImgBed',

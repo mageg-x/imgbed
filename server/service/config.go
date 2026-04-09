@@ -680,6 +680,7 @@ func (s *ConfigService) UpdateScheduleConfig(cfg *ScheduleConfig) error {
 type CDNConfig struct {
 	Enabled  bool   `json:"enabled"`  // 是否启用 CDN 代理
 	ProxyUrl string `json:"proxyUrl"` // CDN 代理基础地址
+	CdnUrl   string `json:"cdnUrl"`   // CDN 加速地址
 }
 
 // GetCDNConfig 获取 CDN 代理配置
@@ -693,6 +694,7 @@ func (s *ConfigService) GetCDNConfig() (*CDNConfig, error) {
 	return &CDNConfig{
 		Enabled:  configs["cdn.enabled"] == "true",
 		ProxyUrl: configs["cdn.proxyUrl"],
+		CdnUrl:   configs["cdn.cdnUrl"],
 	}, nil
 }
 
@@ -701,6 +703,7 @@ func (s *ConfigService) UpdateCDNConfig(cfg *CDNConfig) error {
 	updates := map[string]string{
 		"cdn.enabled":  strconv.FormatBool(cfg.Enabled),
 		"cdn.proxyUrl": cfg.ProxyUrl,
+		"cdn.cdnUrl":  cfg.CdnUrl,
 	}
 
 	for key, value := range updates {

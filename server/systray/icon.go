@@ -6,7 +6,7 @@ import (
 	_ "embed"
 )
 
-//go:embed icon.png
+//go:embed icon.ico
 var iconData []byte
 
 func getIcon() []byte {

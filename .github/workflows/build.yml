@@ -1,0 +1,170 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [main]
+
+jobs:
+  # Build Linux amd64
+  build-linux-amd64:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Build admin
+        run: |
+          cd admin && npm ci && npm run build
+          cd .. && rm -rf server/static/embed/admin && mv dist server/static/embed/admin
+
+      - name: Build site
+        run: |
+          cd site && npm ci && npm run build
+          cd .. && rm -rf server/static/embed/site && mv dist server/static/embed/site
+
+      - name: Build Go binary
+        run: |
+          cd server
+          CGO_ENABLED=0 go build -tags sqlite_fts5 -ldflags="-s -w" -o imgbed-linux-amd64
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: imgbed-linux-amd64
+          path: server/imgbed-linux-amd64
+
+  # Build Linux arm64
+  build-linux-arm64:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Build admin
+        run: |
+          cd admin && npm ci && npm run build
+          cd .. && rm -rf server/static/embed/admin && mv dist server/static/embed/admin
+
+      - name: Build site
+        run: |
+          cd site && npm ci && npm run build
+          cd .. && rm -rf server/static/embed/site && mv dist server/static/embed/site
+
+      - name: Build Go binary
+        run: |
+          cd server
+          CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -tags sqlite_fts5 -ldflags="-s -w" -o imgbed-linux-arm64
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: imgbed-linux-arm64
+          path: server/imgbed-linux-arm64
+
+  # Build Windows
+  build-windows:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Build admin
+        run: |
+          cd admin && npm ci && npm run build
+          cd .. && rm -rf server/static/embed/admin && mv dist server/static/embed/admin
+
+      - name: Build site
+        run: |
+          cd site && npm ci && npm run build
+          cd .. && rm -rf server/static/embed/site && mv dist server/static/embed/site
+
+      - name: Build Go binary
+        run: |
+          cd server
+          CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -tags sqlite_fts5 -ldflags="-s -w" -o imgbed-windows-amd64.exe
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: imgbed-windows-amd64.exe
+          path: server/imgbed-windows-amd64.exe
+
+  # Build macOS amd64
+  build-darwin-amd64:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Build admin
+        run: |
+          cd admin && npm ci && npm run build
+          cd .. && rm -rf server/static/embed/admin && mv dist server/static/embed/admin
+
+      - name: Build site
+        run: |
+          cd site && npm ci && npm run build
+          cd .. && rm -rf server/static/embed/site && mv dist server/static/embed/site
+
+      - name: Build Go binary
+        run: |
+          cd server
+          CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -tags sqlite_fts5 -ldflags="-s -w" -o imgbed-darwin-amd64
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: imgbed-darwin-amd64
+          path: server/imgbed-darwin-amd64
+
+  # Build macOS arm64 (Apple Silicon)
+  build-darwin-arm64:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Build admin
+        run: |
+          cd admin && npm ci && npm run build
+          cd .. && rm -rf server/static/embed/admin && mv dist server/static/embed/admin
+
+      - name: Build site
+        run: |
+          cd site && npm ci && npm run build
+          cd .. && rm -rf server/static/embed/site && mv dist server/static/embed/site
+
+      - name: Build Go binary
+        run: |
+          cd server
+          CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -tags sqlite_fts5 -ldflags="-s -w" -o imgbed-darwin-arm64
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: imgbed-darwin-arm64
+          path: server/imgbed-darwin-arm64

@@ -24,9 +24,26 @@ const (
 
 // convertToCDNUrl 将原始直链转换为 CDN 代理地址
 // 如果未启用 CDN 或 URL 不需要转换，则返回原始 URL
+// 如果配置了 CDN 加速地址，则用 CDN 地址替换代理地址
 func convertToCDNUrl(originalUrl string) string {
 	cdnConfig := config.GetCDNConfig()
-	if !cdnConfig.Enabled || cdnConfig.ProxyUrl == "" || originalUrl == "" {
+	if !cdnConfig.Enabled || originalUrl == "" {
+		return originalUrl
+	}
+
+	// 如果配置了 CDN 加速地址，直接替换代理地址
+	if cdnConfig.CdnUrl != "" {
+		cdnUrl := strings.TrimSuffix(cdnConfig.CdnUrl, "/")
+		lastSlash := strings.LastIndex(originalUrl, "/")
+		if lastSlash > 0 {
+			filePath := originalUrl[lastSlash+1:]
+			return fmt.Sprintf("%s/%s", cdnUrl, filePath)
+		}
+		return originalUrl
+	}
+
+	// 如果没有配置 CDN 加速地址但启用了 CDN，使用 Worker 代理
+	if cdnConfig.ProxyUrl == "" {
 		return originalUrl
 	}
 

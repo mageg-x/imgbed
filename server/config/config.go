@@ -292,7 +292,8 @@ func GetStringSlice(key string) []string {
 // CDNConfig CDN 代理配置
 type CDNConfig struct {
 	Enabled  bool   // 是否启用 CDN 代理
-	ProxyUrl string // CDN 代理基础地址
+	ProxyUrl string // CDN 代理基础地址（Worker 地址）
+	CdnUrl   string // CDN 加速地址
 }
 
 // GetCDNConfig 获取 CDN 代理配置
@@ -300,6 +301,7 @@ func GetCDNConfig() *CDNConfig {
 	return &CDNConfig{
 		Enabled:  GetBool("cdn.enabled"),
 		ProxyUrl: GetString("cdn.proxyUrl"),
+		CdnUrl:   GetString("cdn.cdnUrl"),
 	}
 }
 

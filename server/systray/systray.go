@@ -7,20 +7,23 @@ import (
 	"fmt"
 	"os/exec"
 	"runtime"
+	"strings"
 
 	"github.com/getlantern/systray"
 	"github.com/imgbed/server/config"
 )
 
 var (
-	serverAddr    string
-	onQuit        func()
+	serverAddr     string
+	onQuit         func()
 	shutdownServer func(context.Context) error
+	getActualAddr  func() string
 )
 
-func Init(addr string, shutdown func(context.Context) error) {
+func Init(addr string, shutdown func(context.Context) error, actualAddrFunc func() string) {
 	serverAddr = addr
 	shutdownServer = shutdown
+	getActualAddr = actualAddrFunc
 }
 
 func Run(onReady func()) {
@@ -38,8 +41,7 @@ func Setup() {
 	systray.SetTitle("ImgBed")
 	systray.SetTooltip("ImgBed 图床服务运行中")
 
-	mStatus := systray.AddMenuItem("服务运行中", "当前状态")
-	mStatus.Disable()
+	systray.AddMenuItem("● 服务运行中", "当前状态")
 
 	systray.AddSeparator()
 
@@ -54,9 +56,9 @@ func Setup() {
 		for {
 			select {
 			case <-mOpenAdmin.ClickedCh:
-				openBrowser(fmt.Sprintf("http://%s/admin", serverAddr))
+				openBrowser(getBrowserURL("/admin"))
 			case <-mOpenSite.ClickedCh:
-				openBrowser(fmt.Sprintf("http://%s", serverAddr))
+				openBrowser(getBrowserURL(""))
 			case <-mQuit.ClickedCh:
 				if shutdownServer != nil {
 					ctx := context.Background()
@@ -92,4 +94,23 @@ func GetServerAddr() string {
 	host := config.GetString("app.host")
 	port := config.GetInt("app.port")
 	return fmt.Sprintf("%s:%d", host, port)
+}
+
+func getBrowserURL(path string) string {
+	var addr string
+	if getActualAddr != nil {
+		addr = getActualAddr()
+	} else {
+		addr = serverAddr
+	}
+
+	parts := strings.Split(addr, ":")
+	host := parts[0]
+	port := parts[1]
+
+	if host == "0.0.0.0" || host == "" {
+		host = "localhost"
+	}
+
+	return fmt.Sprintf("http://%s:%s%s", host, port, path)
 }

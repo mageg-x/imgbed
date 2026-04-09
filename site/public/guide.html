@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>白嫖攻略 - ImgBed 免费图床</title>
+  <meta name="description" content="零成本搭建专属图床，存储+代理+CDN全部免费，全程无需写代码">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-deep: #03030a;
+      --bg-surface: #0a0a14;
+      --bg-card: #0d0d1a;
+      --bg-card-hover: #111122;
+      --neon-cyan: #00e5ff;
+      --neon-cyan-dim: #00b8cc;
+      --neon-purple: #bf00ff;
+      --neon-magenta: #ff00aa;
+      --neon-green: #00ff88;
+      --neon-yellow: #ffdd00;
+      --text-primary: #f0f0ff;
+      --text-secondary: #8888aa;
+      --text-muted: #555577;
+      --border-subtle: rgba(0, 229, 255, 0.1);
+      --border-glow: rgba(0, 229, 255, 0.4);
+      --glow-cyan: 0 0 20px rgba(0, 229, 255, 0.4), 0 0 40px rgba(0, 229, 255, 0.2);
+      --glow-purple: 0 0 20px rgba(191, 0, 255, 0.4), 0 0 40px rgba(191, 0, 255, 0.2);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Noto Sans SC', 'JetBrains Mono', sans-serif;
+      background: var(--bg-deep);
+      color: var(--text-primary);
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-deep); }
+    ::-webkit-scrollbar-thumb { background: var(--neon-cyan); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--neon-purple); }
+
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0, 229, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 229, 255, 0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .bg-glow {
+      position: fixed;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      filter: blur(150px);
+      pointer-events: none;
+      z-index: 0;
+      animation: float 12s ease-in-out infinite;
+    }
+    .bg-glow-1 { top: -200px; left: -200px; background: rgba(0, 229, 255, 0.08); }
+    .bg-glow-2 { top: 40%; right: -300px; background: rgba(191, 0, 255, 0.07); animation-delay: -6s; }
+    .bg-glow-3 { bottom: -200px; left: 30%; background: rgba(255, 0, 170, 0.05); animation-delay: -3s; }
+
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(40px, -30px) scale(1.1); }
+      66% { transform: translate(-20px, 20px) scale(0.95); }
+    }
+
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+    section { padding: 80px 0; position: relative; }
+
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 16px 0;
+      backdrop-filter: blur(20px);
+      background: rgba(3, 3, 10, 0.8);
+      border-bottom: 1px solid var(--border-subtle);
+      transition: all 0.3s;
+    }
+    nav .container { display: flex; align-items: center; justify-content: space-between; }
+    .nav-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .nav-brand img { width: 36px; height: 36px; border-radius: 8px; box-shadow: var(--glow-cyan); }
+    .nav-brand span { font-family: 'Orbitron', monospace; font-weight: 700; font-size: 18px; color: var(--text-primary); }
+    .nav-links { display: flex; align-items: center; gap: 8px; }
+    .nav-links a { color: var(--text-secondary); text-decoration: none; padding: 8px 16px; border-radius: 8px; font-size: 14px; transition: all 0.2s; }
+    .nav-links a:hover { color: var(--neon-cyan); background: rgba(0, 229, 255, 0.05); }
+    .nav-links .btn-nav { background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple)); color: #fff; font-weight: 600; padding: 8px 20px; }
+    .nav-links .btn-nav:hover { box-shadow: var(--glow-cyan); transform: translateY(-1px); color: #fff; }
+
+    h1, h2, h3, h4 { font-family: 'Orbitron', monospace; }
+
+    .section-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--neon-cyan);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-label::before { content: ''; display: inline-block; width: 24px; height: 2px; background: var(--neon-cyan); box-shadow: var(--glow-cyan); }
+
+    .section-title {
+      font-size: clamp(28px, 5vw, 42px);
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, var(--text-primary) 0%, var(--neon-cyan) 50%, var(--neon-purple) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .section-subtitle { font-size: 16px; color: var(--text-secondary); max-width: 600px; line-height: 1.8; }
+
+    .hero { min-height: 100vh; display: flex; align-items: center; padding-top: 80px; }
+    .hero-content { max-width: 800px; }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      border-radius: 100px;
+      background: rgba(0, 229, 255, 0.08);
+      border: 1px solid rgba(0, 229, 255, 0.2);
+      font-size: 13px;
+      color: var(--neon-cyan);
+      margin-bottom: 32px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .hero-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--neon-cyan); box-shadow: 0 0 8px var(--neon-cyan); animation: pulse 2s ease-in-out infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.8); } }
+
+    .hero h1 { font-size: clamp(36px, 7vw, 64px); font-weight: 900; line-height: 1.1; margin-bottom: 24px; letter-spacing: -1px; }
+    .hero h1 .highlight { background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .hero p { font-size: 18px; color: var(--text-secondary); margin-bottom: 40px; line-height: 1.8; max-width: 580px; }
+
+    .hero-cta { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 48px; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 32px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+    }
+    .btn-primary { background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple)); color: #fff; box-shadow: 0 4px 20px rgba(0, 229, 255, 0.3); }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0, 229, 255, 0.5); }
+    .btn-secondary { background: rgba(255, 255, 255, 0.05); color: var(--text-primary); border: 1px solid var(--border-subtle); }
+    .btn-secondary:hover { background: rgba(0, 229, 255, 0.08); border-color: var(--neon-cyan); transform: translateY(-2px); }
+
+    .quick-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 32px;
+      padding: 24px;
+      border-radius: 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+    }
+    .quick-nav a {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    .quick-nav a:hover { background: rgba(0, 229, 255, 0.08); border-color: var(--neon-cyan); color: var(--neon-cyan); transform: translateY(-2px); }
+
+    .storage-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-top: 48px; }
+    .storage-card {
+      padding: 32px;
+      border-radius: 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+    .storage-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple));
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .storage-card:hover { border-color: rgba(0, 229, 255, 0.3); transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3); }
+    .storage-card:hover::before { opacity: 1; }
+
+    .storage-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .storage-header h3 { font-family: 'Orbitron', monospace; font-size: 18px; font-weight: 700; color: var(--text-primary); }
+    .storage-rating { color: var(--neon-yellow); font-size: 14px; }
+
+    .storage-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 16px; }
+    .storage-pros { font-size: 13px; color: var(--neon-green); margin-bottom: 8px; }
+    .storage-cons { font-size: 13px; color: var(--neon-magenta); margin-bottom: 16px; }
+
+    .storage-steps { margin-top: 20px; }
+    .storage-steps h4 { font-size: 14px; color: var(--neon-cyan); margin-bottom: 12px; font-weight: 600; }
+    .step-item {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+      padding: 12px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .step-num {
+      flex-shrink: 0;
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .step-content { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+    .step-content strong { color: var(--text-primary); }
+    .step-content code { background: rgba(0, 229, 255, 0.1); padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--neon-cyan); }
+
+    .storage-note {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 8px;
+      background: rgba(255, 221, 0, 0.05);
+      border: 1px solid rgba(255, 221, 0, 0.2);
+      font-size: 13px;
+      color: var(--neon-yellow);
+    }
+
+    .storage-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 16px;
+      color: var(--neon-cyan);
+      text-decoration: none;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+    .storage-link:hover { color: var(--neon-purple); }
+
+    .proxy-section { margin-top: 48px; }
+    .proxy-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px; margin-top: 32px; }
+    .proxy-card {
+      padding: 32px;
+      border-radius: 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      transition: all 0.3s;
+    }
+    .proxy-card:hover { border-color: rgba(0, 229, 255, 0.3); transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3); }
+    .proxy-card h3 { font-family: 'Orbitron', monospace; font-size: 18px; font-weight: 700; margin-bottom: 12px; color: var(--text-primary); }
+    .proxy-card .badge { display: inline-block; padding: 4px 12px; border-radius: 100px; background: rgba(0, 255, 136, 0.1); color: var(--neon-green); font-size: 12px; font-weight: 600; margin-bottom: 16px; }
+    .proxy-card p { font-size: 14px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 16px; }
+    .deploy-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+      color: #fff;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.3s;
+    }
+    .deploy-btn:hover { transform: translateY(-2px); box-shadow: var(--glow-cyan); }
+
+    .cdn-table { width: 100%; margin-top: 32px; border-collapse: collapse; }
+    .cdn-table th, .cdn-table td { padding: 16px; text-align: left; border-bottom: 1px solid var(--border-subtle); }
+    .cdn-table th { font-family: 'Orbitron', monospace; font-size: 14px; color: var(--neon-cyan); font-weight: 600; }
+    .cdn-table td { font-size: 14px; color: var(--text-secondary); }
+    .cdn-table tr:hover td { background: rgba(0, 229, 255, 0.02); }
+
+    .config-steps { margin-top: 48px; }
+    .config-step {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 32px;
+      padding: 24px;
+      border-radius: 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+    }
+    .config-step-num {
+      flex-shrink: 0;
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+      color: #fff;
+      font-size: 20px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .config-step-content h3 { font-family: 'Orbitron', monospace; font-size: 16px; font-weight: 700; margin-bottom: 8px; color: var(--text-primary); }
+    .config-step-content p { font-size: 14px; color: var(--text-secondary); line-height: 1.7; }
+
+    .faq-section { margin-top: 48px; }
+    .faq-item {
+      margin-bottom: 16px;
+      border-radius: 12px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      overflow: hidden;
+    }
+    .faq-question {
+      padding: 20px 24px;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.2s;
+    }
+    .faq-question:hover { background: rgba(0, 229, 255, 0.02); }
+    .faq-question::before { content: 'Q'; display: inline-block; width: 24px; height: 24px; border-radius: 6px; background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple)); color: #fff; font-size: 12px; font-weight: 700; text-align: center; line-height: 24px; }
+    .faq-answer {
+      padding: 0 24px 20px;
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      border-top: 1px solid var(--border-subtle);
+      padding-top: 16px;
+    }
+
+    footer {
+      padding: 40px 0;
+      border-top: 1px solid var(--border-subtle);
+      text-align: center;
+    }
+    footer p { font-size: 14px; color: var(--text-secondary); }
+
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .storage-grid { grid-template-columns: 1fr; }
+      .proxy-grid { grid-template-columns: 1fr; }
+      .config-step { flex-direction: column; gap: 16px; }
+      .cdn-table { display: block; overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+  <div class="bg-glow bg-glow-3"></div>
+
+  <nav>
+    <div class="container">
+      <a href="/" class="nav-brand">
+        <img src="/favicon.png" alt="ImgBed">
+        <span>ImgBed</span>
+      </a>
+      <div class="nav-links">
+        <a href="/#features">功能</a>
+        <a href="/i-want.html">我想要</a>
+        <a href="/guide.html">白嫖攻略</a>
+        <a href="https://github.com/mageg-x/imgbed" target="_blank" class="btn-nav">GitHub</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="hero" id="hero">
+    <div class="container">
+      <div class="hero-content">
+        <div class="hero-badge">
+          <span class="dot"></span>
+          零成本搭建专属图床
+        </div>
+        <h1>
+          <span class="highlight">白嫖攻略</span><br>
+          存储代理CDN全免费
+        </h1>
+        <p>
+          本攻略将一步步教你获取 Telegram / Discord / Hugging Face / Cloudflare R2 / S3 兼容 / 网盘 的免费存储，并一键部署我们写好的代理程序，最后填入 ImgBed 后台即可拥有你自己的图床。<br><br>
+          <strong style="color: var(--neon-cyan);">预计耗时 20 分钟，无需信用卡，无需服务器。</strong>
+        </p>
+        
+        <div class="quick-nav">
+          <a href="#storage">📦 白嫖存储</a>
+          <a href="#proxy">⚡ 白嫖代理</a>
+          <a href="#cdn">🌐 白嫖CDN</a>
+          <a href="#config">⚙️ 配置到ImgBed</a>
+          <a href="#faq">❓ 常见问题</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="storage">
+    <div class="container">
+      <div class="section-label">📦 白嫖存储</div>
+      <h2 class="section-title">6种免费存储渠道</h2>
+      <p class="section-subtitle">选择适合你的存储方式，全部免费，无需信用卡</p>
+
+      <div class="storage-grid">
+        <!-- Telegram -->
+        <div class="storage-card">
+          <div class="storage-header">
+            <h3>Telegram</h3>
+            <div class="storage-rating">⭐⭐⭐⭐⭐</div>
+          </div>
+          <div class="storage-desc">利用 Telegram Bot 将图片发送到频道，获得永久 file_id，通过代理转换为可访问链接。</div>
+          <div class="storage-pros">✓ 无限空间，单文件最大 50MB，稳定不删图</div>
+          <div class="storage-cons">✗ 原始直链被墙，需配合代理</div>
+          
+          <div class="storage-steps">
+            <h4>获取步骤</h4>
+            <div class="step-item">
+              <div class="step-num">1</div>
+              <div class="step-content"><strong>创建 Bot：</strong>打开 Telegram，搜索 <code>@BotFather</code>，发送 <code>/newbot</code>，按提示输入机器人名称和用户名（必须以 <code>bot</code> 结尾）。成功后你会收到 Bot Token（如 <code>123456:ABCdefg</code>），复制并保存。</div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">2</div>
+              <div class="step-content"><strong>创建频道：</strong>在 Telegram 中创建一个新的私有频道（任意名称），记下频道名。</div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">3</div>
+              <div class="step-content"><strong>邀请机器人：</strong>打开频道信息页 → 成员 → 添加成员，搜索你刚创建的机器人用户名，将其添加为管理员（至少需要"发送消息"和"上传文件"权限）。</div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">4</div>
+              <div class="step-content"><strong>获取频道 ID：</strong>在频道中随便发一条消息。然后在浏览器打开：<code>https://api.telegram.org/bot你的BotToken/getUpdates</code>，找到 <code>"chat":{"id":-1001234567890</code>，其中的 id 值（是一个负数）就是频道 ID。</div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">5</div>
+              <div class="step-content"><strong>填入 ImgBed：</strong>在 ImgBed 后台「存储管理」中选择 Telegram，填入 Bot Token 和 Channel ID，保存。</div>
+            </div>
+          </div>
+          
+          <div class="storage-note">
+            💡 注意：频道必须为私有，机器人必须具有发送消息和上传文件的权限。如需删除图片，直接在 Telegram 频道中删除对应消息即可。
+          </div>
+          
+          <a href="https://core.telegram.org/bots" target="_blank" class="storage-link">
+            📖 Telegram Bot API 文档 →
+          </a>
+        </div>
+
+        <!-- Discord -->
+        <div class="storage-card">
+          <div class="storage-header">
+            <h3>Discord</h3>
+            <div class="storage-rating">⭐⭐⭐⭐</div>
+          </div>
+          <div class="storage-desc">Discord 将上传的文件托管在 cdn.discordapp.com 全球 CDN 上，通过 Bot 发送消息到频道即可获得链接。</div>
+          <div class="storage-pros">✓ 无限存储，单文件最大 25MB，自带 CDN</div>
+          <div class="storage-cons">✗ 国内部分地区可能无法直接访问，需配合代理</div>
+          
+          <div class="storage-steps">
+            <h4>获取步骤</h4>
+            <div class="step-item">
+              <div class="step-num">1</div>
+              <div class="step-content"><strong>创建应用：</strong>访问 <a href="https://discord.com/developers/applications" target="_blank" style="color: var(--neon-cyan);">Discord Developer Portal</a>，点击「New Application」，输入名称（任意）。</div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">2</div>
+              <div class="step-content"><strong>创建 Bot：</strong>左侧菜单选择「Bot」，点击「Add Bot」→「Reset Token」并复制 Bot Token（类似 <code>MTAzNzI...</code>）。</div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">3</div>
+              <div class="step-content"><strong>设置权限：</strong>在 Bot 页面下方找到「Privileged Gateway Intents」，开启「Message Content Intent」。</div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">4</div>
+              <div class="step-content"><strong>邀请 Bot：</strong>左侧菜单选择「OAuth2」→「URL Generator」，勾选 <code>bot</code> 和 <code>Send Messages</code>、<code>Attach Files</code>、<code>Read Messages</code>、<code>Manage Messages</code> 权限，复制邀请链接并在浏览器中打开，选择你的服务器完成邀请。</div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">5</div>
+              <div class="step-content"><strong>获取频道 ID：</strong>在 Discord 客户端中打开「用户设置」→「高级」→ 开启「开发者模式」。然后右键点击你准备用于存储图片的文字频道，选择「复制频道 ID」。</div>
+            </div>
+          </div>
+          
+          <div class="storage-note">
+            💡 注意：Bot 必须拥有发送消息和上传文件的权限。建议为图片单独创建一个频道。Discord 的 CDN 链接有效期很长（理论永久），但若消息被删除则链接失效。
+          </div>
+          
+          <a href="https://discord.com/developers/docs/intro" target="_blank" class="storage-link">
+            📖 Discord Developer Portal →
+          </a>
+        </div>
+
+        <!-- Hugging Face -->
+        <div class="storage-card">
+          <div class="storage-header">
+            <h3>Hugging Face</h3>
+            <div class="storage-rating">⭐⭐⭐</div>
+          </div>
+          <div class="storage-desc">Hugging Face 的 Space 支持存储任意文件，并通过 raw 链接公开访问，无需认证。</div>
+          <div class="storage-pros">✓ 免费存储，技术社区常用，公开访问无需认证</div>
+          <div class="storage-cons">✗ 存储空间有限，国内访问速度一般，需配合代理</div>
+          
+          <div class="storage-steps">
+            <h4>获取步骤</h4>
+            <div class="step-item">
+              <div class="step-num">1</div>
+              <div class="step-content"><strong>注册账号：</strong>访问 <a href="https://huggingface.co/" target="_blank" style="color: var(--neon-cyan);">Hugging Face</a> 注册一个免费账号。</div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">2</div>
+              <div class="step-content"><strong>创建 Space：</strong>点击右上角头像 → 「New Space」。输入空间名称（如 <code>my-imgbed</code>），SDK 选择「Static」，Visibility 必须选择「Public」，点击「Create Space」。</div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">3</div>
+              <div class="step-content"><strong>生成 Access Token：</strong>点击右上角头像 → 「Settings」→ 「Access Tokens」→ 「New token」。名称任意，权限勾选「write」，点击「Generate token」，复制并保存（形如 <code>hf_xxxxxx</code>）。</div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">4</div>
+              <div class="step-content"><strong>填入 ImgBed：</strong>在 ImgBed 后台添加 Hugging Face 存储，填入 Access Token 和仓库名称（格式：<code>用户名/空间名</code>）。</div>
+            </div>
+          </div>
+          
+          <div class="storage-note">
+            💡 注意：Space 可以存储文件并公开访问，无需认证。原始直链地址为 <code>https://huggingface.co/spaces/用户名/空间名/resolve/main/文件名</code>，需配合代理使用。
+          </div>
+          
+          <a href="https://huggingface.co/docs/hub/en/spaces" target="_blank" class="storage-link">
+            📖 Hugging Face Spaces 文档 →
+          </a>
+        </div>
+
+        <!-- Cloudflare R2 -->
+        <div class="storage-card">
+          <div class="storage-header">
+            <h3>Cloudflare R2</h3>
+            <div class="storage-rating">⭐⭐⭐⭐</div>
+          </div>
+          <div class="storage-desc">Cloudflare R2 提供 S3 兼容的对象存储，免费额度足够个人图床。</div>
+          <div class="storage-pros">✓ 10GB 免费存储 + 每月 10GB 出站流量，全球 CDN 加速</div>
+          <div class="storage-cons">✗ 需要绑定信用卡（但不会扣费，仅验证身份）</div>
+          
+          <div class="storage-steps">
+            <h4>获取步骤</h4>
+            <div class="step-item">
+              <div class="step-num">1</div>
+              <div class="step-content"><strong>注册 Cloudflare：</strong>访问 <a href="https://cloudflare.com" target="_blank" style="color: var(--neon-cyan);">Cloudflare</a> 注册账号。</div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">2</div>
+              <div class="step-content"><strong>开通 R2：</strong>登录后，左侧菜单选择「R2」→ 点击「开始使用」→ 根据提示添加付款方式（支持信用卡，不会扣费，仅用于防滥用）。</div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">3</div>
+              <div class="step-content"><strong>创建存储桶：</strong>点击「创建存储桶」，输入名称（如 <code>imgbed</code>），区域选择「自动」，点击创建。</div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">4</div>
+              <div class="step-content"><strong>生成 API 令牌：</strong>进入存储桶详情页，点击「设置」→「API 令牌」→「创建 API 令牌」。权限选择「对象读写」，创建后会显示 Access Key ID 和 Secret Access Key，务必立即复制保存。</div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">5</div>
+              <div class="step-content"><strong>填入 ImgBed：</strong>在 ImgBed 后台选择「S3 兼容存储」，填入端点（<code>https://你的账户ID.r2.cloudflarestorage.com</code>）、区域（<code>auto</code>）、存储桶名称、访问密钥和秘密密钥。</div>
+            </div>
+          </div>
+          
+          <div class="storage-note">
+            💡 注意：免费额度每月重置，超出部分会收费，建议在 Cloudflare 设置中启用「限制 R2 使用量」。通过 ImgBed 代理访问时，流量走代理，不计入 R2 出站流量，可节省额度。
+          </div>
+          
+          <a href="https://developers.cloudflare.com/r2/" target="_blank" class="storage-link">
+            📖 Cloudflare R2 文档 →
+          </a>
+        </div>
+
+        <!-- S3 兼容存储 -->
+        <div class="storage-card">
+          <div class="storage-header">
+            <h3>S3 兼容存储</h3>
+            <div class="storage-rating">⭐⭐⭐</div>
+          </div>
+          <div class="storage-desc">以下存储均支持标准 S3 协议，ImgBed 可直接对接。部分有永久免费额度，部分为限时试用。</div>
+          
+          <table class="cdn-table" style="margin-top: 16px;">
+            <thead>
+              <tr>
+                <th>服务商</th>
+                <th>免费额度</th>
+                <th>需要信用卡</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Backblaze B2</strong></td>
+                <td>10GB 存储 + 1GB/天 下行流量</td>
+                <td>是（验证身份）</td>
+              </tr>
+              <tr>
+                <td><strong>腾讯云 COS</strong></td>
+                <td>50GB 存储（6个月）</td>
+                <td>是（实名）</td>
+              </tr>
+              <tr>
+                <td><strong>阿里云 OSS</strong></td>
+                <td>40GB 存储（3个月）</td>
+                <td>是（实名）</td>
+              </tr>
+              <tr>
+                <td><strong>IDrive e2</strong></td>
+                <td>10GB 永久免费</td>
+                <td>否</td>
+              </tr>
+            </tbody>
+          </table>
+          
+          <div class="storage-note">
+            💡 通用配置：创建公开存储桶，生成应用密钥，在 ImgBed 的 S3 兼容配置中填入对应的端点、区域、存储桶名称、密钥对。部分免费额度有期限，到期后可能收费，建议定期检查或设置预算告警。
+          </div>
+        </div>
+
+        <!-- 网盘挂载 -->
+        <div class="storage-card">
+          <div class="storage-header">
+            <h3>网盘挂载</h3>
+            <div class="storage-rating">⭐⭐⭐</div>
+          </div>
+          <div class="storage-desc">使用 Alist 将网盘挂载为 WebDAV 或 S3 接口，ImgBed 通过 WebDAV 连接，实现超大容量存储。</div>
+          <div class="storage-pros">✓ 网盘容量大（通常 2TB+），单文件可达 100MB+</div>
+          <div class="storage-cons">✗ 需要额外维护 Alist 服务</div>
+          
+          <div class="storage-steps">
+            <h4>获取步骤</h4>
+            <div class="step-item">
+              <div class="step-num">1</div>
+              <div class="step-content"><strong>部署 Alist：</strong>下载 Alist 二进制文件运行，或使用 Docker：<code>docker run -d -p 5244:5244 xhofe/alist:latest</code></div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">2</div>
+              <div class="step-content"><strong>添加网盘存储：</strong>打开 Alist 管理后台（默认 <code>http://localhost:5244</code>），进入「存储」→「添加」，选择驱动类型（如「阿里云盘」），根据提示获取 Refresh Token。</div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">3</div>
+              <div class="step-content"><strong>开启 WebDAV：</strong>Alist 默认开启 WebDAV 服务，地址为 <code>http://localhost:5244/dav</code>。用户名和密码与你登录 Alist 后台的相同。</div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">4</div>
+              <div class="step-content"><strong>填入 ImgBed：</strong>在 ImgBed 后台选择「WebDAV」，填入端点、用户名、密码和路径前缀。</div>
+            </div>
+          </div>
+          
+          <div class="storage-note">
+            💡 注意：如果 Alist 部署在本地，ImgBed 需能访问该地址。网盘直链有效期由网盘决定，Alist 会在访问时自动刷新。建议选择支持 Alist 官方文档中标记为「稳定性高」的网盘（如阿里云盘、夸克网盘）。
+          </div>
+          
+          <a href="https://alist.nn.ci/zh/" target="_blank" class="storage-link">
+            📖 Alist 文档 →
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="proxy">
+    <div class="container">
+      <div class="section-label">⚡ 白嫖代理</div>
+      <h2 class="section-title">一键部署代理服务</h2>
+      <p class="section-subtitle">我们已为你写好了代理程序，存储在 GitHub 仓库 imgbed-proxy。你只需点一下按钮，即可将代理部署到免费平台，获得专属代理域名。</p>
+
+      <div class="proxy-grid">
+        <div class="proxy-card">
+          <h3>Cloudflare Workers</h3>
+          <span class="badge">推荐</span>
+          <p>全球边缘网络，每日 10 万次请求免费，绑定自定义域名后国内访问速度尚可。</p>
+          
+          <div class="storage-steps">
+            <h4>部署步骤</h4>
+            <div class="step-item">
+              <div class="step-num">1</div>
+              <div class="step-content">点击下方按钮，登录你的 Cloudflare 账号（如果没有，免费注册一个）。</div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">2</div>
+              <div class="step-content">按页面提示为 Worker 命名（例如 <code>imgbed-proxy</code>），点击「部署」。</div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">3</div>
+              <div class="step-content">部署成功后，你会获得一个形如 <code>https://你的项目名.workers.dev</code> 的域名。复制该域名。</div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">4</div>
+              <div class="step-content">回到 ImgBed 后台的「代理管理」，粘贴该地址，保存。</div>
+            </div>
+          </div>
+          
+          <a href="https://deploy.workers.cloudflare.com/?url=https://github.com/mageg-x/imgbed-proxy" target="_blank" class="deploy-btn">
+            🚀 部署到 Cloudflare Workers
+          </a>
+        </div>
+
+        <div class="proxy-card">
+          <h3>Vercel Edge Functions</h3>
+          <span class="badge">备选</span>
+          <p>每月 100GB 免费流量，但默认域名在国内可能被 DNS 污染，建议搭配 Cloudflare CDN。</p>
+          
+          <div class="storage-steps">
+            <h4>部署步骤</h4>
+            <div class="step-item">
+              <div class="step-num">1</div>
+              <div class="step-content">点击下方按钮，登录 Vercel（可使用 GitHub 账号快速登录）。</div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">2</div>
+              <div class="step-content">点击「Deploy」，等待部署完成（约 1-2 分钟）。</div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">3</div>
+              <div class="step-content">部署后，Vercel 会分配一个 <code>https://你的项目名.vercel.app</code> 域名。复制该域名。</div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">4</div>
+              <div class="step-content">在 ImgBed 后台的「代理管理」中填入该地址。</div>
+            </div>
+          </div>
+          
+          <a href="https://vercel.com/new/clone?repository-url=https://github.com/mageg-x/imgbed-proxy" target="_blank" class="deploy-btn">
+            🚀 部署到 Vercel
+          </a>
+        </div>
+      </div>
+      
+      <div class="storage-note" style="margin-top: 32px;">
+        💡 提示：两个平台均可长期免费使用，个人图床完全够用。如果担心 Vercel 域名被墙，可将 Cloudflare Workers 作为首选。
+      </div>
+    </div>
+  </section>
+
+  <section id="cdn">
+    <div class="container">
+      <div class="section-label">🌐 白嫖CDN</div>
+      <h2 class="section-title">可选加速方案</h2>
+      <p class="section-subtitle">大多数情况下，Cloudflare Workers 自带的 CDN 已经够用。如果你对国内访问速度有更高要求，可以叠加以下免费 CDN。</p>
+
+      <div class="storage-card" style="margin-top: 32px;">
+        <h3 style="margin-bottom: 16px;">又拍云 / 七牛云 免费 CDN 额度</h3>
+        
+        <table class="cdn-table">
+          <thead>
+            <tr>
+              <th>服务商</th>
+              <th>免费额度</th>
+              <th>条件</th>
+              <th>配置方式</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>又拍云</strong></td>
+              <td>每月 15GB CDN 流量 + 15GB 存储</td>
+              <td>需在网站底部添加又拍云 Logo</td>
+              <td>将代理域名作为源站，添加 CDN 服务，获得加速域名</td>
+            </tr>
+            <tr>
+              <td><strong>七牛云</strong></td>
+              <td>每月 10GB CDN 流量 + 10GB 存储</td>
+              <td>需完成实名认证</td>
+              <td>创建 CDN 加速域名，源站填代理地址</td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <div class="storage-steps" style="margin-top: 24px;">
+          <h4>操作步骤（以又拍云为例）</h4>
+          <div class="step-item">
+            <div class="step-num">1</div>
+            <div class="step-content">注册又拍云账号，完成实名认证。</div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">2</div>
+            <div class="step-content">进入「CDN」服务，点击「添加域名」。</div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">3</div>
+            <div class="step-content">加速域名填写你希望使用的域名（需备案或境外），源站地址填写你的代理域名（如 <code>xxx.workers.dev</code>），协议选择 HTTPS。</div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">4</div>
+            <div class="step-content">提交后，根据提示将你的加速域名 CNAME 到又拍云提供的地址。</div>
+          </div>
+          <div class="step-item">
+            <div class="step-num">5</div>
+            <div class="step-content">在 ImgBed 代理配置中，将代理地址改为又拍云分配的加速域名。</div>
+          </div>
+        </div>
+        
+        <div class="storage-note">
+          💡 注意：又拍云需要挂载标识，七牛云需要实名。免费额度每月重置，超量会暂停或扣费，建议设置告警。对于绝大多数用户，直接使用 Cloudflare Workers 代理即可，无需额外 CDN。
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="config">
+    <div class="container">
+      <div class="section-label">⚙️ 配置到 ImgBed</div>
+      <h2 class="section-title">最后一步</h2>
+      <p class="section-subtitle">将你白嫖到的存储和代理配置到 ImgBed，开始使用你的专属图床</p>
+
+      <div class="config-steps">
+        <div class="config-step">
+          <div class="config-step-num">1</div>
+          <div class="config-step-content">
+            <h3>下载并运行 ImgBed</h3>
+            <p>桌面版：下载对应操作系统的安装包，双击运行，系统托盘出现图标。<br>服务端：下载二进制文件，终端执行 <code>./imgbed</code>。</p>
+          </div>
+        </div>
+        
+        <div class="config-step">
+          <div class="config-step-num">2</div>
+          <div class="config-step-content">
+            <h3>打开管理后台</h3>
+            <p>浏览器访问 <code>http://localhost:8380</code>，首次使用需要设置管理员密码。</p>
+          </div>
+        </div>
+        
+        <div class="config-step">
+          <div class="config-step-num">3</div>
+          <div class="config-step-content">
+            <h3>添加存储渠道</h3>
+            <p>进入「存储管理」，点击「添加存储」。选择你白嫖到的渠道（Telegram/Discord/R2 等），填入对应的 Token/密钥。保存后，可以点击「测试」验证连接是否正常。</p>
+          </div>
+        </div>
+        
+        <div class="config-step">
+          <div class="config-step-num">4</div>
+          <div class="config-step-content">
+            <h3>配置代理</h3>
+            <p>进入「代理管理」，点击「添加代理」。填入你部署好的代理域名（例如 <code>https://imgbed-proxy.workers.dev</code>）。勾选「启用代理转换」，保存。</p>
+          </div>
+        </div>
+        
+        <div class="config-step">
+          <div class="config-step-num">5</div>
+          <div class="config-step-content">
+            <h3>上传测试</h3>
+            <p>进入「上传」页面，选择一张图片上传。上传成功后，ImgBed 会显示原始直链和转换后的代理链接。复制代理链接，在国内浏览器中打开，确认图片正常显示。</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="storage-note" style="margin-top: 32px; text-align: center; font-size: 16px;">
+        🎉 <strong style="color: var(--neon-green);">恭喜！你已经拥有一个属于自己的免费图床了。</strong>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq">
+    <div class="container">
+      <div class="section-label">❓ 常见问题</div>
+      <h2 class="section-title">FAQ</h2>
+
+      <div class="faq-section">
+        <div class="faq-item">
+          <div class="faq-question">我部署的 Cloudflare Worker 代理访问时返回 404？</div>
+          <div class="faq-answer">检查 ImgBed 中填写的代理地址是否正确（不要遗漏 <code>https://</code>），并确认代理已启用。另外，ImgBed 生成的链接格式为 <code>https://代理域名/base58(原始host)/图片路径</code>，如果手动修改过代理代码导致路由变化，请重新部署。</div>
+        </div>
+        
+        <div class="faq-item">
+          <div class="faq-question">Telegram 频道 ID 是负数，ImgBed 支持吗？</div>
+          <div class="faq-answer">支持，直接粘贴即可。</div>
+        </div>
+        
+        <div class="faq-item">
+          <div class="faq-question">Discord 的 Bot Token 重置后，之前的图片还能访问吗？</div>
+          <div class="faq-answer">可以，只要频道和消息还在，图片链接依然有效。但新上传需要使用新 Token。</div>
+        </div>
+        
+        <div class="faq-item">
+          <div class="faq-question">Hugging Face 上传后，直接访问原始链接被限制？</div>
+          <div class="faq-answer">请确认你的仓库是 Public 状态。另外 Hugging Face 有时会要求登录才能下载，建议始终通过代理访问。</div>
+        </div>
+        
+        <div class="faq-item">
+          <div class="faq-question">网盘挂载方式会不会很慢？</div>
+          <div class="faq-answer">Alist 会在第一次访问时获取网盘直链，之后 ImgBed 代理会缓存，速度取决于网盘和代理。推荐使用阿里云盘，速度较快。</div>
+        </div>
+        
+        <div class="faq-item">
+          <div class="faq-question">代理域名国内访问还是慢怎么办？</div>
+          <div class="faq-answer">可以尝试绑定自己的域名并开启 Cloudflare 代理，或使用又拍云等国内 CDN 加速（见上文「白嫖 CDN」部分）。</div>
+        </div>
+        
+        <div class="faq-item">
+          <div class="faq-question">ImgBed 本身收费吗？</div>
+          <div class="faq-answer">完全免费开源，永不收费。项目地址：<a href="https://github.com/mageg-x/imgbed" target="_blank" style="color: var(--neon-cyan);">GitHub - mageg-x/imgbed</a></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <p>© 2024 ImgBed. 完全免费开源，永不收费。</p>
+    </div>
+  </footer>
+</body>
+</html>

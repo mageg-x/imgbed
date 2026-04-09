@@ -409,6 +409,11 @@ function closeLangDropdown() {
             <span class="hidden sm:inline">{{ t('nav.gallery') }}</span>
           </button>
 
+          <a href="/i-want.html" target="_blank"
+            class="ml-1 sm:ml-2 px-3 sm:px-4 py-2 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 transition-all shadow-lg shadow-indigo-500/25 flex items-center gap-1">
+            {{ t('nav.iWant') || '我想要' }}
+          </a>
+
           <div class="w-px h-5 sm:h-6 mx-1 sm:mx-2" :class="themeStore.isDark ? 'bg-gray-700' : 'bg-gray-300'"></div>
 
           <button @click="themeStore.toggle" class="p-2 rounded-lg transition-all"

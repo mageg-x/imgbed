@@ -11,7 +11,7 @@ import (
 	"mime/multipart"
 	"strings"
 
-	"github.com/chai2010/webp"
+	"github.com/deepteams/webp"
 	"github.com/disintegration/imaging"
 )
 
@@ -118,10 +118,10 @@ func CompressImage(file *multipart.FileHeader, reader io.Reader, config Compress
 		err = gif.Encode(&buf, img, nil)
 		return buf.Bytes(), "image/gif", err
 	case "webp":
-		err = webp.Encode(&buf, img, &webp.Options{Quality: float32(config.Quality)})
+		err = webp.Encode(&buf, img, &webp.EncoderOptions{Quality: float32(config.Quality)})
 		return buf.Bytes(), "image/webp", err
 	default:
-		err = webp.Encode(&buf, img, &webp.Options{Quality: float32(config.Quality)})
+		err = webp.Encode(&buf, img, &webp.EncoderOptions{Quality: float32(config.Quality)})
 		return buf.Bytes(), "image/webp", err
 	}
 }
@@ -242,10 +242,10 @@ func CompressImageFromBytes(data []byte, format string, config CompressionConfig
 		err = gif.Encode(&buf, img, nil)
 		return buf.Bytes(), "image/gif", err
 	case "webp":
-		err = webp.Encode(&buf, img, &webp.Options{Quality: float32(config.Quality)})
+		err = webp.Encode(&buf, img, &webp.EncoderOptions{Quality: float32(config.Quality)})
 		return buf.Bytes(), "image/webp", err
 	default:
-		err = webp.Encode(&buf, img, &webp.Options{Quality: float32(config.Quality)})
+		err = webp.Encode(&buf, img, &webp.EncoderOptions{Quality: float32(config.Quality)})
 		return buf.Bytes(), "image/webp", err
 	}
 }
@@ -263,7 +263,7 @@ func ValidateImageFormat(format string) bool {
 
 func EstimateWebpSize(img image.Image, quality int) int {
 	var buf bytes.Buffer
-	webp.Encode(&buf, img, &webp.Options{Quality: float32(quality)})
+	webp.Encode(&buf, img, &webp.EncoderOptions{Quality: float32(quality)})
 	return buf.Len()
 }
 

@@ -17,7 +17,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	systray.Init(application.Addr, application.Shutdown)
+	systray.Init(application.Addr, application.Shutdown, func() string {
+		return application.Addr
+	})
 
 	systray.Run(func() {
 		systray.Setup()

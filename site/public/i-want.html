@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>我想要 - ImgBed 免费图床</title>
+  <meta name="description" content="下载 ImgBed，填入你白嫖的 Token，立刻拥有无限存储 + 国内加速的自建图床">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-deep: #03030a;
+      --bg-surface: #0a0a14;
+      --bg-card: #0d0d1a;
+      --bg-card-hover: #111122;
+      --neon-cyan: #00e5ff;
+      --neon-cyan-dim: #00b8cc;
+      --neon-purple: #bf00ff;
+      --neon-magenta: #ff00aa;
+      --neon-green: #00ff88;
+      --neon-yellow: #ffdd00;
+      --text-primary: #f0f0ff;
+      --text-secondary: #8888aa;
+      --text-muted: #5555770;
+      --border-subtle: rgba(0, 229, 255, 0.1);
+      --border-glow: rgba(0, 229, 255, 0.4);
+      --glow-cyan: 0 0 20px rgba(0, 229, 255, 0.4), 0 0 40px rgba(0, 229, 255, 0.2);
+      --glow-purple: 0 0 20px rgba(191, 0, 255, 0.4), 0 0 40px rgba(191, 0, 255, 0.2);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Noto Sans SC', 'JetBrains Mono', sans-serif;
+      background: var(--bg-deep);
+      color: var(--text-primary);
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-deep); }
+    ::-webkit-scrollbar-thumb { background: var(--neon-cyan); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--neon-purple); }
+
+    /* ─── Background ─── */
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0, 229, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 229, 255, 0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .bg-glow {
+      position: fixed;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      filter: blur(150px);
+      pointer-events: none;
+      z-index: 0;
+      animation: float 12s ease-in-out infinite;
+    }
+    .bg-glow-1 {
+      top: -200px;
+      left: -200px;
+      background: rgba(0, 229, 255, 0.08);
+    }
+    .bg-glow-2 {
+      top: 40%;
+      right: -300px;
+      background: rgba(191, 0, 255, 0.07);
+      animation-delay: -6s;
+    }
+    .bg-glow-3 {
+      bottom: -200px;
+      left: 30%;
+      background: rgba(255, 0, 170, 0.05);
+      animation-delay: -3s;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(40px, -30px) scale(1.1); }
+      66% { transform: translate(-20px, 20px) scale(0.95); }
+    }
+
+    /* ─── Layout ─── */
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    section { padding: 80px 0; position: relative; }
+
+    /* ─── Nav ─── */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 16px 0;
+      backdrop-filter: blur(20px);
+      background: rgba(3, 3, 10, 0.8);
+      border-bottom: 1px solid var(--border-subtle);
+      transition: all 0.3s;
+    }
+    nav .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+    .nav-brand img {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      box-shadow: var(--glow-cyan);
+    }
+    .nav-brand span {
+      font-family: 'Orbitron', monospace;
+      font-weight: 700;
+      font-size: 18px;
+      color: var(--text-primary);
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    .nav-links a:hover {
+      color: var(--neon-cyan);
+      background: rgba(0, 229, 255, 0.05);
+    }
+    .nav-links .btn-nav {
+      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+      color: #fff;
+      font-weight: 600;
+      padding: 8px 20px;
+    }
+    .nav-links .btn-nav:hover {
+      box-shadow: var(--glow-cyan);
+      transform: translateY(-1px);
+      color: #fff;
+    }
+
+    /* ─── Typography ─── */
+    h1, h2, h3 { font-family: 'Orbitron', monospace; }
+
+    .section-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--neon-cyan);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-label::before {
+      content: '';
+      display: inline-block;
+      width: 24px;
+      height: 2px;
+      background: var(--neon-cyan);
+      box-shadow: var(--glow-cyan);
+    }
+
+    .section-title {
+      font-size: clamp(28px, 5vw, 42px);
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, var(--text-primary) 0%, var(--neon-cyan) 50%, var(--neon-purple) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .section-subtitle {
+      font-size: 16px;
+      color: var(--text-secondary);
+      max-width: 600px;
+      line-height: 1.8;
+    }
+
+    /* ─── Hero ─── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding-top: 80px;
+    }
+    .hero-content { max-width: 800px; }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      border-radius: 100px;
+      background: rgba(0, 229, 255, 0.08);
+      border: 1px solid rgba(0, 229, 255, 0.2);
+      font-size: 13px;
+      color: var(--neon-cyan);
+      margin-bottom: 32px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .hero-badge .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--neon-cyan);
+      box-shadow: 0 0 8px var(--neon-cyan);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    .hero h1 {
+      font-size: clamp(36px, 7vw, 64px);
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 24px;
+      letter-spacing: -1px;
+    }
+    .hero h1 .highlight {
+      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p {
+      font-size: 18px;
+      color: var(--text-secondary);
+      margin-bottom: 40px;
+      line-height: 1.8;
+      max-width: 580px;
+    }
+
+    .hero-cta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 48px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 32px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(0, 229, 255, 0.3);
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(0, 229, 255, 0.5);
+    }
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-primary);
+      border: 1px solid var(--border-subtle);
+    }
+    .btn-secondary:hover {
+      background: rgba(0, 229, 255, 0.08);
+      border-color: var(--neon-cyan);
+      transform: translateY(-2px);
+    }
+
+    .hero-core {
+      display: inline-block;
+      padding: 16px 24px;
+      border-radius: 12px;
+      background: rgba(0, 229, 255, 0.05);
+      border: 1px solid rgba(0, 229, 255, 0.15);
+      backdrop-filter: blur(10px);
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.8;
+    }
+    .hero-core strong {
+      color: var(--neon-cyan);
+    }
+
+    /* ─── WhatYouNeed ─── */
+    .need-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-top: 48px;
+    }
+    .need-card {
+      padding: 28px;
+      border-radius: 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+    .need-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple));
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .need-card:hover {
+      border-color: rgba(0, 229, 255, 0.3);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+    }
+    .need-card:hover::before { opacity: 1; }
+    .need-card .icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      font-size: 24px;
+    }
+    .need-card.storage .icon { background: rgba(0, 229, 255, 0.1); }
+    .need-card.proxy .icon { background: rgba(191, 0, 255, 0.1); }
+    .need-card h3 {
+      font-family: 'Orbitron', monospace;
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+    }
+    .need-card p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+    }
+    .need-card .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .need-card .tag {
+      padding: 4px 12px;
+      border-radius: 100px;
+      font-size: 12px;
+      font-weight: 500;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-secondary);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    /* ─── Steps ─── */
+    .steps-container {
+      margin-top: 60px;
+      position: relative;
+    }
+    .steps-line {
+      position: absolute;
+      left: 50px;
+      top: 60px;
+      bottom: 60px;
+      width: 2px;
+      background: linear-gradient(to bottom, var(--neon-cyan), var(--neon-purple));
+      opacity: 0.2;
+    }
+    @media (min-width: 768px) {
+      .steps-line { left: 50%; transform: translateX(-50%); }
+    }
+
+    .step {
+      display: flex;
+      gap: 32px;
+      margin-bottom: 48px;
+      position: relative;
+    }
+    .step:last-child { margin-bottom: 0; }
+    @media (min-width: 768px) {
+      .step:nth-child(even) { flex-direction: row-reverse; }
+      .step:nth-child(even) .step-content { text-align: right; }
+      .step:nth-child(even) .step-content .step-body { margin-left: auto; }
+    }
+    .step-number {
+      width: 48px;
+      height: 48px;
+      min-width: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Orbitron', monospace;
+      font-size: 18px;
+      font-weight: 800;
+      border: 2px solid var(--neon-cyan);
+      color: var(--neon-cyan);
+      background: var(--bg-deep);
+      box-shadow: var(--glow-cyan);
+      position: relative;
+      z-index: 2;
+    }
+    .step:nth-child(even) .step-number {
+      border-color: var(--neon-purple);
+      color: var(--neon-purple);
+      box-shadow: var(--glow-purple);
+    }
+    .step-content { flex: 1; }
+    .step-content h3 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--text-primary);
+    }
+    .step-body {
+      max-width: 480px;
+      padding: 20px 24px;
+      border-radius: 12px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.8;
+    }
+    .step-body p { margin-bottom: 8px; }
+    .step-body p:last-child { margin-bottom: 0; }
+    .step-body strong { color: var(--neon-cyan); }
+    .step-body .inline-link {
+      color: var(--neon-purple);
+      text-decoration: none;
+      border-bottom: 1px solid rgba(191, 0, 255, 0.3);
+      transition: border-color 0.2s;
+    }
+    .step-body .inline-link:hover { border-color: var(--neon-purple); }
+
+    /* ─── Channel Cards ─── */
+    .channel-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+    }
+    .channel-card {
+      padding: 20px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      transition: all 0.25s;
+      cursor: pointer;
+      text-decoration: none;
+      display: block;
+    }
+    .channel-card:hover {
+      background: rgba(0, 229, 255, 0.05);
+      border-color: rgba(0, 229, 255, 0.2);
+      transform: translateY(-2px);
+    }
+    .channel-card .ch-icon {
+      font-size: 28px;
+      margin-bottom: 12px;
+    }
+    .channel-card h4 {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+    .channel-card span {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    /* ─── Download ─── */
+    .download-section { background: var(--bg-surface); }
+    .download-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      margin-top: 40px;
+    }
+    .download-card {
+      padding: 28px;
+      border-radius: 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      transition: all 0.3s;
+    }
+    .download-card:hover {
+      border-color: var(--neon-cyan);
+      box-shadow: 0 0 30px rgba(0, 229, 255, 0.1);
+    }
+    .download-card h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .download-card p {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 20px;
+    }
+    .download-items { display: flex; flex-direction: column; gap: 10px; }
+    .download-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      transition: all 0.2s;
+      text-decoration: none;
+      color: var(--text-primary);
+    }
+    .download-item:hover {
+      background: rgba(0, 229, 255, 0.06);
+      border-color: rgba(0, 229, 255, 0.2);
+    }
+    .download-item .left { display: flex; align-items: center; gap: 10px; }
+    .download-item .os {
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .download-item .arch {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-secondary);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .download-item .arrow {
+      color: var(--neon-cyan);
+      font-size: 18px;
+      transition: transform 0.2s;
+    }
+    .download-item:hover .arrow { transform: translateX(4px); }
+
+    /* ─── Tags ─── */
+    .tags-cloud {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 40px;
+      justify-content: center;
+    }
+    .tags-cloud span {
+      padding: 8px 20px;
+      border-radius: 100px;
+      font-size: 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      transition: all 0.2s;
+    }
+    .tags-cloud span:hover {
+      border-color: var(--neon-purple);
+      color: var(--neon-purple);
+      transform: translateY(-2px);
+    }
+
+    /* ─── FAQ ─── */
+    .faq-list { margin-top: 40px; max-width: 720px; }
+    .faq-item {
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .faq-question {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 0;
+      background: none;
+      border: none;
+      color: var(--text-primary);
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: left;
+      font-family: inherit;
+      gap: 16px;
+    }
+    .faq-question:hover { color: var(--neon-cyan); }
+    .faq-question .icon {
+      font-size: 20px;
+      transition: transform 0.3s;
+      flex-shrink: 0;
+      color: var(--neon-cyan);
+    }
+    .faq-item.open .faq-question .icon { transform: rotate(45deg); }
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s ease;
+    }
+    .faq-item.open .faq-answer { max-height: 200px; }
+    .faq-answer-inner {
+      padding-bottom: 20px;
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.8;
+    }
+
+    /* ─── CTA ─── */
+    .cta-section {
+      text-align: center;
+      padding: 100px 0;
+    }
+    .cta-section h2 {
+      font-size: clamp(28px, 5vw, 44px);
+      font-weight: 800;
+      margin-bottom: 16px;
+    }
+    .cta-section p {
+      color: var(--text-secondary);
+      font-size: 18px;
+      margin-bottom: 40px;
+    }
+
+    /* ─── Footer ─── */
+    footer {
+      border-top: 1px solid var(--border-subtle);
+      padding: 40px 0;
+      text-align: center;
+    }
+    footer p {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    footer .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin-bottom: 16px;
+    }
+    footer .footer-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 13px;
+      transition: color 0.2s;
+    }
+    footer .footer-links a:hover { color: var(--neon-cyan); }
+
+    /* ─── Code block ─── */
+    .code-block {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(0, 229, 255, 0.1);
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-top: 16px;
+      position: relative;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: var(--neon-green);
+    }
+    .code-block .copy-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      padding: 4px 12px;
+      border-radius: 6px;
+      background: rgba(0, 229, 255, 0.1);
+      border: 1px solid rgba(0, 229, 255, 0.2);
+      color: var(--neon-cyan);
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .code-block .copy-btn:hover {
+      background: rgba(0, 229, 255, 0.2);
+    }
+    .code-block .copy-btn.copied {
+      background: rgba(0, 255, 136, 0.2);
+      border-color: var(--neon-green);
+      color: var(--neon-green);
+    }
+
+    /* ─── Animations ─── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+    .reveal-delay-4 { transition-delay: 0.4s; }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 640px) {
+      section { padding: 60px 0; }
+      .hero-cta { flex-direction: column; }
+      .btn { width: 100%; justify-content: center; }
+      .step { flex-direction: column; gap: 16px; }
+      .steps-line { display: none; }
+      .step:nth-child(even) { flex-direction: column; }
+      .step:nth-child(even) .step-content { text-align: left; }
+      .step:nth-child(even) .step-content .step-body { margin-left: 0; }
+      .nav-links a:not(.btn-nav) { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background -->
+  <div class="bg-grid"></div>
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+  <div class="bg-glow bg-glow-3"></div>
+
+  <!-- Nav -->
+  <nav>
+    <div class="container">
+      <a href="/" class="nav-brand">
+        <img src="/imgbed.webp" alt="ImgBed">
+        <span>ImgBed</span>
+      </a>
+      <div class="nav-links">
+        <a href="/">首页</a>
+        <a href="/i-want.html" class="btn-nav">我想要</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ─── Hero ─── -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-content">
+        <div class="hero-badge reveal">
+          <span class="dot"></span>
+          开源 · 免费 · 完全掌控
+        </div>
+
+        <h1 class="reveal reveal-delay-1">
+          <span class="highlight">「我想要」</span><br>
+          一个属于自己的免费图床
+        </h1>
+
+        <p class="reveal reveal-delay-2">
+          别再忍受公共图床的删图、防盗链、被墙了。<br>
+          使用 ImgBed，填入你自己白嫖的 Token，搭建一个<strong style="color: var(--neon-cyan)">完全属于你、永久免费、国内秒开</strong>的图床。
+        </p>
+
+        <div class="hero-cta reveal reveal-delay-3">
+          <a href="#download" class="btn btn-primary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            立即下载
+          </a>
+          <a href="/guide.html" target="_blank" class="btn btn-secondary">
+            白嫖攻略
+          </a>
+        </div>
+
+        <div class="hero-core reveal reveal-delay-4">
+          <strong>你只需要准备三样东西（都不花钱）：</strong><br>
+          ① 一个存储渠道：Telegram / Discord / HuggingFace / Cloudflare R2 / AWS S3 / 本地磁盘（任选）<br>
+          ② 一个代理服务：Cloudflare Workers（可选）<br>
+          ③ 国内 CDN 加速（可选，代理够快则不需要）
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Download ─── -->
+  <section id="download" class="download-section">
+    <div class="container">
+      <div class="section-label reveal">开始使用</div>
+      <h2 class="section-title reveal reveal-delay-1">选择你的运行方式</h2>
+      <p class="section-subtitle reveal reveal-delay-2">
+        完全开源，数据自主，单二进制 ~8MB，下载即用。
+      </p>
+
+      <div class="download-grid">
+        <div class="download-card reveal">
+          <h3>🖥️ 桌面版</h3>
+          <p>适合日常使用，系统托盘常驻，右键菜单快速上传。</p>
+          <div class="download-items">
+            <a href="https://github.com/imgbed/imgbed/releases" target="_blank" class="download-item">
+              <div class="left">
+                <span class="os">Windows</span>
+                <span class="arch">amd64</span>
+              </div>
+              <span class="arrow">↓</span>
+            </a>
+            <a href="https://github.com/imgbed/imgbed/releases" target="_blank" class="download-item">
+              <div class="left">
+                <span class="os">macOS</span>
+                <span class="arch">arm64</span>
+              </div>
+              <span class="arrow">↓</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="download-card reveal reveal-delay-1">
+          <h3>☁️ 服务端</h3>
+          <p>适合部署在 VPS 上，提供 REST API 供其他应用调用。</p>
+          <div class="download-items">
+            <a href="https://github.com/imgbed/imgbed/releases" target="_blank" class="download-item">
+              <div class="left">
+                <span class="os">Linux</span>
+                <span class="arch">amd64</span>
+              </div>
+              <span class="arrow">↓</span>
+            </a>
+            <a href="https://github.com/imgbed/imgbed/releases" target="_blank" class="download-item">
+              <div class="left">
+                <span class="os">Linux</span>
+                <span class="arch">arm64</span>
+              </div>
+              <span class="arrow">↓</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="tags-cloud reveal">
+        <span>🏷️ 个人博客博主</span>
+        <span>📚 开源文档维护者</span>
+        <span>🛒 电商/论坛发图</span>
+        <span>✍️ 技术写作者</span>
+        <span>🛠️ 独立开发者</span>
+        <span>📝 Typora/Obsidian</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── FAQ ─── -->
+  <section id="faq">
+    <div class="container">
+      <div class="section-label reveal">常见问题</div>
+      <h2 class="section-title reveal reveal-delay-1">还有什么疑问？</h2>
+
+      <div class="faq-list">
+        <div class="faq-item reveal">
+          <button class="faq-question" onclick="toggleFaq(this)">
+            <span>需要服务器吗？</span>
+            <span class="icon">+</span>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              不需要。桌面版直接在你的电脑上运行，服务端可部署在免费云（如 Oracle Cloud 永久免费 VPS）上。
+            </div>
+          </div>
+        </div>
+        <div class="faq-item reveal reveal-delay-1">
+          <button class="faq-question" onclick="toggleFaq(this)">
+            <span>图片会被删除吗？</span>
+            <span class="icon">+</span>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              存储在你自己的 Telegram/Discord/GitHub 账号下，只要你的账号不被封，图片永存。ImgBed 只是管理工具，不存储任何图片。
+            </div>
+          </div>
+        </div>
+        <div class="faq-item reveal reveal-delay-2">
+          <button class="faq-question" onclick="toggleFaq(this)">
+            <span>代理地址会不会失效？</span>
+            <span class="icon">+</span>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              代理由你自己部署在 Cloudflare/Vercel 免费套餐上，你拥有完全控制权。只要你的 Worker 脚本还在运行，代理就有效。
+            </div>
+          </div>
+        </div>
+        <div class="faq-item reveal reveal-delay-3">
+          <button class="faq-question" onclick="toggleFaq(this)">
+            <span>我能用自己的域名吗？</span>
+            <span class="icon">+</span>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              可以。绑定自定义域名到你的 Cloudflare Worker 即可，ImgBed 后台支持配置自定义域名。
+            </div>
+          </div>
+        </div>
+        <div class="faq-item reveal reveal-delay-4">
+          <button class="faq-question" onclick="toggleFaq(this)">
+            <span>支持 API 调用吗？</span>
+            <span class="icon">+</span>
+          </button>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              支持。ImgBed 提供完整的 REST API，支持 Token 认证，可以集成到任何应用中使用。
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── CTA ─── -->
+  <section class="cta-section">
+    <div class="container">
+      <h2 class="reveal">现在开始，5 分钟拥有专属图床</h2>
+      <p class="reveal reveal-delay-1">完全开源，永不收费，你的数据你做主</p>
+      <div class="reveal reveal-delay-2">
+        <a href="#download" class="btn btn-primary" style="font-size: 17px; padding: 16px 40px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          立即下载 ImgBed
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Footer ─── -->
+  <footer>
+    <div class="container">
+      <div class="footer-links">
+        <a href="https://github.com/imgbed/imgbed" target="_blank">GitHub</a>
+        <a href="/">文档</a>
+        <a href="https://discord.gg" target="_blank">Discord</a>
+      </div>
+      <p>完全开源，永不收费 · ImgBed</p>
+    </div>
+  </footer>
+
+  <script>
+    // ─── FAQ ───
+    function toggleFaq(btn) {
+      const item = btn.parentElement
+      const isOpen = item.classList.contains('open')
+      // Close all
+      document.querySelectorAll('.faq-item').forEach(el => el.classList.remove('open'))
+      // Open clicked if was closed
+      if (!isOpen) item.classList.add('open')
+    }
+
+    // ─── Copy code ───
+    function copyCode(btn) {
+      const code = btn.parentElement.querySelector('pre').innerText
+      navigator.clipboard.writeText(code).then(() => {
+        btn.textContent = '已复制!'
+        btn.classList.add('copied')
+        setTimeout(() => {
+          btn.textContent = '复制'
+          btn.classList.remove('copied')
+        }, 2000)
+      })
+    }
+
+    // ─── Scroll reveal ───
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible')
+          observer.unobserve(entry.target)
+        }
+      })
+    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' })
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el))
+
+    // ─── Nav blur on scroll ───
+    const nav = document.querySelector('nav')
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 20) {
+        nav.style.borderBottomColor = 'rgba(0, 229, 255, 0.15)'
+      } else {
+        nav.style.borderBottomColor = 'rgba(0, 229, 255, 0.07)'
+      }
+    })
+  </script>
+</body>
+</html>

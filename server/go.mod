@@ -7,7 +7,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.26.1
 	github.com/aws/aws-sdk-go-v2/credentials v1.16.12
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.47.5
-	github.com/chai2010/webp v1.4.0
+	github.com/deepteams/webp v1.2.1
 	github.com/disintegration/imaging v1.6.2
 	github.com/getlantern/systray v1.2.2
 	github.com/gin-gonic/gin v1.9.1
