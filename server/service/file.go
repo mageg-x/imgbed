@@ -77,6 +77,7 @@ func (s *FileService) GetCDNUrl(originalUrl string, channelType string) string {
 //   - "c:xxx" 或 "channel:xxx"：按渠道名模糊过滤（需 JOIN channels 表）
 //   - "source:xxx"：按来源精确匹配（如 source:admin）
 //   - 纯文本：按文件名模糊搜索（FTS5 加速 + LIKE fallback）
+//
 // 例如：c:telegram:logo → 渠道名含 telegram 且文件名含 logo
 // 例如：source:admin → 来源为 admin 的文件
 // 例如：logo.png → 文件名模糊含 logo.png
@@ -628,11 +629,11 @@ func (s *FileService) List(ctx context.Context, page, pageSize int, search strin
 			Where("channels.name LIKE ? OR channels.type LIKE ?", "%"+channelName+"%", "%"+channelName+"%")
 	}
 
-	// 来源精确过滤（覆盖 search 解析的 sourceExact）
+	// 来源模糊过滤（覆盖 search 解析的 sourceExact）
 	if source != "" {
-		query = query.Where("source = ?", source)
+		query = query.Where("source LIKE ?", "%"+source+"%")
 	} else if sourceExact != "" {
-		query = query.Where("source = ?", sourceExact)
+		query = query.Where("source LIKE ?", "%"+sourceExact+"%")
 	}
 
 	// 文件名搜索：优先使用 FTS5 加速，失败则 fallback 到 LIKE

@@ -230,7 +230,8 @@ export default {
   },
   files: {
     title: '文件管理',
-    searchPlaceholder: '搜索文件名...',
+    searchPlaceholder: '搜索，支持 c:渠道 s:来源',
+    searchTip: '支持：c:渠道名 或 s:来源 筛选',
     uploadFile: '上传文件',
     batchUpload: '批量上传',
     originalLink: '原始链接',

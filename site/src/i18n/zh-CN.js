@@ -183,7 +183,8 @@ export default {
   },
   browse: {
     title: '我的文件',
-    searchPlaceholder: '搜索文件...',
+    searchPlaceholder: '搜索文件，支持 c:渠道 s:来源',
+    searchTip: '支持：c:渠道名 或 s:来源 筛选',
     selectedCount: '已选择 {0} 个文件',
     batchDelete: '批量删除',
     cancel: '取消',
@@ -207,7 +208,8 @@ export default {
   },
   gallery: {
     title: '我的图库',
-    searchPlaceholder: '搜索文件名...',
+    searchPlaceholder: '搜索文件名，支持 c:渠道 s:来源',
+    searchTip: '支持：c:渠道名 或 s:来源 筛选',
     noImages: '暂无图片',
     all: '全部',
     today: '今天',

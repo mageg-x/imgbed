@@ -183,7 +183,8 @@ export default {
   },
   browse: {
     title: 'My Files',
-    searchPlaceholder: 'Search files...',
+    searchPlaceholder: 'Search, supports c:channel s:source',
+    searchTip: 'Supports: c:channel or s:source filter',
     selectedCount: '{0} files selected',
     batchDelete: 'Batch Delete',
     cancel: 'Cancel',
@@ -207,7 +208,8 @@ export default {
   },
   gallery: {
     title: 'My Gallery',
-    searchPlaceholder: 'Search filenames...',
+    searchPlaceholder: 'Search, supports c:channel s:source',
+    searchTip: 'Supports: c:channel or s:source filter',
     noImages: 'No images',
     all: 'All',
     today: 'Today',

@@ -230,7 +230,8 @@ export default {
   },
   files: {
     title: 'File Management',
-    searchPlaceholder: 'Search by filename...',
+    searchPlaceholder: 'Search, supports c:channel s:source',
+    searchTip: 'Supports: c:channel or s:source filter',
     uploadFile: 'Upload File',
     batchUpload: 'Batch Upload',
     originalLink: 'Original Link',
