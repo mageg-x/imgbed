@@ -221,6 +221,34 @@ func (s *FileService) Upload(ctx context.Context, file *multipart.FileHeader, ch
 	// 计算原始文件的 SHA256 校验和（用于秒传和去重）
 	fileChecksum := utils.CalcSHA256(fileData)
 
+	// 秒传检查：查询是否已存在相同 checksum 的文件
+	existingFile, err := s.CheckFileByChecksum(fileChecksum)
+	if err != nil {
+		utils.Errorf("upload: checksum check failed, filename=%s, error=%v", safeFilename, err)
+		// 查询失败不阻止上传，继续上传流程
+	} else if existingFile != nil {
+		// 文件已存在，直接返回已有的文件信息（秒传成功）
+		utils.Infof("upload: dedup hit, filename=%s, checksum=%s, existingFileID=%s", safeFilename, fileChecksum, existingFile.ID)
+		cdnURL := s.GetCDNUrl(existingFile.URL, existingFile.ChannelType)
+		links := model.Links{
+			URL:      cdnURL,
+			Markdown: fmt.Sprintf("![%s](%s)", existingFile.Name, cdnURL),
+			HTML:     fmt.Sprintf(`<img src="%s" alt="%s">`, cdnURL, existingFile.Name),
+		}
+		return &model.UploadResult{
+			ID:          existingFile.ID,
+			Name:        existingFile.Name,
+			URL:         cdnURL,
+			Size:        existingFile.Size,
+			Type:        existingFile.Type,
+			Channel:     existingFile.ChannelID,
+			ChannelType: existingFile.ChannelType,
+			Tags:        utils.ParseTags(existingFile.Tags),
+			UploadedAt:  existingFile.CreatedAt.Unix(),
+			Links:       links,
+		}, nil
+	}
+
 	fileID := utils.GenerateID()
 	mimeType := actualMimeType
 
