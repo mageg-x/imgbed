@@ -30,3 +30,4 @@ server/imgbed-linux-amd64
 server/imgbed-linux-arm64
 server/imgbed-windows-amd64..zip
 server/imgbed-windows-amd64.zip
+server/server

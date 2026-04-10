@@ -62,6 +62,7 @@ ImgBed 是一款**开源免费图床聚合工具**，专注于聚合各大免费
 | 图片压缩 | P0 | 上传前自动压缩，可配置压缩率 |
 | 格式转换 | P0 | 自动转换为 WebP 等高效格式 |
 | 上传限制 | P1 | 文件大小限制、类型限制 |
+| **秒传** | **P0** | **基于 SHA256 校验，已存在文件直接返回** |
 
 #### 2.2.2 图片管理模块
 
@@ -102,7 +103,16 @@ ImgBed 是一款**开源免费图床聚合工具**，专注于聚合各大免费
 | 上传量统计 | P1 | 每日/每周上传量统计 |
 | 可视化展示 | P1 | 图表形式展示统计数据 |
 
-#### 2.2.5 系统配置模块
+#### 2.2.5 数据备份模块
+
+| 功能 | 优先级 | 说明 |
+|------|--------|------|
+| 自动备份 | P1 | 可配置备份周期，自动备份 SQLite 数据库 |
+| 手动备份 | P0 | 一键创建备份 |
+| 备份管理 | P0 | 查看备份列表、删除备份 |
+| 一键恢复 | P0 | 从备份文件恢复数据库 |
+
+#### 2.2.6 系统配置模块
 
 | 功能 | 优先级 | 说明 |
 |------|--------|------|
@@ -116,10 +126,9 @@ ImgBed 是一款**开源免费图床聚合工具**，专注于聚合各大免费
 |------|--------|------|
 | **API Token 管理** | **P0** | **创建、删除、启用/禁用 API Token** |
 | **Token 权限控制** | **P0** | **Token 细粒度权限控制（upload/read/delete）** |
-| **匿名上传接口** | **P0** | **无需认证的上传接口（有限制）** |
 | **Token 认证接口** | **P0** | **API Token 认证的完整接口** |
 | **粘贴上传支持** | **P1** | **支持剪贴板粘贴图片上传（前端示例）** |
-| **集成示例** | **P1** | **提供 Typora、VS Code、Python、JavaScript 等集成示例** |
+| **集成示例** | **P1** | **提供 Typora、Python、JavaScript 等集成示例** |
 
 ---
 
@@ -258,6 +267,7 @@ ImgBed 是一款**开源免费图床聚合工具**，专注于聚合各大免费
 | `round_robin` | 轮询选择渠道 |
 | `random` | 随机选择渠道 |
 | `priority` | 按优先级选择渠道 |
+| `weight` | 按权重比例加权随机选择（轮盘赌算法） |
 
 #### 4.2.3 重试机制
 - 上传失败时自动尝试下一个渠道
@@ -371,46 +381,101 @@ ImgBed 是一款**开源免费图床聚合工具**，专注于聚合各大免费
 │
 ├── /auth                          # 认证接口
 │   ├── POST /login                # 登录
-│   └── GET  /session              # 获取当前会话信息
+│   ├── POST /admin/login          # 管理员登录
+│   ├── POST /logout               # 登出
+│   ├── GET  /check                # 会话检查
+│   └── POST /password             # 设置密码（管理员）
 │
-├── /upload                        # 上传接口
-│   ├── POST /                     # 上传图片 (需要认证)
-│   ├── POST /multiple             # 批量上传 (需要认证)
-│   └── POST /anonymous            # 匿名上传 (无需认证)
+├── /file                          # 文件访问接口
+│   ├── GET  /check/:checksum      # 秒传检查（基于 SHA256）
+│   ├── GET  /:id                  # 获取文件
+│   ├── GET  /:id/info             # 获取文件信息
+│   ├── GET  /:id/download         # 下载文件
+│   └── GET  /:id/proxy            # 代理访问
 │
-├── /images                        # 图片接口
-│   ├── GET  /                     # 图片列表
-│   ├── GET  /:id                  # 获取图片
-│   ├── GET  /:id/info             # 获取图片信息
-│   ├── GET  /:id/download         # 下载图片
-│   ├── DELETE /:id                # 删除图片
-│   ├── POST /batch-delete         # 批量删除
+├── /upload                        # 上传接口（需认证）
+│   ├── POST /                     # 上传图片
+│   └── POST /multiple             # 批量上传
+│
+├── /files                         # 文件管理接口（需认证）
+│   ├── GET  /                     # 文件列表
+│   ├── GET  /ids                  # 文件ID列表
+│   ├── DELETE /                   # 批量删除
 │   ├── POST /cleanup/preview      # 一键清理预览
 │   └── POST /cleanup              # 执行一键清理
 │
-├── /channels                      # 存储渠道接口
+├── /channel                       # 存储渠道接口（需认证）
 │   ├── GET  /                     # 渠道列表
 │   ├── GET  /:id                  # 渠道详情
+│   ├── GET  /:id/status           # 渠道状态
 │   ├── GET  /:id/stats            # 渠道统计
-│   └── POST /:id/test             # 测试渠道连接
+│   ├── POST /                     # 创建渠道（管理员）
+│   ├── PUT  /:id                  # 更新渠道（管理员）
+│   ├── DELETE /:id                # 删除渠道（管理员）
+│   ├── PUT  /:id/enable           # 启用/禁用渠道（管理员）
+│   ├── PUT  /:id/weight           # 设置渠道权重（管理员）
+│   ├── GET  /:id/health           # 健康检查（管理员）
+│   └── POST /:id/test             # 测试渠道连接（管理员）
+│
+├── /channels                      # 渠道状态接口
+│   ├── GET  /status               # 所有渠道状态
+│   └── POST /health-check         # 健康检查（管理员）
 │
 ├── /stats                         # 统计接口
 │   ├── GET  /overview             # 总览统计
 │   ├── GET  /channels             # 渠道统计
-│   └── GET  /trend                # 趋势统计
+│   ├── GET  /trend                # 趋势统计
+│   └── GET  /weekly              # 周统计
 │
-├── /tokens                        # API Token 接口
+├── /tokens                        # API Token 接口（需认证）
 │   ├── GET  /                     # Token 列表
 │   ├── POST /                     # 创建 Token
-│   ├── PUT  /:id                  # 更新 Token
-│   ├── DELETE /:id                # 删除 Token
-│   └── POST /:id/toggle           # 启用/禁用 Token
+│   ├── DELETE /:token             # 删除 Token
+│   └── PUT  /:token/enable        # 启用/禁用 Token
 │
-└── /config                        # 配置接口
-    ├── GET  /                     # 获取配置
-    └── PUT  /                     # 更新配置
-
-/image/:id                          # 图片访问 (GET/HEAD)
+├── /config                        # 配置接口
+│   ├── GET  /                     # 获取所有配置
+│   ├── GET  /:key                 # 获取单个配置
+│   ├── PUT  /                     # 更新配置
+│   ├── GET  /upload               # 获取上传配置
+│   ├── PUT  /upload               # 更新上传配置
+│   ├── GET  /site                 # 获取站点配置
+│   ├── PUT  /site                 # 更新站点配置
+│   ├── GET  /auth                # 获取认证配置
+│   ├── PUT  /auth                # 更新认证配置
+│   ├── GET  /rate-limit          # 获取限速配置
+│   ├── PUT  /rate-limit          # 更新限速配置
+│   ├── GET  /schedule             # 获取调度配置
+│   ├── PUT  /schedule             # 更新调度配置
+│   ├── GET  /cdn                 # 获取 CDN 配置
+│   ├── PUT  /cdn                 # 更新 CDN 配置
+│   ├── GET  /backup              # 获取备份配置
+│   └── PUT  /backup              # 更新备份配置
+│
+├── /admin                         # 管理后台接口（需管理员）
+│   ├── GET  /dashboard            # 仪表盘数据
+│   ├── GET  /statistics           # 统计数据
+│   ├── GET  /files               # 文件列表
+│   ├── DELETE /files/:id         # 删除文件
+│   ├── DELETE /files             # 批量删除文件
+│   ├── GET  /channels            # 渠道列表
+│   ├── POST /channels            # 创建渠道
+│   ├── PUT  /channels/:id        # 更新渠道
+│   ├── DELETE /channels/:id      # 删除渠道
+│   ├── PUT  /channels/:id/enable # 启用/禁用渠道
+│   ├── POST /channels/:id/test   # 测试渠道
+│   ├── GET  /settings            # 获取设置
+│   ├── PUT  /settings            # 更新设置
+│   ├── GET  /tokens             # Token 列表
+│   ├── POST /tokens             # 创建 Token
+│   ├── DELETE /tokens/:id       # 删除 Token
+│   ├── PUT  /tokens/:id/enable  # 启用/禁用 Token
+│   ├── GET  /backup/list        # 备份列表
+│   ├── POST /backup/create      # 创建备份
+│   ├── DELETE /backup           # 删除备份
+│   └── POST /backup/restore     # 恢复备份
+│
+└── /image/:id                     # 图片访问 (GET/HEAD)
 ```
 
 ### 5.5 核心接口详细设计
@@ -469,39 +534,6 @@ Response:
       "url": "https://cdn.discord.com/attachments/xxx/image.png",
       "markdown": "![image](https://cdn.discord.com/attachments/xxx/image.png)",
       "html": "<img src=\"https://cdn.discord.com/attachments/xxx/image.png\" alt=\"image\">"
-    }
-  }
-}
-```
-
-**匿名上传**
-```
-POST /api/v1/upload/anonymous
-Content-Type: multipart/form-data
-
-Form Data:
-- file: 图片文件 (必填)
-
-限制:
-- 限速: 5次/分钟
-- 文件大小: 最大 5MB
-- 不记录上传历史
-
-Response:
-{
-  "code": 0,
-  "message": "success",
-  "data": {
-    "id": "abc123",
-    "name": "image.jpg",
-    "url": "https://cdn.discord.com/attachments/xxx/image.jpg",
-    "size": 102400,
-    "type": "image/jpeg",
-    "channel": "discord",
-    "links": {
-      "url": "https://cdn.discord.com/attachments/xxx/image.jpg",
-      "markdown": "![image](https://cdn.discord.com/attachments/xxx/image.jpg)",
-      "html": "<img src=\"https://cdn.discord.com/attachments/xxx/image.jpg\" alt=\"image\">"
     }
   }
 }
@@ -934,16 +966,7 @@ ImgBed 是一个**免费图床聚合工具**，专注于：
 - ✅ **代理上传流量**：图片上传经过 ImgBed 分发到各个免费存储渠道
 - ❌ **不代理访问流量**：图片直接使用原始存储渠道的 URL，节省服务器带宽
 
-### 6.2 认证方式设计
-
-#### 6.2.1 两种认证模式
-
-| 认证方式 | 说明 | 使用场景 |
-|---------|------|---------|
-| **匿名上传** | 无需认证，直接上传 | 快速测试、临时使用 |
-| **Token 认证** | 使用 API Token 认证 | 博客编辑器、脚本集成、长期使用 |
-
-#### 6.2.2 Token 权限说明
+### 6.2 Token 权限说明
 
 | 权限 | 说明 |
 |------|------|
@@ -963,10 +986,6 @@ X-API-Token: your_token_here
 X-API-Secret: your_secret_here
 ```
 
-#### 6.3.2 匿名上传
-
-无需任何认证，直接调用 `/api/v1/upload/anonymous`。
-
 ### 6.4 使用场景示例
 
 #### 6.4.1 场景 1：Typora 配置
@@ -975,13 +994,6 @@ X-API-Secret: your_secret_here
 
 - **上传服务**：选择 `Custom Command`
 - **命令**：
-```bash
-curl -X POST https://your-imgbed.com/api/v1/upload/anonymous \
-  -F "file=@${filepath}" \
-  | grep -o '"url":"[^"]*"' | cut -d'"' -f4
-```
-
-**或者使用 Token（推荐）：**
 ```bash
 curl -X POST https://your-imgbed.com/api/v1/upload \
   -H "X-API-Token: your_token" \
@@ -996,41 +1008,32 @@ curl -X POST https://your-imgbed.com/api/v1/upload \
 import requests
 
 class ImgBedClient:
-    def __init__(self, base_url, api_token=None, api_secret=None):
+    def __init__(self, base_url, api_token, api_secret):
         self.base_url = base_url
         self.api_token = api_token
         self.api_secret = api_secret
-    
+
     def upload(self, image_path):
         with open(image_path, 'rb') as f:
             files = {'file': f}
-            
-            if self.api_token and self.api_secret:
-                headers = {
-                    'X-API-Token': self.api_token,
-                    'X-API-Secret': self.api_secret
-                }
-                url = f"{self.base_url}/api/v1/upload"
-            else:
-                headers = {}
-                url = f"{self.base_url}/api/v1/upload/anonymous"
-            
+            headers = {
+                'X-API-Token': self.api_token,
+                'X-API-Secret': self.api_secret
+            }
+            url = self.base_url + '/api/v1/upload'
             response = requests.post(url, files=files, headers=headers)
             return response.json()
 
-# 使用 Token（推荐）
+# 使用 Token（需先在管理后台创建 API Token）
 client = ImgBedClient(
     "https://your-imgbed.com",
     api_token="your_token",
     api_secret="your_secret"
 )
 
-# 匿名上传
-# client = ImgBedClient("https://your-imgbed.com")
-
 result = client.upload("image.jpg")
 if result['code'] == 0:
-    print(f"上传成功: {result['data']['links']['markdown']}")
+    print('Upload success:', result['data']['links']['markdown'])
 ```
 
 #### 6.4.3 场景 3：JavaScript 博客编辑器集成（支持粘贴上传）
@@ -1040,54 +1043,45 @@ if result['code'] == 0:
 <html>
 <body>
     <textarea id="editor" placeholder="在这里写文章，Ctrl+V 粘贴图片..."></textarea>
-    
+
     <script>
         const BASE_URL = 'https://your-imgbed.com';
-        const API_TOKEN = 'your_token';   // 可选
-        const API_SECRET = 'your_secret'; // 可选
-        
+        const API_TOKEN = 'your_token';
+        const API_SECRET = 'your_secret';
+
         async function uploadImage(file) {
             const formData = new FormData();
             formData.append('file', file);
-            
-            const headers = {};
-            let url;
-            
-            if (API_TOKEN && API_SECRET) {
-                headers['X-API-Token'] = API_TOKEN;
-                headers['X-API-Secret'] = API_SECRET;
-                url = `${BASE_URL}/api/v1/upload`;
-            } else {
-                url = `${BASE_URL}/api/v1/upload/anonymous`;
-            }
-            
-            const response = await fetch(url, {
+            const headers = {
+                'X-API-Token': API_TOKEN,
+                'X-API-Secret': API_SECRET
+            };
+            const response = await fetch(BASE_URL + '/api/v1/upload', {
                 method: 'POST',
                 headers,
                 body: formData
             });
-            
             return await response.json();
         }
-        
+
         // 监听粘贴事件
         document.getElementById('editor').addEventListener('paste', async (e) => {
             const items = e.clipboardData.items;
-            
+
             for (const item of items) {
                 if (item.kind === 'file' && item.type.startsWith('image/')) {
                     e.preventDefault();
-                    
+
                     const file = item.getAsFile();
                     const result = await uploadImage(file);
-                    
+
                     if (result.code === 0) {
                         const markdown = result.data.links.markdown;
                         const textarea = e.target;
                         const start = textarea.selectionStart;
                         const end = textarea.selectionEnd;
                         const text = textarea.value;
-                        
+
                         textarea.value = text.substring(0, start) + markdown + text.substring(end);
                         textarea.selectionStart = textarea.selectionEnd = start + markdown.length;
                     }
@@ -1100,27 +1094,15 @@ if result['code'] == 0:
 </html>
 ```
 
-### 6.5 匿名 vs Token 对比
+### 6.5 安全建议
 
-| 特性 | 匿名上传 | Token 认证 |
-|------|---------|-----------|
-| 认证 | 无需认证 | 需要 Token + Secret |
-| 限速 | 5次/分钟 | 无限制（受平台限制） |
-| 文件大小 | 最大 5MB | 最大 20MB（受渠道限制） |
-| 批量上传 | ❌ 不支持 | ✅ 支持 |
-| 文件管理 | ❌ 无法管理 | ✅ 可查看、删除 |
-| 使用历史 | ❌ 不记录 | ✅ 完整记录 |
-| 适用场景 | 临时测试、快速上传 | 博客、编辑器、长期使用 |
-
-### 6.6 安全建议
-
-1. **优先使用 Token**：匿名上传仅用于测试，正式使用请创建 Token
+1. **创建专用 Token**：不要共用 Token，为每个应用创建独立 Token
 2. **权限最小化**：只给必要的权限（如仅 `upload`）
 3. **定期轮换 Token**：建议每 3-6 个月更换一次
 4. **使用 HTTPS**：确保 Token 传输安全
 5. **不要泄露 Token**：不要将 Token 提交到公开代码仓库
 
-### 6.7 错误码补充说明
+### 6.6 错误码补充说明
 
 | 错误码 | 说明 |
 |--------|------|
@@ -1128,7 +1110,7 @@ if result['code'] == 0:
 | 10001 | 参数错误 |
 | 10002 | 文件过大 |
 | 10003 | 不支持的文件类型 |
-| 10004 | 超过限速（匿名） |
+| 10004 | 超过限速 |
 | 30001 | 无效的 Token |
 | 30002 | Token 已禁用 |
 | 30003 | Token 已过期 |
@@ -1170,6 +1152,6 @@ type StorageDriver interface {
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
-| **v2.1** | **2026-04-06** | **新增第三方接入功能：API Token 管理、匿名上传接口、时间范围筛选、一键清理、完整的集成示例** |
+| **v2.1** | **2026-04-10** | **新增秒传功能、权重调度策略、数据备份恢复、API Token 权限控制** |
 | v2.0 | 2026-04-06 | 聚焦个人白嫖图床需求，删除过度设计功能，新增图片压缩、统计报表、失败重试增强 |
 | v1.2 | 2026-04-06 | 初始版本 |
