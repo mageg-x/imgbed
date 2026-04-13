@@ -31,7 +31,23 @@ func convertToCDNUrl(originalUrl string) string {
 		return originalUrl
 	}
 
-	// 如果配置了 CDN 加速地址，直接替换代理地址
+	if strings.Contains(originalUrl, "/telegram:") {
+		if cdnConfig.ProxyUrl == "" {
+			return originalUrl
+		}
+		proxyUrl := strings.TrimSuffix(cdnConfig.ProxyUrl, "/")
+		idx := strings.Index(originalUrl, "/telegram:")
+		if idx > 0 {
+			telegramPart := originalUrl[idx:]
+			return proxyUrl + telegramPart
+		}
+		return originalUrl
+	}
+
+	if cdnConfig.ProxyUrl != "" && strings.HasPrefix(originalUrl, cdnConfig.ProxyUrl) {
+		return originalUrl
+	}
+
 	if cdnConfig.CdnUrl != "" {
 		cdnUrl := strings.TrimSuffix(cdnConfig.CdnUrl, "/")
 		lastSlash := strings.LastIndex(originalUrl, "/")
@@ -42,12 +58,10 @@ func convertToCDNUrl(originalUrl string) string {
 		return originalUrl
 	}
 
-	// 如果没有配置 CDN 加速地址但启用了 CDN，使用 Worker 代理
 	if cdnConfig.ProxyUrl == "" {
 		return originalUrl
 	}
 
-	// 提取 URL 的基础路径（最后一个 / 之前）
 	lastSlash := strings.LastIndex(originalUrl, "/")
 	if lastSlash <= 0 {
 		return originalUrl
@@ -56,10 +70,8 @@ func convertToCDNUrl(originalUrl string) string {
 	baseUrl := originalUrl[:lastSlash]
 	filePath := originalUrl[lastSlash+1:]
 
-	// Base58 编码基础 URL
 	encoded := utils.Base58Encode(baseUrl)
 
-	// 拼接 CDN URL
 	proxyUrl := strings.TrimSuffix(cdnConfig.ProxyUrl, "/")
 	return fmt.Sprintf("%s/%s/%s", proxyUrl, encoded, filePath)
 }

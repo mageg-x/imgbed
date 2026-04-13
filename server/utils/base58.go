@@ -9,18 +9,18 @@ const Base58Alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwx
 
 // Base58Encode 将字符串编码为 Base58
 func Base58Encode(input string) string {
-	if input == "" {
+	return Base58EncodeBytes([]byte(input))
+}
+
+func Base58EncodeBytes(bytes []byte) string {
+	if len(bytes) == 0 {
 		return ""
 	}
 
-	// 将字符串转换为字节
-	bytes := []byte(input)
-
-	// 计算前导零的个数
 	leadingZeros := 0
 	for _, b := range bytes {
 		if b == 0 {
- leadingZeros++
+			leadingZeros++
 		} else {
 			break
 		}

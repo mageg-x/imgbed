@@ -8,8 +8,10 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"strings"
 	"time"
 
+	"github.com/imgbed/server/config"
 	"github.com/imgbed/server/utils"
 )
 
@@ -197,19 +199,24 @@ func (d *TelegramDriver) Upload(ctx context.Context, req *UploadRequest) (*Uploa
 
 	tgFileID := result.Result.Document.FileID
 
-	// 获取文件路径（需要额外调用 getFile API）
-	filePath, err := d.getFilePath(ctx, tgFileID)
-	if err != nil {
-		utils.Warnf("telegram upload: get file path failed, fileID=%s, error=%v", tgFileID, err)
-		// 即使获取失败也继续，但 URL 可能不正确
-		filePath = tgFileID
+	proxyUrl := config.GetCDNProxyUrl()
+	var fileUrl string
+	if proxyUrl != "" {
+		fileUrl = d.generateProxyURL(tgFileID, req.FileName)
+	} else {
+		filePath, err := d.getFilePath(ctx, tgFileID)
+		if err != nil {
+			utils.Warnf("telegram upload: get file path failed, fileID=%s, error=%v", tgFileID, err)
+			filePath = tgFileID
+		}
+		fileUrl = fmt.Sprintf("%s/%s", d.getFileBaseUrl(), filePath)
 	}
 
-	utils.Debugf("telegram upload: success, fileID=%s, tgFileID=%s, filePath=%s", fileID, tgFileID, filePath)
+	utils.Debugf("telegram upload: success, fileID=%s, tgFileID=%s, url=%s", fileID, tgFileID, fileUrl)
 
 	return &UploadResult{
 		FileID:    tgFileID,
-		URL:       fmt.Sprintf("%s/%s", d.getFileBaseUrl(), filePath),
+		URL:       fileUrl,
 		Size:      result.Result.Document.FileSize,
 		ChannelID: d.channelIDInternal,
 	}, nil
@@ -503,4 +510,18 @@ func (d *TelegramDriver) getFilePath(ctx context.Context, fileID string) (string
 	}
 
 	return result.Result.FilePath, nil
+}
+
+func (d *TelegramDriver) generateProxyURL(tgFileID, fileName string) string {
+	proxyUrl := strings.TrimSuffix(config.GetCDNProxyUrl(), "/")
+	payload := d.botToken + "|" + tgFileID
+	encrypted, err := utils.EncryptTelegramPayload(payload)
+	if err != nil {
+		utils.Warnf("telegram generateProxyURL: encrypt failed, error=%v", err)
+		return fmt.Sprintf("%s/%s", d.getFileBaseUrl(), tgFileID)
+	}
+	encoded := utils.Base58EncodeBytes(encrypted)
+	telegramPayload := "telegram:" + encoded
+	finalEncoded := utils.Base58Encode(telegramPayload)
+	return fmt.Sprintf("%s/%s/%s", proxyUrl, finalEncoded, fileName)
 }
