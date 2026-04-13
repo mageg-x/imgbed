@@ -44,6 +44,19 @@ func convertToCDNUrl(originalUrl string) string {
 		return originalUrl
 	}
 
+	if strings.Contains(originalUrl, "/discord:") {
+		if cdnConfig.ProxyUrl == "" {
+			return originalUrl
+		}
+		proxyUrl := strings.TrimSuffix(cdnConfig.ProxyUrl, "/")
+		idx := strings.Index(originalUrl, "/discord:")
+		if idx > 0 {
+			discordPart := originalUrl[idx:]
+			return proxyUrl + discordPart
+		}
+		return originalUrl
+	}
+
 	if cdnConfig.ProxyUrl != "" && strings.HasPrefix(originalUrl, cdnConfig.ProxyUrl) {
 		return originalUrl
 	}

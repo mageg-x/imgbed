@@ -8,8 +8,11 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"path/filepath"
+	"strings"
 	"time"
 
+	"github.com/imgbed/server/config"
 	"github.com/imgbed/server/utils"
 )
 
@@ -174,9 +177,19 @@ func (d *DiscordDriver) Upload(ctx context.Context, req *UploadRequest) (*Upload
 
 	utils.Debugf("discord upload: success, fileID=%s, messageID=%s, attachmentID=%s", fileID, result.ID, attachment.ID)
 
+	fileID = fmt.Sprintf("%s:%s:%s", d.channelID, result.ID, attachment.ID)
+
+	var fileUrl string
+	proxyUrl := config.GetCDNProxyUrl()
+	if proxyUrl != "" {
+		fileUrl = d.generateProxyURL(result.ID, attachment.ID, req.FileName)
+	} else {
+		fileUrl = attachment.URL
+	}
+
 	return &UploadResult{
-		FileID:    fmt.Sprintf("%s:%s", d.channelID, result.ID), // 存储 channelID:messageID
-		URL:       attachment.URL,
+		FileID:    fileID,
+		URL:       fileUrl,
 		Size:      int64(attachment.Size),
 		ChannelID: d.channelIDInternal,
 	}, nil
@@ -196,20 +209,14 @@ func (d *DiscordDriver) GetURL(ctx context.Context, fileID string) (string, erro
 
 // Delete 删除 Discord 消息（删除文件）
 func (d *DiscordDriver) Delete(ctx context.Context, fileID string) error {
-	// fileID 格式为 channelID:messageID
-	var channelID, messageID string
-	for i := 0; i < len(fileID); i++ {
-		if fileID[i] == ':' {
-			channelID = fileID[:i]
-			messageID = fileID[i+1:]
-			break
-		}
-	}
-
-	if channelID == "" || messageID == "" {
+	parts := strings.Split(fileID, ":")
+	if len(parts) < 2 {
 		utils.Warnf("discord delete: invalid fileID format, fileID=%s", fileID)
 		return fmt.Errorf("invalid fileID format")
 	}
+
+	channelID := parts[0]
+	messageID := parts[1]
 
 	apiBase := d.getApiBaseUrl()
 	url := fmt.Sprintf("%s/channels/%s/messages/%s", apiBase, channelID, messageID)
@@ -286,4 +293,19 @@ func (d *DiscordDriver) HealthCheck(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (d *DiscordDriver) generateProxyURL(messageID, attachmentID, fileName string) string {
+	proxyUrl := strings.TrimSuffix(config.GetCDNProxyUrl(), "/")
+	payload := d.botToken + "|" + d.channelID + "|" + messageID + "|" + attachmentID
+	encrypted, err := utils.EncryptTelegramPayload(payload)
+	if err != nil {
+		utils.Warnf("discord generateProxyURL: encrypt failed, error=%v", err)
+		return ""
+	}
+	encoded := utils.Base58EncodeBytes(encrypted)
+	discordPayload := "discord:" + encoded
+	finalEncoded := utils.Base58Encode(discordPayload)
+	ext := filepath.Ext(fileName)
+	return fmt.Sprintf("%s/%s/%s", proxyUrl, finalEncoded, ext)
 }
